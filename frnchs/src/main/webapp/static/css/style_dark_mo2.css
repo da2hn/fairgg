@@ -1,0 +1,153 @@
+@charset "utf-8";
+
+@media (prefers-color-scheme: dark) {
+	#header .uh .search .box_search {background: #343537;}
+	.layer_full.layer_search .titleArea .box_input input[type="text"] {color: #222222;}
+	input[type="text"], input[type="password"] {color: #EEEFF1; border: 1px solid #67686a; background-color: transparent;}
+	input[type="checkbox"].hidden + label:before {background: url(../images/dark/checkbox.svg) no-repeat center left/13px auto;}
+	input[type="radio"] + label:before, input[type="radio"].hidden + label:before {background: url(../images/dark/radio.svg) no-repeat left center/100% auto !important;}
+	input[type="radio"]:checked + label:before, input[type="radio"].hidden:checked + label:before {background-image: url(../images/dark/radio_checked.svg) !important;}
+	textarea {color: #EEEFF1;}
+	select.select {background-image: url(../images/dark/select2.svg) !important;}
+	
+	.tbl_row > tbody > tr > td {}
+	.tbl_row2 {}
+	.tbl_row2 > tbody > tr > th {}
+	.tbl_row2 > tbody > tr > td {}
+	
+	.mBoard1 td {border-color: #4A4A4A;}
+	.mBoard1 th span {color: #BABABA;}
+	
+	.mSort1 .it { border-color: #67686a; color: #EEEFF1;}
+	.swiper_board .swiper-slide button {border-bottom: 2px solid #67686a;}
+	#main .board ul li .box .subject {color: #bababa;}
+	#main .board ul li {border-bottom: 1px solid #4A4A4A;}
+	
+	
+	/*************  프렌차이즈현황  *****************/
+	dl.datalist_toggle > dd ul li {border-bottom: 1px solid #4A4A4A;}
+	dl.datalist_toggle > dt.active {color: #EEEFF1;}
+	dl.datalist_toggle > dd > p.txt {color: #bababa;}
+	
+	
+	
+	/*************  브랜드비교검색  *****************/
+	.box_search > input[type="text"] {color: #EEEFF1;}
+	.box_date button img{display: none !important;}
+	.box_date button{background-image: url(../images/dark/i_calendar.svg); width: 16px; height: 17px;}
+	
+	
+	
+	/*************  정보공개서등록  *****************/
+	#infoOpen .mList5 > li:before {top: 7px; left: 5px; width: 5px; height: 5px;}
+	#infoEdu .mBoard1 th {border-color: #4A4A4A;}
+	#infoEdu .tbl_row > tbody > tr > td {padding: 10px 8px 10px 8px;}
+	.mPopup1 .cont {background: #292a2c;}
+	.mPopup1 .cont h3 {border-bottom: 1px solid #67686a;}
+	.mPopup1 .cont .close {background: url(../images/dark/close.svg) no-repeat center/12px auto;}
+	ul.list_board > li .box p.subject {color: #EEEFF1;}
+	
+	
+	
+	/*************  정보지원게시판  *****************/
+	.boardView .cont {border-top: 1px solid #67686a;}
+	.boardView .subject {color: #EEEFF1;}
+	.box_btn.charcoal > * {border-color: #999; background-color: #999;}
+	.boardView dl.commentArea > dt {color: #EEEFF1;}
+	.boardView dl.commentArea .write textarea {border: 1px solid #67686a; color: #bababa;}
+	ul.list_board {border-color: #bababa;}
+	ul.list_board > li .box .subject p, ul.list_board > li .box p.subject {color: #EEEFF1;}
+	ul.list_board > li .box > a:before {background: url(../images/dark/arrow_left.svg) no-repeat center/100% auto;}
+	
+	.box_btn.white4 > * {border-color: #999; background-color: #999; color: #fff;}
+	.box_file {border: 1px solid #67686a;}
+	ul.list_upload > li button.del {background: #67686a;}
+	textarea {border: 1px solid #67686a; background: transparent;}
+
+	ul.list_upload > li {padding-right: 30px;}
+	ul.list_upload > li button.del {width: 20px; height: 20px; margin-top: -10px;}
+	
+	.mSub13 .ti {color: #EEEFF1;}
+
+	
+	
+	/*************  시민참여마당  *****************/
+	#storeTransfer .gTitle5 .con1 .bg {background-image: none;}
+	#storeTransfer .gTitle5 {border-bottom: none;}
+	#storeTransfer .body {background-color: transparent;}
+	.mBox1 {background-color: transparent;}
+	.mBox1 .check {border-top: 1px solid #4A4A4A;}
+	.mInfo4 {border-color: #67686a; background: #3c3d3f;}
+	.mBox1 .mCheckbox input[type="checkbox"] + label:before {background-image: url(../images/dark/checkbox2.svg);}
+	.mBox1 .mCheckbox input[type="checkbox"]:checked + label {color: #EEEFF1;}
+	.mSort3 {border-bottom: 1px solid #67686a;}
+	#expFranchise .body {background-color: transparent;}
+	#expFranchise .gTitle5 {border-bottom: none;}
+	#expFranchise .gTitle5 .con1 .bg {background-image: none;}
+	#expFranchiseInfo .mList3 {border-color: #67686a; background: #3c3d3f;}
+	.gTitle4 .mTitle4 {color: #bababa;}
+	.gTitle5 .con1 .info {color: #999;}
+	.gTitle5 .con1 .gRt .mBtn1.orange {border-color: #999; background-color: #999;}
+	.mList2 li .btn {background-color: transparent;}
+	.mView2 {background-color: transparent;}
+	ul.list_flow > li .box {border: 1px solid #67686a;}
+	ul.list_flow > li .box dt {background: #3c3d3f; border-bottom: 1px solid #67686a; color: #EEEFF1;}
+	.layer_popup .mCSB_container {padding-bottom:30px;}
+	.mSort2 {background-color: transparent;}
+	#brandInfo .mDetail1 {background-color: transparent}
+	#brandInfo .mDetail1 .gLeft .tit {border-bottom: 1px solid #67686a; color: #EEEFF1;}
+	.layer_qna {background: #292a2c;}
+	.layer_qna .titleArea {border-bottom: 1px solid #67686a;}
+	.layer_qna .titleArea button.close {background-image: url(../images/dark/close.svg);}
+	
+	
+	
+	/*************  마이페이지  *****************/
+	.swiper_mypage .swiper-slide button {border-bottom: 2px solid #67686a;}
+	.tbl_row > tbody > tr > th {}
+	.tbl_row > tbody > tr > td .msg + .box_btn {margin: 0;}
+	#mypageModify .tbl_row > tbody > tr > td input[type="text"] {border-color: #67686a; color: #EEEFF1;}
+	.brandAdd { border-top: 1px solid #4A4A4A;}
+	ul.tab_common2 > li > button {border: 1px solid #4A4A4A;}
+	.hasBtn2 {border: 1px solid #67686a;}
+	.hasUnit {border: 1px solid #67686a;}
+	.layer_popup.layer_qnaDetail .subject {color: #EEEFF1;}
+	
+	.layer_diary {background: #292a2c;}
+	.layer_diary .titleArea button.close {background-image: url(../images/dark/close.svg);}
+	.layer_diary .titleArea {border-bottom: 1px solid #67686a;}
+	.layer_diary .inner .mBoard1.noline {border-top: 2px solid #bababa;}
+	.layer_diary .inner .mBoard1 table th {border-bottom: 1px solid #4A4A4A; color: #bababa;}
+	.layer_diary .inner .mBoard1 table td {border-color: #4A4A4A;}
+	.layer_diary .inner .mBoard1 table td .gIt .it {border-color: #67686a;}
+	.layer_diary .inner .mBoard1 table td .textarea {border-color: #67686a;}
+	
+	.layer_popup.layer_question .cont {color: #bababa;}
+	ul.list_board > li .box .subject .brand {color: #EEEFF1;}
+	
+	#mypageInfoRegister .tbl_row > tbody > tr > td .msg + .box_btn {margin: 10px 0;}
+	
+	
+	
+	
+	/*************  회원가입  *****************/
+	.mLogin .done {background: url(../images/img_done1.png) center 40px no-repeat;}
+	.mTab1 a {border-color: #4a4a4a;}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+}

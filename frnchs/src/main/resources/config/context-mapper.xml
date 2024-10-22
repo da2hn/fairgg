@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+	<!-- SqlSessionFactory 정의 -->
+ 	<!-- typeAliasesPackage 속성에는 맵퍼 정의 파일(XML) 내의 SQL 문장에서 참조하는 도메인 클래스가 포함된 패키지를 지정 -->
+    <bean id="sqlSessionFactory" class="gov.ggdo.frnchs.common.support.RefreshableSqlSessionFactoryBean">
+  		<property name="dataSource" ref="dataSource" />
+  		<property name="mapperLocations" value="classpath*:/**/dao/*.xml" />
+  		<property name="typeAliasesPackage" value="gov.ggdo/**/domain" />
+  		<property name="configLocation" value="classpath:/config/config-mybatis.xml"/>
+	</bean>
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate" destroy-method="clearCache">
+        <constructor-arg index="0" ref="sqlSessionFactory" />
+        <constructor-arg index="1" value="SIMPLE"/>
+    </bean>
+    <bean id="sqlSessionFactory2" class="gov.ggdo.frnchs.common.support.RefreshableSqlSessionFactoryBean">
+  		<property name="dataSource" ref="dataSource2" />
+  		<property name="mapperLocations" value="classpath*:/**/pr/*.xml" />
+  		<property name="typeAliasesPackage" value="gov.ggdo/**/domain" />
+  		<property name="configLocation" value="classpath:/config/config-mybatis.xml"/>
+	</bean>  			
+	<bean id="sqlSession2" class="org.mybatis.spring.SqlSessionTemplate" destroy-method="clearCache">
+        <constructor-arg index="0" ref="sqlSessionFactory2" />
+        <constructor-arg index="1" value="SIMPLE"/>
+    </bean>
+<!-- 	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer"> -->
+<!-- 		<property name="basePackage" value="gov.ggdo" /> -->
+<!-- 	</bean> -->
+	<bean id="dataPr" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="gov.ggdo.**.pr" />
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory2" />
+	</bean>
+	<bean id="dataDao" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="gov.ggdo.**.dao" />
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+	</bean>
+</beans>

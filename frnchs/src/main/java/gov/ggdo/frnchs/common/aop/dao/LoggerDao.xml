@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="gov.ggdo.frnchs.common.aop.dao.LoggerDao">
+	<insert id="insertMethodLog" parameterType="egovMap">
+	INSERT INTO TB_CONECT_LOG (
+		SESION_ID,
+		CONECT_DT,
+		CONECTR_IP,
+		CONECTR_ENVRN,
+		CONECTR_INFLOW_COURS,
+		CONECTR_BRWSR_NM,
+		CONECTR_BRWSR_VER,
+		CONECTR_BRWSR_PLTFOM,
+		CONECTR_DEVICE_SE,
+		CONECTR_DEVICE_NM,
+		CONECTR_ACT,
+		LOGIN_ID
+	)VALUES(
+		#{sesionId},
+		CAST(#{conectDt} AS TIMESTAMP),
+		#{conectrIp},
+		#{conectrEnvrn},
+		#{conectrInflowCours},
+		#{conectrBrwsrNm},
+		#{conectrBrwsrVer},
+		#{conectrBrwsrPltfom},
+		#{conectrDeviceSe},
+		#{conectrDeviceNm},
+		#{conectrAct},
+		#{loginId}
+	)
+	</insert>
+</mapper>

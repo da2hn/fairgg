@@ -1,0 +1,3792 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="gov.ggdo.frnchs.ui.board.dao.BoardDao">
+	<!-- 창업지원 게시판 목록 개수 조회 -->
+	<select id="selectFntnBbsListCount" parameterType="java.util.Map" resultType="int">
+	SELECT COUNT(1)
+	  FROM TB_FNTN_SPORT_BBS A
+	 WHERE A.DELETE_AT = 'N'
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schFntnSportCnSeCode)'>
+       AND A.FNTN_SPORT_CN_SE_CODE = #{schFntnSportCnSeCode}
+	</if>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+	   AND A.SJ like '%'|| #{schTxt} ||'%'
+	</if>
+	</select>
+
+	<!-- 창업지원 게시판 목록 조회 -->
+	<select id="selectFntnBbsList" parameterType="java.util.Map" resultType="egovMap">
+	SELECT TMP.*
+		 , ROW_NUMBER() OVER (ORDER BY FNTN_SPORT_SN DESC) AS RN
+	  FROM (
+	SELECT A.FNTN_SPORT_SN
+		 , A.FNTN_SPORT_CN_SE_CODE
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'FNTN_SPORT_CN_SE_CODE' AND X.CODE_VALUE = A.FNTN_SPORT_CN_SE_CODE) AS FNTN_SPORT_CN_SE_CODE_NM
+		 , A.USER_NO
+		 , (SELECT CASE WHEN CHAR_LENGTH(Z.USER_NM) > 2
+						THEN CONCAT(SUBSTRING(Z.USER_NM, 1, 1),LPAD('*', CHAR_LENGTH(Z.USER_NM) - 2, '*'),SUBSTRING(Z.USER_NM, CHAR_LENGTH(Z.USER_NM), CHAR_LENGTH(Z.USER_NM)))
+						ELSE CONCAT(SUBSTRING(Z.USER_NM, 1, 1),LPAD('*', CHAR_LENGTH(Z.USER_NM) - 1, '*'))
+						 END
+   						FROM (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.USER_NO) Z
+		 ) AS USER_NM
+		 , A.SJ
+		 , A.CN
+		 , A.RDCNT
+		 , COALESCE(A.ATCHMNFL_NO,NULL) AS ATCHMNFL_NO
+		 , A.OTHBC_AT
+		 , A.DELETE_AT
+		 , A.LAST_UPDT_USER_NO
+		 , A.ANSWER_CN
+		 , A.ANSWRR_USER_NO
+		 , (SELECT CASE WHEN CHAR_LENGTH(Z.USER_NM) > 2
+						THEN CONCAT(SUBSTRING(Z.USER_NM, 1, 1),LPAD('*', CHAR_LENGTH(Z.USER_NM) - 2, '*'),SUBSTRING(Z.USER_NM, CHAR_LENGTH(Z.USER_NM), CHAR_LENGTH(Z.USER_NM)))
+						ELSE CONCAT(SUBSTRING(Z.USER_NM, 1, 1),LPAD('*', CHAR_LENGTH(Z.USER_NM) - 1, '*'))
+						 END
+   						FROM (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.ANSWRR_USER_NO) Z
+		 ) AS ANSWRR_USER_NM
+		 , TO_CHAR(A.ANSWER_REGIST_DT,'YYYY-MM-DD') AS ANSWER_REGIST_DT
+		 , TO_CHAR(A.ANSWER_UPDT_DT,'YYYY-MM-DD') AS ANSWER_UPDT_DT
+		 , CASE WHEN A.ANSWER_UPDT_DT > NOW()::DATE - 6 THEN 'NEW' END AS ANSWER_UPDT_DT_AWEEK
+		 , TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+		 , TO_CHAR(A.UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+		 , CASE WHEN A.UPDT_DT > NOW()::DATE - 6 THEN 'NEW' END AS UPDT_DT_AWEEK
+	  FROM TB_FNTN_SPORT_BBS A
+	 WHERE 1=1
+	   AND A.DELETE_AT = 'N'
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schFntnSportCnSeCode)'>
+       AND A.FNTN_SPORT_CN_SE_CODE = #{schFntnSportCnSeCode}
+	</if>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+	   AND A.SJ like '%'|| #{schTxt} ||'%'
+	</if>
+		 ) TMP
+	 LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+	<!-- 창업지원 게시판 글 조회 -->
+	<select id="selectFntnBbs" parameterType="java.util.Map" resultType="egovMap">
+	SELECT A.FNTN_SPORT_SN
+		 , A.FNTN_SPORT_CN_SE_CODE
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'FNTN_SPORT_CN_SE_CODE' AND X.CODE_VALUE = A.FNTN_SPORT_CN_SE_CODE) AS FNTN_SPORT_CN_SE_CODE_NM
+		 , A.USER_NO
+		 , (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.USER_NO) AS USER_NM
+		 , A.SJ
+		 , A.CN
+		 , A.RDCNT
+		 , COALESCE(A.ATCHMNFL_NO,NULL) AS ATCHMNFL_NO
+		 , A.OTHBC_AT
+		 , A.DELETE_AT
+		 , A.LAST_UPDT_USER_NO
+		 , A.ANSWER_CN
+		 , A.ANSWRR_USER_NO
+		 , TO_CHAR(A.ANSWER_REGIST_DT,'YYYY-MM-DD') AS ANSWER_REGIST_DT
+		 , TO_CHAR(A.ANSWER_UPDT_DT,'YYYY-MM-DD') AS ANSWER_UPDT_DT
+		 , TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+		 , TO_CHAR(A.UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+	  FROM TB_FNTN_SPORT_BBS A
+	 WHERE FNTN_SPORT_SN::TEXT = #{fntnSportSn}
+	</select>
+	<!-- 창업지원 게시판 입력 -->
+	<insert id="insertFntnBbs" parameterType="java.util.Map">
+	INSERT INTO TB_FNTN_SPORT_BBS
+	     ( FNTN_SPORT_CN_SE_CODE
+		 , USER_NO
+		 , SJ
+		 , CN
+		 , RDCNT
+		 , ATCHMNFL_NO
+		 , OTHBC_AT
+		 , DELETE_AT
+		 , LAST_UPDT_USER_NO
+		 , REGIST_DT
+		 , UPDT_DT
+	) VALUES (
+		   #{fntnSportCnSeCode}
+		 , CAST(#{ssUserNo} AS INTEGER)
+		 , #{sj}
+		 , #{cn}
+		 , 0
+		 , CASE WHEN #{atchmnflNo} = '' THEN NULL ELSE #{atchmnflNo}::INTEGER END
+		 , #{othbcAt}
+		 , 'N'
+		 , CAST(#{ssUserNo} AS INTEGER)
+		 , now()
+		 , now()
+		 )
+	</insert>
+
+	<!-- 창업지원 게시판 수정 -->
+	<update id="updateFntnBbs" parameterType="java.util.Map">
+	UPDATE TB_FNTN_SPORT_BBS
+	   SET FNTN_SPORT_CN_SE_CODE = #{fntnSportCnSeCode}
+		 , SJ = #{sj}
+		 , CN = #{cn}
+		 , ATCHMNFL_NO = CASE WHEN #{atchmnflNo} = '' THEN NULL ELSE #{atchmnflNo}::INTEGER END
+		 , OTHBC_AT = #{othbcAt}
+		 , LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		 , UPDT_DT = now()
+		 <if test='myPageAnswerAt == "Y"'>
+		 , ANSWER_CN = #{answerCn}
+		 , ANSWRR_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		 , ANSWER_REGIST_DT = NOW()
+		 , ANSWER_UPDT_DT = NOW()
+		 </if>
+	 WHERE FNTN_SPORT_SN::TEXT = #{fntnSportSn}
+	</update>
+
+	<!-- 창업지원 게시판 답변 등록 수정 -->
+	<update id="updateFntnBbsAnswer" parameterType="java.util.Map">
+	UPDATE TB_FNTN_SPORT_BBS
+	   SET ANSWER_CN = #{answerCn}
+		 , ANSWRR_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		 , ANSWER_REGIST_DT = NOW()
+		 , ANSWER_UPDT_DT = NOW()
+	 WHERE FNTN_SPORT_SN::TEXT = #{answerFntnSportSn}
+	</update>
+
+	<!-- 창업지원 게시판 삭제 -->
+	<update id="deleteFntnBbs" parameterType="java.util.Map">
+	UPDATE TB_FNTN_SPORT_BBS
+	   SET DELETE_AT = 'Y'
+	     , LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		 , UPDT_DT = now()
+	WHERE FNTN_SPORT_SN::TEXT = #{fntnSportSn}
+	</update>
+
+	<!-- 창업지원 게시판 조회수 증가 -->
+	<update id="updateFntnBbsUpRdcnt" parameterType="java.util.Map">
+	UPDATE TB_FNTN_SPORT_BBS
+	   SET RDCNT = COALESCE(RDCNT, 0) + 1
+	WHERE FNTN_SPORT_SN::TEXT = #{fntnSportSn}
+	</update>
+
+	<!-- 창업지원 게시판 이전/다음 조회 -->
+	<select id="selectFntnBbsNextInfo" parameterType="java.util.Map" resultType="egovMap">
+	SELECT AA.*
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'FNTN_SPORT_CN_SE_CODE' AND X.CODE_VALUE = (SELECT Z.FNTN_SPORT_CN_SE_CODE FROM TB_FNTN_SPORT_BBS Z WHERE Z.FNTN_SPORT_SN = AA.FNTN_SPORT_SN_PR)) AS FNTN_SPORT_CN_SE_CODE_NM_PR
+		 , (SELECT X.SJ FROM TB_FNTN_SPORT_BBS X WHERE X.FNTN_SPORT_SN = AA.FNTN_SPORT_SN_PR) AS SJ_PR
+		 , TO_CHAR((SELECT X.UPDT_DT FROM TB_FNTN_SPORT_BBS X WHERE X.FNTN_SPORT_SN = AA.FNTN_SPORT_SN_PR), 'YYYY-MM-DD') AS UPDT_DT_PR
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'FNTN_SPORT_CN_SE_CODE' AND X.CODE_VALUE = (SELECT Z.FNTN_SPORT_CN_SE_CODE FROM TB_FNTN_SPORT_BBS Z WHERE Z.FNTN_SPORT_SN = AA.FNTN_SPORT_SN_NX)) AS FNTN_SPORT_CN_SE_CODE_NM_NX
+		 , (SELECT X.SJ FROM TB_FNTN_SPORT_BBS X WHERE X.FNTN_SPORT_SN = AA.FNTN_SPORT_SN_NX) AS SJ_NX
+		 , TO_CHAR((SELECT X.UPDT_DT FROM TB_FNTN_SPORT_BBS X WHERE X.FNTN_SPORT_SN = AA.FNTN_SPORT_SN_NX), 'YYYY-MM-DD') AS UPDT_DT_NX
+	  FROM (
+	SELECT TMP.*
+		 <![CDATA[
+		 , (SELECT MAX(X.FNTN_SPORT_SN) FROM TB_FNTN_SPORT_BBS X WHERE X.DELETE_AT = 'N' AND X.FNTN_SPORT_SN < TMP.FNTN_SPORT_SN
+		 ]]>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(schCodeVal)'>
+	       AND X.FNTN_SPORT_CN_SE_CODE = #{schCodeVal}
+		</if>
+		<!-- 시큐어 코딩 수정 - 21.03.17 -->
+		<if test='!@org.springframework.util.StringUtils@isEmpty(schTxtVal)'>
+		   AND X.SJ like '%'|| #{schTxtVal} ||'%'
+		</if>
+		 ) AS FNTN_SPORT_SN_PR
+		 <![CDATA[
+		 , (SELECT MIN(X.FNTN_SPORT_SN) FROM TB_FNTN_SPORT_BBS X WHERE X.DELETE_AT = 'N' AND X.FNTN_SPORT_SN > TMP.FNTN_SPORT_SN
+		 ]]>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(schCodeVal)'>
+	       AND X.FNTN_SPORT_CN_SE_CODE = #{schCodeVal}
+		</if>
+		<!-- 시큐어 코딩 수정 - 21.03.17 -->
+		<if test='!@org.springframework.util.StringUtils@isEmpty(schTxtVal)'>
+		   AND X.SJ like '%'|| #{schTxtVal} ||'%'
+		</if>
+		 ) AS FNTN_SPORT_SN_NX
+	  FROM (
+	SELECT A.FNTN_SPORT_SN
+	  FROM TB_FNTN_SPORT_BBS A
+	 WHERE 1=1
+	   AND A.DELETE_AT = 'N'
+	   AND A.FNTN_SPORT_SN::TEXT = #{fntnSportSn}
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schCodeVal)'>
+       AND A.FNTN_SPORT_CN_SE_CODE = #{schCodeVal}
+	</if>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schTxtVal)'>
+	   AND A.SJ like '%'|| #{schTxtVal} ||'%'
+	</if>
+		 ) TMP
+		 ) AA
+	</select>
+
+	<!-- 불공정계약신고 작성 -->
+	<insert id="insertInjstBbs" parameterType="java.util.Map">
+	INSERT INTO TB_INJST_CNTRCT_STTEMNT_BBS (
+		STTEMNT_IEM_SE_CODE,
+		ANSWER_STTUS_SE_CODE,
+		USER_NO,
+		WRTER_NM,
+		WRTER_EMAIL_ADRES,
+		SJ,
+		CN,
+		<if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo_f1)'>
+		ATCHMNFL_NO,
+		</if>
+		COLCT_AGRE_AT,
+		DELETE_AT,
+		LAST_UPDT_USER_NO,
+		REGIST_DT,
+		UPDT_DT
+	)VALUES(
+		#{sttemntIemSeCode},
+		'AN02',
+		CAST(#{ssUserNo} AS INTEGER),
+		#{wrterNm},
+		#{wrterEmailAdres},
+		#{sj},
+		#{cn},
+		<if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo_f1)'>
+		CAST(#{atchmnflNo_f1} AS INTEGER),
+		</if>
+		#{colctAgreAt},
+		'N',
+		CAST(#{ssUserNo} AS INTEGER),
+		now(),
+		now()
+	)
+	</insert>
+
+	<!-- 불공정계약신고 답변 작성 -->
+	<update id="updateInjstBbs" parameterType="java.util.Map">
+	UPDATE TB_INJST_CNTRCT_STTEMNT_BBS
+	   SET ANSWER_STTUS_SE_CODE = 'AN01'
+		 , ANSWER_CN = #{answerCn}
+		 , ANSWRR_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		 , LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		 , ANSWER_REGIST_DT = now()
+	 WHERE INJST_CNTRCT_STTEMNT_SN::TEXT = #{injstCntrctSttemntSn}
+	</update>
+
+	<!-- 불공정계약신고 목록 개수 조회 -->
+	<select id="selectInjstBbsListCount" parameterType="java.util.Map" resultType="int">
+	SELECT COUNT(1)
+	  FROM TB_INJST_CNTRCT_STTEMNT_BBS A
+	 WHERE A.DELETE_AT = 'N'
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schCodeSttemnt)'>
+       AND A.STTEMNT_IEM_SE_CODE = #{schCodeSttemnt}
+	</if>
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schCodeAnswer)'>
+       AND A.ANSWER_STTUS_SE_CODE = #{schCodeAnswer}
+	</if>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+	   AND A.SJ like '%'|| #{schTxt} ||'%'
+	</if>
+	</select>
+
+	<!-- 불공정계약신고 목록 조회 -->
+	<select id="selectInjstBbsList" parameterType="java.util.Map" resultType="egovMap">
+	SELECT TMP.*
+		 , ROW_NUMBER() OVER (ORDER BY INJST_CNTRCT_STTEMNT_SN DESC) AS RN
+	  FROM (
+	SELECT A.INJST_CNTRCT_STTEMNT_SN
+	     , A.STTEMNT_IEM_SE_CODE
+	     , A.ANSWER_STTUS_SE_CODE
+	     , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'STTEMNT_IEM_SE_CODE' AND X.CODE_VALUE = A.STTEMNT_IEM_SE_CODE) AS STTEMNT_IEM_SE_CODE_NM
+	     , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'ANSWER_STTUS_SE_CODE' AND X.CODE_VALUE = A.ANSWER_STTUS_SE_CODE) AS ANSWER_STTUS_SE_CODE_NM
+	     , A.USER_NO
+	     , A.SJ
+	     , TO_CHAR(A.UPDT_DT,'YYYY-MM-DD HH24:MI') AS UPDT_DT
+	     , CASE WHEN A.UPDT_DT > NOW()::DATE - 6 THEN 'NEW' END AS UPDT_DT_AWEEK
+	  FROM TB_INJST_CNTRCT_STTEMNT_BBS A
+	 WHERE A.DELETE_AT = 'N'
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schCodeSttemnt)'>
+       AND A.STTEMNT_IEM_SE_CODE = #{schCodeSttemnt}
+	</if>
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schCodeAnswer)'>
+       AND A.ANSWER_STTUS_SE_CODE = #{schCodeAnswer}
+	</if>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+	   AND A.SJ like '%'|| #{schTxt} ||'%'
+	</if>
+		 ) TMP
+	 LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+
+	<!-- 불공정계약신고 조회 -->
+	<select id="selectInjstBbs" parameterType="java.util.Map" resultType="egovMap">
+	SELECT A.INJST_CNTRCT_STTEMNT_SN
+	     , A.STTEMNT_IEM_SE_CODE
+	     , A.ANSWER_STTUS_SE_CODE
+	     , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'STTEMNT_IEM_SE_CODE' AND X.CODE_VALUE = A.STTEMNT_IEM_SE_CODE) AS STTEMNT_IEM_SE_CODE_NM
+	     , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'ANSWER_STTUS_SE_CODE' AND X.CODE_VALUE = A.ANSWER_STTUS_SE_CODE) AS ANSWER_STTUS_SE_CODE_NM
+	     , A.USER_NO
+	     , (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.USER_NO) AS USER_NM
+	     , A.WRTER_EMAIL_ADRES
+	     , A.SJ
+	     , A.CN
+	     , COALESCE(A.ATCHMNFL_NO,NULL) AS ATCHMNFL_NO
+	     , A.COLCT_AGRE_AT
+	     , A.LAST_UPDT_USER_NO
+	     , A.ANSWER_CN
+	     , TO_CHAR(A.ANSWER_REGIST_DT,'YYYY-MM-DD HH24:MI') AS ANSWER_REGIST_DT
+	     , TO_CHAR(A.UPDT_DT,'YYYY-MM-DD HH24:MI') AS UPDT_DT
+	  FROM TB_INJST_CNTRCT_STTEMNT_BBS A
+	 WHERE A.DELETE_AT = 'N'
+	   AND A.INJST_CNTRCT_STTEMNT_SN::TEXT = #{injstCntrctSttemntSn}
+	</select>
+
+	<!-- 공지사항 목록 개수 조회 -->
+	<select id="selectNoticeBbsListCount" parameterType="java.util.Map" resultType="int">
+	SELECT COUNT(1)
+	  FROM TB_NOTICE_BBS A
+	 WHERE A.DELETE_AT = 'N'
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schCode)'>
+       AND A.NOTICE_SE_CODE = #{schCode}
+	</if>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+	   AND A.SJ like '%'|| #{schTxt} ||'%'
+	</if>
+	</select>
+
+	<!-- 공지사항 이전/다음 조회 -->
+	<select id="selectNoticeBbsNextInfo" parameterType="java.util.Map" resultType="egovMap">
+	SELECT AA.*
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'NOTICE_SE_CODE' AND X.CODE_VALUE = (SELECT Z.NOTICE_SE_CODE FROM TB_NOTICE_BBS Z WHERE Z.NOTICE_SN = AA.NOTICE_SN_PR)) AS NOTICE_SE_CODE_NM_PR
+		 , (SELECT X.SJ FROM TB_NOTICE_BBS X WHERE X.NOTICE_SN = AA.NOTICE_SN_PR) AS SJ_PR
+		 , TO_CHAR((SELECT X.UPDT_DT FROM TB_NOTICE_BBS X WHERE X.NOTICE_SN = AA.NOTICE_SN_PR), 'YYYY-MM-DD') AS UPDT_DT_PR
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'NOTICE_SE_CODE' AND X.CODE_VALUE = (SELECT Z.NOTICE_SE_CODE FROM TB_NOTICE_BBS Z WHERE Z.NOTICE_SN = AA.NOTICE_SN_NX)) AS NOTICE_SE_CODE_NM_NX
+		 , (SELECT X.SJ FROM TB_NOTICE_BBS X WHERE X.NOTICE_SN = AA.NOTICE_SN_NX) AS SJ_NX
+		 , TO_CHAR((SELECT X.UPDT_DT FROM TB_NOTICE_BBS X WHERE X.NOTICE_SN = AA.NOTICE_SN_NX), 'YYYY-MM-DD') AS UPDT_DT_NX
+	  FROM (
+	SELECT TMP.*
+		 <![CDATA[
+		 , (SELECT MAX(X.NOTICE_SN) FROM TB_NOTICE_BBS X WHERE X.DELETE_AT = 'N' AND X.NOTICE_SN < TMP.NOTICE_SN
+		 ]]>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(schCodeVal)'>
+	       AND X.NOTICE_SE_CODE = #{schCodeVal}
+		</if>
+		<!-- 시큐어 코딩 수정 - 21.03.17 -->
+		<if test='!@org.springframework.util.StringUtils@isEmpty(schTxtVal)'>
+		   AND X.SJ like '%'|| #{schTxtVal} ||'%'
+		</if>
+			 ) AS NOTICE_SN_PR
+		 <![CDATA[
+		 , (SELECT MIN(X.NOTICE_SN) FROM TB_NOTICE_BBS X WHERE X.DELETE_AT = 'N' AND X.NOTICE_SN > TMP.NOTICE_SN
+		 ]]>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(schCodeVal)'>
+	       AND X.NOTICE_SE_CODE = #{schCodeVal}
+		</if>
+		<!-- 시큐어 코딩 수정 - 21.03.17 -->
+		<if test='!@org.springframework.util.StringUtils@isEmpty(schTxtVal)'>
+		   AND X.SJ like '%'|| #{schTxtVal} ||'%'
+		</if>
+		 ) AS NOTICE_SN_NX
+	  FROM (
+	SELECT A.NOTICE_SN
+	  FROM TB_NOTICE_BBS A
+	 WHERE 1=1
+	   AND A.DELETE_AT = 'N'
+	   AND A.NOTICE_SN::TEXT = #{noticeSn}
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schCodeVal)'>
+       AND A.NOTICE_SE_CODE = #{schCodeVal}
+	</if>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schTxtVal)'>
+	   AND A.SJ like '%'|| #{schTxtVal} ||'%'
+	</if>
+		 ) TMP
+		 ) AA
+	</select>
+
+	<!-- 공지사항 목록 조회 -->
+	<select id="selectNoticeBbsList" parameterType="java.util.Map" resultType="egovMap">
+	<![CDATA[
+	SELECT TMP.*
+		 , ROW_NUMBER() OVER (ORDER BY NOTICE_SN DESC) AS RN
+	  FROM (
+	SELECT A.NOTICE_SN
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'NOTICE_SE_CODE' AND X.CODE_VALUE = A.NOTICE_SE_CODE) AS NOTICE_SE_CODE_NM
+		 , A.SJ
+		 , TO_CHAR(A.UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+		 , TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+		 , CASE WHEN A.UPDT_DT > NOW()::DATE - 6 THEN 'NEW' END AS UPDT_DT_AWEEK
+	  FROM TB_NOTICE_BBS A
+	 WHERE 1=1
+	   AND A.DELETE_AT = 'N'
+	]]>
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schCode)'>
+       AND A.NOTICE_SE_CODE = #{schCode}
+	</if>
+	<!-- 시큐어코딩 수정 - 21.03.17 -->
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+	   AND A.SJ like '%'|| #{schTxt} ||'%'
+	</if>
+		 ) TMP
+	 LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+
+	<!-- 공지사항 내용 조회 -->
+	<select id="selectNoticeBbs" parameterType="java.util.Map" resultType="egovMap">
+	SELECT A.NOTICE_SN
+		 , A.NOTICE_SE_CODE
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'NOTICE_SE_CODE' AND X.CODE_VALUE = A.NOTICE_SE_CODE) AS NOTICE_SE_CODE_NM
+		 , A.USER_NO
+		 , A.SJ
+		 , A.CN
+		 , COALESCE(A.ATCHMNFL_NO,NULL) AS ATCHMNFL_NO
+		 , TO_CHAR(A.UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+		 , TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+	  FROM TB_NOTICE_BBS A
+	 WHERE NOTICE_SN::TEXT = #{noticeSn}
+	</select>
+
+	<!-- 공지사항 등록 -->
+	<insert id="insertNoticeBbs" parameterType="java.util.Map">
+	INSERT INTO TB_NOTICE_BBS
+		 ( NOTICE_SE_CODE
+		 , USER_NO
+		 , SJ
+		 , CN
+		 <if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+		 , ATCHMNFL_NO
+		 </if>
+		 , DELETE_AT
+		 , REGIST_DT
+		 , UPDT_DT
+		 ) VALUES (
+		   #{noticeSeCode}
+		 , CAST(#{ssUserNo} AS INTEGER)
+		 , #{sj}
+		 , #{cn}
+		 <if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+		 , CAST(#{atchmnflNo} AS INTEGER)
+		 </if>
+		 , 'N'
+		 , now()
+		 , now()
+	     )
+	</insert>
+
+	<!-- 공지사항 수정 -->
+	<update id="updateNoticeBbs" parameterType="java.util.Map">
+	UPDATE TB_NOTICE_BBS
+	   SET
+<!-- 	   		NOTICE_SE_CODE = #{noticeSeCode}, -->
+		   USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		 , SJ = #{sj}
+		 , CN = #{cn}
+		 <if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+		 , ATCHMNFL_NO = CAST(#{atchmnflNo} AS INTEGER)
+		 </if>
+		 , UPDT_DT = now()
+	 WHERE NOTICE_SN::TEXT = #{noticeSn}
+	</update>
+
+	<!-- 공지사항 삭제 -->
+	<update id="deleteNoticeBbs" parameterType="java.util.Map">
+	UPDATE TB_NOTICE_BBS
+	   SET DELETE_AT = 'Y'
+	 WHERE NOTICE_SN::TEXT = #{noticeSn}
+	</update>
+
+	<!-- 점포장터 매물점포 정보 저장 -->
+	<insert id="insertTradeBbs" parameterType="java.util.Map">
+	INSERT INTO TB_TRDE_THING_BBS
+		 ( SJ                           /* 제목 */
+		 , DETAIL_DC                    /* 상세설명 */
+		 , USER_NO                      /* 사용자번호 */
+		 , CHARGER_NM                   /* 담당자명 */
+		 , TELNO                        /* 전화번호 */
+		 , ZIP                          /* 우편번호 */
+		 , BASS_ADRES                   /* 기본주소 */
+		 , DETAIL_ADRES                 /* 상세주소 */
+		 , SOPSRT_STLE_CODE             /* 상가형태코드 */
+		 , COMPET_YEAR                  /* 준공년도 */
+		 , REMDELNG_YEAR                /* 리모델링년도 */
+		 , FLOOR_CO                     /* 층수 */
+		 , BULD_FLOOR_CO                /* 건물층수 */
+		 , CNTRCT_AR                    /* 계약면적 평 */
+		 , DVR_AR                       /* 전용면적 평 */
+		 , GTN                          /* 보증금 */
+		 , MT_RNTCHRG                   /* 월임대료 */
+		 , PREMUM                       /* 권리금 */
+		 , MANAGECT                     /* 관리비 */
+		 , PARKNG_AT                    /* 주차여부 */
+		 , ELVTR_AT                     /* 엘리베이터여부 */
+		 , HEAT_KND_CODE                /* 난방종류코드 */
+		 , TOILET_SE_CODE               /* 화장실구분코드 */
+		 , MVN_POSBL_DE_CODE            /* 입주가능일코드 */
+		 , MVN_POSBL_DE                 /* 입주가능일자 */
+		 , TRDE_THING_PHOTO_FILE_NO		/* 매물사진파일명 */
+		 , CONFM_STTUS_CODE             /* 승인상태코드 */
+		 , LAST_UPDT_USER_NO            /* 최종수정사용자번호 */
+		 , REGIST_DT                    /* 등록일시 */
+		 , UPDT_DT                      /* 수정일시 */
+		 ) VALUES (
+		   #{sj}
+		 , #{detailDc}
+		 , CAST(#{ssUserNo} AS INTEGER)
+		 , #{chargerNm}
+		 , #{telno}
+		 , #{zipNo}
+		 , #{roadAddrPart1}
+		 , #{addrDetail}
+		 , #{sopsrtStleCode}
+		 , #{competYear}
+		 , #{remdelngYear}
+		 , CAST(#{floorCo} AS INTEGER)
+		 , CAST(#{buldFloorCo} AS INTEGER)
+		 , CAST(#{cntrctAr} AS NUMERIC)
+		 , CAST(#{dvrAr} AS NUMERIC)
+		 , CAST(#{gtn} AS INTEGER)
+		 , CAST(#{mtRntchrg} AS INTEGER)
+		 , CAST(#{premum} AS INTEGER)
+		 , CAST(#{managect} AS INTEGER)
+		 , #{parkngAt}
+		 , #{elvtrAt}
+		 , #{heatKndCode}
+		 , #{toiletSeCode}
+		 , #{mvnPosblDeCode}
+		 <if test='mvnPosblDe == ""'>
+		 , null
+		</if>
+		 <if test='mvnPosblDe != ""'>
+		 , COALESCE((CAST(#{mvnPosblDe} AS DATE)),null)
+		</if>
+		<!--  , COALESCE((CAST(#{mvnPosblDe} AS DATE)),null) -->
+		 , CAST(#{atchmnflNo} AS INTEGER)
+		 , 'CS03'
+		 , CAST(#{ssUserNo} AS INTEGER)
+		 , NOW()
+		 , NOW()
+		 )
+	</insert>
+	<update id="updateTradeBbs" parameterType="java.util.Map">
+	UPDATE TB_TRDE_THING_BBS /*updateTradeBbs*/
+	   SET SJ = #{sj}                        				  				/* 제목 */
+		 , DETAIL_DC = #{detailDc}                   		  				/* 상세설명 */
+		 , CHARGER_NM = #{chargerNm}                  		  				/* 담당자명 */
+		 , TELNO = #{telno}                       			  				/* 전화번호 */
+		 , ZIP = #{zip}                        			  				/* 우편번호 */
+		 , BASS_ADRES = #{bassAdres}                	  				/* 기본주소 */
+		 , DETAIL_ADRES = #{detailAdres}               		  				/* 상세주소 */
+		 , SOPSRT_STLE_CODE = #{sopsrtStleCode}         	  				/* 상가형태코드 */
+		 , COMPET_YEAR = #{competYear}                 		  				/* 준공년도 */
+		 , REMDELNG_YEAR = #{remdelngYear}               	  				/* 리모델링년도 */
+		 , FLOOR_CO = CAST(#{floorCo} AS INTEGER)             				/* 층수 */
+		 , BULD_FLOOR_CO = CAST(#{buldFloorCo} AS INTEGER)    				/* 건물층수 */
+		 , CNTRCT_AR = CAST(#{cntrctAr} AS NUMERIC)           				/* 계약면적 평 */
+		 , DVR_AR = CAST(#{dvrAr} AS NUMERIC)                 				/* 전용면적 평 */
+		 , GTN  = CAST(#{gtn} AS INTEGER)                     				/* 보증금 */
+		 , MT_RNTCHRG = CAST(#{mtRntchrg} AS INTEGER)         				/* 월임대료 */
+		 , PREMUM = CAST(#{premum} AS INTEGER)                				/* 권리금 */
+		 , MANAGECT = CAST(#{managect} AS INTEGER)            				/* 관리비 */
+		 , PARKNG_AT = #{parkngAt}                  		  				/* 주차여부 */
+		 , ELVTR_AT = #{elvtrAt}                   			  				/* 엘리베이터여부 */
+		 , HEAT_KND_CODE = #{heatKndCode}              		  				/* 난방종류코드 */
+		 , TOILET_SE_CODE = #{toiletSeCode}               	  				/* 화장실구분코드 */
+		 , MVN_POSBL_DE_CODE = #{mvnPosblDeCode}          	  				/* 입주가능일코드 */
+		 , MVN_POSBL_DE = COALESCE((CAST(#{mvnPosblDe} AS DATE)),null)      /* 입주가능일자 */
+		 , TRDE_THING_PHOTO_FILE_NO	= CAST(#{atchmnflNo} AS INTEGER)		/* 매물사진파일명 */
+		 , LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER)            		/* 최종수정사용자번호 */
+		 , UPDT_DT =  NOW()                   								/* 수정일시 */
+	 WHERE 1=1
+	   AND TRDE_THING_REGIST_NO::TEXT  = #{trdeThingRegistNo}
+	</update>
+	
+	<update id="updateTradeBbsMob" parameterType="java.util.Map"> 
+	UPDATE TB_TRDE_THING_BBS /*updateTradeBbsMob*/
+	   SET SJ = #{sjMob}                        				  				/* 제목 */
+		 , DETAIL_DC = #{detailDcMob}                   		  				/* 상세설명 */
+		 , CHARGER_NM = #{chargerNmMob}                  		  				/* 담당자명 */
+		 , TELNO = #{telnoMob}                       			  				/* 전화번호 */
+		 , ZIP = #{zipMob}                        			  					/* 우편번호 */
+		 , BASS_ADRES = #{bassAdresMob}                	  						/* 기본주소 */
+		 , DETAIL_ADRES = #{detailAdresMob}               		  				/* 상세주소 */
+		 , SOPSRT_STLE_CODE = #{sopsrtStleCodeMob}         	  					/* 상가형태코드 */
+		 , COMPET_YEAR = #{competYearMob}                 		  				/* 준공년도 */
+		 , REMDELNG_YEAR = #{remdelngYearMob}               	  				/* 리모델링년도 */
+		 , FLOOR_CO = CAST(#{floorCoMob} AS INTEGER)             				/* 층수 */
+		 , BULD_FLOOR_CO = CAST(#{buldFloorCoMob} AS INTEGER)    				/* 건물층수 */
+		 , CNTRCT_AR = CAST(#{cntrctArMob} AS NUMERIC)           				/* 계약면적 평 */
+		 , DVR_AR = CAST(#{dvrArMob} AS NUMERIC)                 				/* 전용면적 평 */
+		 , GTN  = CAST(#{gtnMob} AS INTEGER)                     				/* 보증금 */
+		 , MT_RNTCHRG = CAST(#{mtRntchrgMob} AS INTEGER)         				/* 월임대료 */
+		 , PREMUM = CAST(#{premumMob} AS INTEGER)                				/* 권리금 */
+		 , MANAGECT = CAST(#{managectMob} AS INTEGER)            				/* 관리비 */
+		 , PARKNG_AT = #{parkngAtMob}                  		  					/* 주차여부 */
+		 , ELVTR_AT = #{elvtrAtMob}                   			  				/* 엘리베이터여부 */
+		 , HEAT_KND_CODE = #{heatKndCodeMob}              		  				/* 난방종류코드 */
+		 , TOILET_SE_CODE = #{toiletSeCodeMob}               	  				/* 화장실구분코드 */
+		 , MVN_POSBL_DE_CODE = #{mvnPosblDeCode}          	  					/* 입주가능일코드 */
+		 , MVN_POSBL_DE = COALESCE((CAST(#{mvnPosblDeMob} AS DATE)),null)      	/* 입주가능일자 */
+		 , TRDE_THING_PHOTO_FILE_NO	= CAST(#{atchmnflNo} AS INTEGER)			/* 매물사진파일명 */
+		 , LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER)            			/* 최종수정사용자번호 */
+		 , UPDT_DT =  NOW()                   									/* 수정일시 */
+	 WHERE 1=1
+	   AND TRDE_THING_REGIST_NO::TEXT = #{trdeThingRegistNoMob}
+	</update>
+
+	<!-- 점포장터 매물점포 목록 개수 조회 -->
+	<select id="selectTradeBbsListCount" parameterType="java.util.Map" resultType="int">
+	SELECT COUNT(1)
+	  FROM TB_TRDE_THING_BBS A
+	 WHERE 1=1
+	   AND A.CONFM_STTUS_CODE = 'CS01'
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='schSido != "00"'>
+	   AND A.BASS_ADRES LIKE '%'|| #{schSidoTxt} ||'%'        /* 시도 */
+	</if>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='schSigngu != ""'>
+	   AND A.BASS_ADRES LIKE '%'|| #{schSignguTxt} ||'%'      /* 시군구 */
+	</if>
+	</select>
+
+	<!-- 점포장터 매물점포 목록 조회 -->
+	<select id="selectTradeBbsList" parameterType="java.util.Map" resultType="egovMap">
+	SELECT TMP.*
+		 , ROW_NUMBER() OVER (ORDER BY TRDE_THING_REGIST_NO DESC, UPDT_DT DESC) AS RN
+	  FROM (
+	SELECT A.TRDE_THING_REGIST_NO             /* 매물등록번호 */
+		 , A.SJ                               /* 제목 */
+		 , A.DETAIL_DC                        /* 상세설명 */
+		 , A.USER_NO                          /* 사용자번호 */
+		 , (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.USER_NO) AS USER_NM           /* 사용자이름 */
+		 , (SELECT X.EMAIL_ADRES FROM TB_USER X WHERE X.USER_NO = A.USER_NO) AS EMAIL_ADRES   /* 이메일주소 */
+		 , A.CHARGER_NM                       /* 담당자명 */
+		 , A.TELNO                            /* 전화번호 */
+		 , A.ZIP                              /* 우편번호 */
+		 , A.BASS_ADRES                       /* 기본주소 */
+		 , A.DETAIL_ADRES                     /* 상세주소 */
+		 , A.SOPSRT_STLE_CODE                 /* 상가형태코드 */
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'SOPSRT_STLE_CODE' AND X.CODE_VALUE = A.SOPSRT_STLE_CODE) AS SOPSRT_STLE_CODE_NM       /* 상가형태코드 */
+		 , A.COMPET_YEAR                      /* 준공년도 */
+		 , A.REMDELNG_YEAR                    /* 리모델링년도 */
+		 , A.FLOOR_CO                         /* 층수 */
+		 , A.BULD_FLOOR_CO                    /* 건물층수 */
+		 , A.CNTRCT_AR                        /* 계약면적 평 */
+		 , A.DVR_AR                           /* 전용면적 평 */
+		 , TRUNC((A.CNTRCT_AR * 3.3058), 2) AS CNTRCT_AR_SM     /* 계약면적 m² */
+		 , TRUNC((A.DVR_AR * 3.3058), 2) AS DVR_AR_SM           /* 전용면적 m² */
+		 , A.GTN                              /* 보증금 */
+		 , A.MT_RNTCHRG                       /* 월임대료 */
+		 , A.PREMUM                           /* 권리금 */
+		 , A.MANAGECT                         /* 관리비 */
+		 , A.PARKNG_AT                        /* 주차여부 */
+		 , A.ELVTR_AT                         /* 엘리베이터여부 */
+		 , A.HEAT_KND_CODE                    /* 난방종류코드 */
+		 , A.TOILET_SE_CODE                   /* 화장실구분코드 */
+		 , A.MVN_POSBL_DE_CODE                /* 입주가능일코드 */
+		 , A.MVN_POSBL_DE                     /* 입주가능일자 */
+		 , A.TRDE_THING_PHOTO_FILE_NO AS ATCHMNFL_NO            /* 매물사진파일번호 */
+		 , A.CONFM_STTUS_CODE                 /* 승인상태코드 */
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'CONFM_STTUS_CODE' AND X.CODE_VALUE = A.CONFM_STTUS_CODE) AS CONFM_STTUS_CODE_NM       /* 승인상태코드명 */
+		 , A.CONFM_USER_NO                    /* 승인사용자번호 */
+		 , (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.CONFM_USER_NO) AS CONFM_USER_NM           /* 승인사용자이름 */
+		 , (SELECT X.TELNO FROM TB_USER X WHERE X.USER_NO = A.CONFM_USER_NO) AS CONFM_USER_TELNO          /* 승인사용자전화번호 */
+		 , A.LAST_UPDT_USER_NO                /* 최종수정사용자번호 */
+		 , TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT    /* 등록일시 */
+		 , TO_CHAR(A.CONFM_DT,'YYYY-MM-DD') AS CONFM_DT      /* 승인일시 */
+		 , TO_CHAR(A.UPDT_DT,'YYYY-MM-DD') AS UPDT_DT        /* 수정일시 */
+	  FROM TB_TRDE_THING_BBS A
+	 WHERE 1=1
+	   AND A.CONFM_STTUS_CODE = 'CS01'
+		 ) TMP
+	 WHERE 1=1
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='schSido != "00"'>
+	   AND TMP.BASS_ADRES LIKE '%'|| #{schSidoTxt} ||'%'        /* 시도 */
+	</if>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='schSigngu != ""'>
+	   AND TMP.BASS_ADRES LIKE '%'|| #{schSignguTxt} ||'%'      /* 시군구 */
+	</if>
+	 LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+
+	<!-- 마이페이지 매물점포 목록 개수 조회 -->
+	<select id="selectMypageTradeBbsListCount" parameterType="java.util.Map" resultType="int">
+	SELECT COUNT(1)
+	  FROM (
+	SELECT (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.USER_NO) AS USER_NM           /* 사용자이름-신청자명 */
+		 , COALESCE((SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.CONFM_USER_NO), '배정중') AS CONFM_USER_NM    /* 승인사용자이름 */
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'CONFM_STTUS_CODE' AND X.CODE_VALUE = A.CONFM_STTUS_CODE) AS CONFM_STTUS_CODE_NM       /* 승인상태코드명 */
+		 , A.SJ
+		 , (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.CHRG_CNSTNT_USER_NO) AS CHRG_CNSTNT_USER_NM    /* 담당컨설턴트이름 */
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'SOPSRT_STLE_CODE' AND X.CODE_VALUE = A.SOPSRT_STLE_CODE) AS SOPSRT_STLE_CODE_NM       /* 상가형태코드명 */
+		 , A.BASS_ADRES                       /* 기본주소 */
+		 , A.DETAIL_ADRES                     /* 상세주소 */
+	  FROM TB_TRDE_THING_BBS A
+	 WHERE 1=1
+	   AND A.CONFM_STTUS_CODE NOT IN ('CS08')
+	<if test='ssUserSeCode == "US01"'>
+	   AND A.USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		<if test='pageSe == "reqstPage"'>
+	   AND A.CONFM_STTUS_CODE IN ('CS03','CS04')
+		</if>
+		<if test='pageSe == "managePage"'>
+	   AND A.CONFM_STTUS_CODE = 'CS01'
+		</if>
+	</if>
+	<if test='ssUserSeCode == "US02"'>
+ 	   AND A.CHRG_CNSTNT_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+	   AND A.CONFM_STTUS_CODE IN ('CS03','CS04')
+	</if>
+	<if test='ssUserSeCode == "US04"'>
+	   AND A.CONFM_STTUS_CODE IN ('CS01','CS02','CS03','CS04')
+	</if>
+		 ) TMP
+	 WHERE 1=1
+	<if test='!@org.springframework.util.StringUtils@isEmpty("schTxt")'>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='schTxt != ""'>
+		<if test='schSeCode == "schUserNm"'>
+       AND TMP.USER_NM LIKE '%'|| #{schTxt} ||'%'                    /* 사용자이름-신청자명 */
+		</if>
+		<if test='schSeCode == "schConfmUserNm"'>
+       AND TMP.CONFM_USER_NM LIKE '%'|| #{schTxt} ||'%'              /* 승인사용자이름 */
+		</if>
+		<if test='schSeCode == "schConfmSttusCodeNm"'>
+       AND TMP.CONFM_STTUS_CODE_NM LIKE '%'|| #{schTxt}||'%'        /* 승인상태코드명 */
+		</if>
+		<if test='schSeCode == "schSj"'>
+	   AND TMP.SJ LIKE '%'|| #{schTxt} ||'%'                         /* 제목 */
+		</if>
+		<if test='schSeCode == "schSopsrtStleCodeNm"'>
+       AND TMP.SOPSRT_STLE_CODE_NM LIKE '%'|| #{schTxt} ||'%'        /* 상가형태코드명 */
+		</if>
+		<if test='schSeCode == "schAdres"'>
+	   AND TMP.BASS_ADRES LIKE '%'|| #{schTxt}||'%'                 /* 기본주소 */
+	    OR TMP.DETAIL_ADRES LIKE '%'|| #{schTxt} ||'%'               /* 상세주소 */
+		</if>
+		<if test='schSeCode == "schChrgCnstntUserNm"'>
+       AND TMP.CHRG_CNSTNT_USER_NM LIKE '%'|| #{schTxt}||'%'        /* 접수자 컨설던트 명 */
+		</if>
+	</if>
+	</if>
+	</select>
+
+	<!-- 마이페이지 매물점포 목록 조회 -->
+	<select id="selectMypageTradeBbsList" parameterType="java.util.Map" resultType="egovMap">
+	/*selectMypageTradeBbsList*/
+	SELECT TMP.*
+		 , ROW_NUMBER() OVER (ORDER BY TRDE_THING_REGIST_NO DESC) AS RN
+	  FROM (
+	SELECT A.TRDE_THING_REGIST_NO             /* 매물등록번호 */
+		 , A.SJ                               /* 제목 */
+		 , A.DETAIL_DC                        /* 상세설명 */
+		 , A.USER_NO                          /* 사용자번호 */
+		 , (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.USER_NO) AS USER_NM           /* 사용자이름-신청자명 */
+		 , (SELECT X.EMAIL_ADRES FROM TB_USER X WHERE X.USER_NO = A.USER_NO) AS EMAIL_ADRES   /* 이메일주소 */
+		 , A.CHARGER_NM                       /* 담당자명 */
+		 , A.TELNO                            /* 전화번호 */
+		 , A.ZIP                              /* 우편번호 */
+		 , A.BASS_ADRES                       /* 기본주소 */
+		 , A.DETAIL_ADRES                     /* 상세주소 */
+		 , A.SOPSRT_STLE_CODE                 /* 상가형태코드 */
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'SOPSRT_STLE_CODE' AND X.CODE_VALUE = A.SOPSRT_STLE_CODE) AS SOPSRT_STLE_CODE_NM       /* 상가형태코드명 */
+		 , A.COMPET_YEAR                      /* 준공년도 */
+		 , A.REMDELNG_YEAR                    /* 리모델링년도 */
+		 , A.FLOOR_CO                         /* 층수 */
+		 , A.BULD_FLOOR_CO                    /* 건물층수 */
+		 , A.CNTRCT_AR                        /* 계약면적 평 */
+		 , A.DVR_AR                           /* 전용면적 평 */
+		 , TRUNC((A.CNTRCT_AR * 3.3058), 2) AS CNTRCT_AR_SM     /* 계약면적 m² */
+		 , TRUNC((A.DVR_AR * 3.3058), 2) AS DVR_AR_SM           /* 전용면적 m² */
+		 , A.GTN                              /* 보증금 */
+		 , A.MT_RNTCHRG                       /* 월임대료 */
+		 , A.PREMUM                           /* 권리금 */
+		 , A.MANAGECT                         /* 관리비 */
+		 , A.PARKNG_AT                        /* 주차여부 */
+		 , A.ELVTR_AT                         /* 엘리베이터여부 */
+		 , A.HEAT_KND_CODE                    /* 난방종류코드 */
+		 , A.TOILET_SE_CODE                   /* 화장실구분코드 */
+		 , A.MVN_POSBL_DE_CODE                /* 입주가능일코드 */
+		 , A.MVN_POSBL_DE                     /* 입주가능일자 */
+		 , A.TRDE_THING_PHOTO_FILE_NO AS ATCHMNFL_NO            /* 매물사진파일명 */
+		 , A.CONFM_STTUS_CODE                 /* 승인상태코드 */
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'CONFM_STTUS_CODE' AND X.CODE_VALUE = A.CONFM_STTUS_CODE) AS CONFM_STTUS_CODE_NM       /* 승인상태코드명 */
+		 , A.CHRG_CNSTNT_USER_NO              /* 담당컨설턴트사용자번호 */
+		 , (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.CHRG_CNSTNT_USER_NO) AS CHRG_CNSTNT_USER_NM    /* 담당컨설턴트이름 */
+		 , REGEXP_REPLACE((SELECT X.TELNO FROM TB_USER X WHERE X.USER_NO = A.CHRG_CNSTNT_USER_NO), '(02|.{3})(.+)(.{4})', '\1-\2-\3') AS CHRG_CNSTNT_USER_TELNO   /* 담당컨설턴트전화번호 */
+		 , A.CONFM_USER_NO                    /* 승인사용자번호 */
+		 , (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.CONFM_USER_NO) AS CONFM_USER_NM    /* 승인사용자이름 */
+		 , (SELECT X.TELNO FROM TB_USER X WHERE X.USER_NO = A.CONFM_USER_NO) AS CONFM_USER_TELNO   /* 승인사용자전화번호 */
+		 , A.LAST_UPDT_USER_NO                /* 최종수정사용자번호 */
+		 , TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT    /* 등록일시 */
+		 , TO_CHAR(A.CONFM_DT,'YYYY-MM-DD') AS CONFM_DT      /* 승인일시 */
+		 , TO_CHAR(A.UPDT_DT,'YYYY-MM-DD') AS UPDT_DT        /* 수정일시 */
+	  FROM TB_TRDE_THING_BBS A
+	 WHERE 1=1
+	<!--    AND A.CONFM_STTUS_CODE NOT IN ('CS08') -->
+	<if test='ssUserSeCode == "US01"'>
+	   AND A.USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		<if test='pageSe == "reqstPage"'>
+	   AND A.CONFM_STTUS_CODE IN ('CS03','CS04')
+		</if>
+		<if test='pageSe == "managePage"'>
+	   AND A.CONFM_STTUS_CODE = 'CS01'
+		</if>
+	</if>
+	<if test='ssUserSeCode == "US02"'>
+ 	   AND A.CHRG_CNSTNT_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+	   AND A.CONFM_STTUS_CODE IN ('CS03','CS04')
+	</if>
+	<if test='ssUserSeCode == "US04"'>
+	   AND A.CONFM_STTUS_CODE IN ('CS01','CS02','CS03','CS04','CS07')
+	</if>
+		 ) TMP
+	 WHERE 1=1
+	<if test='!@org.springframework.util.StringUtils@isEmpty("schTxt")'>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='schTxt != ""'>
+		<if test='schSeCode == "schUserNm"'>
+       AND TMP.USER_NM LIKE '%'|| #{schTxt} ||'%'                    /* 사용자이름-신청자명 */
+		</if>
+		<if test='schSeCode == "schConfmUserNm"'>
+       AND TMP.CONFM_USER_NM LIKE '%'|| #{schTxt} ||'%'              /* 승인사용자이름 */
+		</if>
+		<if test='schSeCode == "schConfmSttusCodeNm"'>
+       AND TMP.CONFM_STTUS_CODE_NM LIKE '%'|| #{schTxt} ||'%'        /* 승인상태코드명 */
+		</if>
+		<if test='schSeCode == "schSj"'>
+	   AND TMP.SJ LIKE '%'|| #{schTxt} ||'%'                         /* 제목 */
+		</if>
+		<if test='schSeCode == "schSopsrtStleCodeNm"'>
+       AND TMP.SOPSRT_STLE_CODE_NM LIKE '%'|| #{schTxt} ||'%'        /* 상가형태코드명 */
+		</if>
+		<if test='schSeCode == "schAdres"'>
+	   AND TMP.BASS_ADRES LIKE '%'|| #{schTxt} ||'%'                 /* 기본주소 */
+	    OR TMP.DETAIL_ADRES LIKE '%'|| #{schTxt} ||'%'               /* 상세주소 */
+		</if>
+		<if test='schSeCode == "schChrgCnstntUserNm"'>
+       AND TMP.CHRG_CNSTNT_USER_NM LIKE '%'|| #{schTxt}||'%'        /* 접수자 컨설던트 명 */
+		</if>
+	</if>
+	</if>
+	 LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+	
+	
+		<!-- 마이페이지 매물점포 문의목록 개수 조회 -->
+	<select id="selectInqryListCount" parameterType="java.util.Map" resultType="int">
+	SELECT COUNT(1)
+	  FROM (
+	SELECT (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.USER_NO) AS USER_NM           /* 사용자이름-신청자명 */
+		 , COALESCE((SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.CONFM_USER_NO), '배정중') AS CONFM_USER_NM    /* 승인사용자이름 */
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'ANSWER_STTUS_SE_CODE' AND X.CODE_VALUE = B.ANSWER_STTUS_SE_CODE) AS ANSWER_STTUS_SE_CODE_NM       /* 승인상태코드명 */
+		 , A.SJ
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'SOPSRT_STLE_CODE' AND X.CODE_VALUE = A.SOPSRT_STLE_CODE) AS SOPSRT_STLE_CODE_NM       /* 상가형태코드명 */
+		 , A.BASS_ADRES                       /* 기본주소 */
+		 , A.DETAIL_ADRES                     /* 상세주소 */
+	  FROM tb_trde_thing_bbs a INNER JOIN 
+		   tb_trde_thing_inqry b ON a.trde_thing_regist_no  = b.trde_thing_regist_no 
+	 WHERE 1=1
+	   AND A.CONFM_STTUS_CODE NOT IN ('CS08')
+ 	<if test='ssUserSeCode == "US01"'>
+	   AND A.USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		<if test='pageSe == "reqstPage"'>
+	   AND A.CONFM_STTUS_CODE IN ('CS03','CS04')
+		</if>
+		<if test='pageSe == "managePage"'>
+	   AND A.CONFM_STTUS_CODE = 'CS01'
+		</if>
+	</if>
+	<if test='ssUserSeCode == "US02"'>
+	   AND A.CHRG_CNSTNT_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+	   AND A.CONFM_STTUS_CODE IN ('CS03','CS04')
+	</if>
+	<if test='ssUserSeCode == "US04"'>
+	   AND A.CONFM_STTUS_CODE IN ('CS01','CS02','CS03','CS04')
+	</if>
+		 ) TMP
+	 WHERE 1=1
+	<if test='!@org.springframework.util.StringUtils@isEmpty("schTxt")'>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='schTxt != ""'>
+		<if test='schSeCode == "schUserNm"'>
+       AND TMP.USER_NM LIKE '%'|| #{schTxt} ||'%'                    /* 사용자이름-신청자명 */
+		</if>
+		<if test='schSeCode == "schConfmUserNm"'>
+       AND TMP.CONFM_USER_NM LIKE '%'|| #{schTxt} ||'%'              /* 승인사용자이름 */
+		</if>
+		<if test='schSeCode == "schAnswerSttusSeCodeNm"'>
+       AND TMP.ANSWER_STTUS_SE_CODE_NM LIKE '%'|| #{schTxt}||'%'        /* 승인상태코드명 */
+		</if>
+		<if test='schSeCode == "schSj"'>
+	   AND TMP.SJ LIKE '%'|| #{schTxt} ||'%'                         /* 제목 */
+		</if>
+		<if test='schSeCode == "schSopsrtStleCodeNm"'>
+       AND TMP.SOPSRT_STLE_CODE_NM LIKE '%'|| #{schTxt} ||'%'        /* 상가형태코드명 */
+		</if>
+		<if test='schSeCode == "schAdres"'>
+	   AND TMP.BASS_ADRES LIKE '%'|| #{schTxt}||'%'                 /* 기본주소 */
+	    OR TMP.DETAIL_ADRES LIKE '%'|| #{schTxt} ||'%'               /* 상세주소 */
+		</if>
+	</if>
+	</if>
+	</select>
+
+	<!-- 마이페이지 매물점포 문의목록 조회 -->
+	<select id="selectInqryList" parameterType="java.util.Map" resultType="egovMap">
+	SELECT TMP.*
+		 , ROW_NUMBER() OVER (ORDER BY TRDE_THING_REGIST_NO DESC) AS RN
+	  FROM (
+	SELECT A.TRDE_THING_REGIST_NO             /* 매물등록번호 */
+		 , A.SJ                               /* 제목 */
+		 , A.DETAIL_DC                        /* 상세설명 */
+		 , A.USER_NO                          /* 사용자번호 */
+		 , (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.USER_NO) AS USER_NM           /* 사용자이름-신청자명 */
+		 , (SELECT X.EMAIL_ADRES FROM TB_USER X WHERE X.USER_NO = A.USER_NO) AS EMAIL_ADRES   /* 이메일주소 */
+		 , A.CHARGER_NM                       /* 담당자명 */
+		 , A.TELNO                            /* 전화번호 */
+		 , A.ZIP                              /* 우편번호 */
+		 , A.BASS_ADRES                       /* 기본주소 */
+		 , A.DETAIL_ADRES                     /* 상세주소 */
+		 , A.SOPSRT_STLE_CODE                 /* 상가형태코드 */
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'SOPSRT_STLE_CODE' AND X.CODE_VALUE = A.SOPSRT_STLE_CODE) AS SOPSRT_STLE_CODE_NM       /* 상가형태코드명 */
+		 , A.COMPET_YEAR                      /* 준공년도 */
+		 , A.REMDELNG_YEAR                    /* 리모델링년도 */
+		 , A.FLOOR_CO                         /* 층수 */
+		 , A.BULD_FLOOR_CO                    /* 건물층수 */
+		 , A.CNTRCT_AR                        /* 계약면적 평 */
+		 , A.DVR_AR                           /* 전용면적 평 */
+		 , TRUNC((A.CNTRCT_AR * 3.3058), 2) AS CNTRCT_AR_SM     /* 계약면적 m² */
+		 , TRUNC((A.DVR_AR * 3.3058), 2) AS DVR_AR_SM           /* 전용면적 m² */
+		 , A.GTN                              /* 보증금 */
+		 , A.MT_RNTCHRG                       /* 월임대료 */
+		 , A.PREMUM                           /* 권리금 */
+		 , A.MANAGECT                         /* 관리비 */
+		 , A.PARKNG_AT                        /* 주차여부 */
+		 , A.ELVTR_AT                         /* 엘리베이터여부 */
+		 , A.HEAT_KND_CODE                    /* 난방종류코드 */
+		 , A.TOILET_SE_CODE                   /* 화장실구분코드 */
+		 , A.MVN_POSBL_DE_CODE                /* 입주가능일코드 */
+		 , A.MVN_POSBL_DE                     /* 입주가능일자 */
+		 <!-- , A.TRDE_THING_PHOTO_FILE_NO AS ATCHMNFL_NO            /* 매물사진파일명 */ -->
+		 , B.ATCHMNFL_NO AS ATCHMNFL_NO            /* 매물사진파일명 */
+		 , A.CONFM_STTUS_CODE                 /* 승인상태코드 */
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'CONFM_STTUS_CODE' AND X.CODE_VALUE = A.CONFM_STTUS_CODE) AS CONFM_STTUS_CODE_NM       /* 승인상태코드명 */
+		 , A.CHRG_CNSTNT_USER_NO              /* 담당컨설턴트사용자번호 */
+		 , (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.CHRG_CNSTNT_USER_NO) AS CHRG_CNSTNT_USER_NM    /* 담당컨설턴트이름 */
+		 , REGEXP_REPLACE((SELECT X.TELNO FROM TB_USER X WHERE X.USER_NO = A.CHRG_CNSTNT_USER_NO), '(02|.{3})(.+)(.{4})', '\1-\2-\3') AS CHRG_CNSTNT_USER_TELNO   /* 담당컨설턴트전화번호 */
+		 , A.CONFM_USER_NO                    /* 승인사용자번호 */
+		 , (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.CONFM_USER_NO) AS CONFM_USER_NM    /* 승인사용자이름 */
+		 , (SELECT X.TELNO FROM TB_USER X WHERE X.USER_NO = A.CONFM_USER_NO) AS CONFM_USER_TELNO   /* 승인사용자전화번호 */
+		 , A.LAST_UPDT_USER_NO                /* 최종수정사용자번호 */
+		 , TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT    /* 등록일시 */
+		 , TO_CHAR(A.CONFM_DT,'YYYY-MM-DD') AS CONFM_DT      /* 승인일시 */
+		 , TO_CHAR(A.UPDT_DT,'YYYY-MM-DD') AS UPDT_DT        /* 수정일시 */
+		 , b.trde_thing_inqry_no /* 문의신청번호 */
+		 , b.inqry_user_no 
+		 , (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = b.inqry_user_no) AS inqry_user_nm /* 문의자 */
+		 , b.inqr_email_adres /* 문의자이메일 */
+		 , REGEXP_REPLACE(b.inqr_telno, '(02|.{3})(.+)(.{4})', '\1-\2-\3') AS inqr_telno   /* 문의자전화번호 */
+		 , b.inqr_cn /* 문의내용 */
+		 , b.answer_sttus_se_code /* 답변상태 */
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'ANSWER_STTUS_SE_CODE' AND X.CODE_VALUE = b.answer_sttus_se_code) AS ANSWER_STTUS_SE_CODE_NM       /* 문의상태코드명 */
+		 , TO_CHAR(B.REGIST_DT,'YYYY-MM-DD') as inqr_regist_dt
+		 , b.atchmnfl_no AS inqr_atchmnfl_no
+		 , b.answer_cn
+		 , b.answer_sttus_se_code
+	  FROM tb_trde_thing_bbs a INNER JOIN 
+		   tb_trde_thing_inqry b ON a.trde_thing_regist_no  = b.trde_thing_regist_no 
+	 WHERE 1=1
+	 <if test='myInqry == "Y"'>
+	   AND A.USER_NO = b.inqry_user_no
+	</if>
+	   AND A.CONFM_STTUS_CODE NOT IN ('CS08')
+ 	<if test='ssUserSeCode == "US01"'>
+	   AND A.USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		<if test='pageSe == "reqstPage"'>
+	   AND A.CONFM_STTUS_CODE IN ('CS03','CS04')
+		</if>
+		<if test='pageSe == "managePage"'>
+	   AND A.CONFM_STTUS_CODE = 'CS01'
+		</if>
+	</if>
+	<if test='ssUserSeCode == "US02"'>
+	   AND A.CHRG_CNSTNT_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+	   AND A.CONFM_STTUS_CODE IN ('CS03','CS04')
+	</if>
+	<if test='ssUserSeCode == "US04"'>
+	   AND A.CONFM_STTUS_CODE IN ('CS01','CS02','CS03','CS04')
+	</if>
+		 ) TMP
+	 WHERE 1=1
+	<if test='!@org.springframework.util.StringUtils@isEmpty("schTxt")'>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='schTxt != ""'>
+		<if test='schSeCode == "schUserNm"'>
+       AND TMP.USER_NM LIKE '%'|| #{schTxt} ||'%'                    /* 사용자이름-신청자명 */
+		</if>
+		<if test='schSeCode == "schConfmUserNm"'>
+       AND TMP.CONFM_USER_NM LIKE '%'|| #{schTxt} ||'%'              /* 승인사용자이름 */
+		</if>
+		<if test='schSeCode == "schAnswerSttusSeCodeNm"'>
+       AND TMP.ANSWER_STTUS_SE_CODE_NM LIKE '%'|| #{schTxt} ||'%'        /* 승인상태코드명 */
+		</if>
+		<if test='schSeCode == "schSj"'>
+	   AND TMP.SJ LIKE '%'|| #{schTxt} ||'%'                         /* 제목 */
+		</if>
+		<if test='schSeCode == "schSopsrtStleCodeNm"'>
+       AND TMP.SOPSRT_STLE_CODE_NM LIKE '%'|| #{schTxt} ||'%'        /* 상가형태코드명 */
+		</if>
+		<if test='schSeCode == "schAdres"'>
+	   AND TMP.BASS_ADRES LIKE '%'|| #{schTxt} ||'%'                 /* 기본주소 */
+	    OR TMP.DETAIL_ADRES LIKE '%'|| #{schTxt} ||'%'               /* 상세주소 */
+		</if>
+	</if>
+	</if>
+	 LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+	
+	
+		<!-- 점포장터 매물점포 승인상태 수정 -->
+	<update id="updateInqrySttus" parameterType="java.util.Map">
+	UPDATE TB_TRDE_THING_INQRY
+	   SET ANSWER_CN = #{answerCn}
+		 , ANSWRR_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		 , ANSWER_STTUS_SE_CODE = #{answerSttusSeCode}
+		 , LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		 , ANSWER_REGIST_DT = NOW()
+		 , ANSWER_UPDT_DT = NOW()
+		 , UPDT_DT = NOW()
+	 WHERE TRDE_THING_INQRY_NO::TEXT = #{trdeThingInqryNo}
+	</update>
+	
+	
+	
+
+	<!-- 점포장터 매물점포 정보 조회 -->
+	<select id="selectTradeBbs" parameterType="java.util.Map" resultType="egovMap">
+	SELECT A.TRDE_THING_REGIST_NO             /* 매물등록번호 */
+		 , A.SJ                               /* 제목 */
+		 , A.DETAIL_DC                        /* 상세설명 */
+		 , A.USER_NO                          /* 사용자번호 */
+		 , (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.USER_NO) AS USER_NM           /* 사용자이름 */
+		 , (SELECT X.EMAIL_ADRES FROM TB_USER X WHERE X.USER_NO = A.USER_NO) AS EMAIL_ADRES   /* 이메일주소 */
+		 , A.CHARGER_NM                       /* 담당자명 */
+		 , A.CHRG_CNSTNT_USER_NO
+		 , A.TELNO                            /* 전화번호 */
+		 , A.ZIP                              /* 우편번호 */
+		 , A.BASS_ADRES                       /* 기본주소 */
+		 , A.DETAIL_ADRES                     /* 상세주소 */
+		 , A.SOPSRT_STLE_CODE                 /* 상가형태코드 */
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'SOPSRT_STLE_CODE' AND X.CODE_VALUE = A.SOPSRT_STLE_CODE) AS SOPSRT_STLE_CODE_NM       /* 상가형태코드명 */
+		 , A.COMPET_YEAR                      /* 준공년도 */
+		 , A.REMDELNG_YEAR                    /* 리모델링년도 */
+		 , A.FLOOR_CO                         /* 층수 */
+		 , A.BULD_FLOOR_CO                    /* 건물층수 */
+		 , TRUNC(A.CNTRCT_AR) AS CNTRCT_AR                    /* 계약면적 평 */
+		 , TRUNC(A.DVR_AR) AS DVR_AR                          /* 전용면적 평 */
+		 , TRUNC((A.CNTRCT_AR * 3.3058), 2) AS CNTRCT_AR_SM   /* 계약면적 m² */
+		 , TRUNC((A.DVR_AR * 3.3058), 2) AS DVR_AR_SM         /* 전용면적 m² */
+		 , A.GTN                              /* 보증금 */
+		 , A.MT_RNTCHRG                       /* 월임대료 */
+		 , A.PREMUM                           /* 권리금 */
+		 , A.MANAGECT                         /* 관리비 */
+		 , A.PARKNG_AT                        /* 주차여부 */
+		 , A.ELVTR_AT                         /* 엘리베이터여부 */
+		 , A.HEAT_KND_CODE                    /* 난방종류코드 */
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'HEAT_KND_CODE' AND X.CODE_VALUE = A.HEAT_KND_CODE) AS HEAT_KND_CODE_NM                /* 난방종류코드명 */
+		 , A.TOILET_SE_CODE                   /* 화장실구분코드 */
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'TOILET_SE_CODE' AND X.CODE_VALUE = A.TOILET_SE_CODE) AS TOILET_SE_CODE_NM             /* 화장실구분코드명 */
+		 , A.MVN_POSBL_DE_CODE                /* 입주가능일코드 */
+		 , (SELECT CASE WHEN A.MVN_POSBL_DE_CODE = 'MV03'
+						THEN TO_CHAR(A.MVN_POSBL_DE,'YYYY-MM-DD')
+						ELSE (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'MVN_POSBL_DE_CODE' AND X.CODE_VALUE = A.MVN_POSBL_DE_CODE)
+						 END
+		 ) AS MVN_POSBL_DE_CODE_NM            /* 입주가능일코드명 */
+		 , A.MVN_POSBL_DE                     /* 입주가능일자 */
+		 , A.TRDE_THING_PHOTO_FILE_NO AS ATCHMNFL_NO         /* 매물사진파일명 */
+		 , A.CONFM_STTUS_CODE                 /* 승인상태코드 */
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'CONFM_STTUS_CODE' AND X.CODE_VALUE = A.CONFM_STTUS_CODE) AS CONFM_STTUS_CODE_NM       /* 승인상태코드명 */
+		 , A.CONFM_USER_NO                    /* 승인사용자번호 */
+		 , (SELECT X.USER_NM FROM TB_USER X WHERE X.USER_NO = A.CONFM_USER_NO) AS CONFM_USER_NM           /* 승인사용자이름 */
+		 , (SELECT X.TELNO FROM TB_USER X WHERE X.USER_NO = A.CONFM_USER_NO) AS CONFM_USER_TELNO          /* 승인사용자전화번호 */
+		 , A.LAST_UPDT_USER_NO                               /* 최종수정사용자번호 */
+		 , TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT    /* 등록일시 */
+		 , TO_CHAR(A.CONFM_DT,'YYYY-MM-DD') AS CONFM_DT      /* 승인일시 */
+		 , TO_CHAR(A.UPDT_DT,'YYYY-MM-DD') AS UPDT_DT        /* 수정일시 */
+		 , A.CNSTNT_ANSWER 					/* 컨설턴트 답변  */
+	  FROM TB_TRDE_THING_BBS A				
+	 WHERE A.TRDE_THING_REGIST_NO::TEXT = #{trdeThingRegistNo}
+	</select>
+
+	<!-- 점포장터 매물점포 승인상태 수정 -->
+	<update id="updateTradeSttus" parameterType="java.util.Map">
+	UPDATE TB_TRDE_THING_BBS
+	   SET CONFM_STTUS_CODE = #{confmSttusCode}
+		 , CONFM_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		 , LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		 , CONFM_DT = NOW()
+		 , UPDT_DT = NOW()
+		 <if test="cnstntAnswer != null">
+		 	, CNSTNT_ANSWER = #{cnstntAnswer}
+		 </if>
+	 WHERE TRDE_THING_REGIST_NO::TEXT = #{trdeThingRegistNo}
+	</update>
+
+	<!-- 허위매물신고 내용 저장 -->
+	<insert id="insertFlshdTrde" parameterType="java.util.Map">
+	  INSERT INTO TB_FLSHD_TRDE_THING
+	  (
+	    TRDE_THING_REGIST_NO
+	  , USER_NO
+	  , FLSHD_TRDE_THING_RESN_CODE
+	  , CN
+	  , REGIST_DT
+	  , FLSHD_PROCESS_AT
+	  ) VALUES (
+	    CAST(#{trdeThingRegistNo} AS INTEGER)
+	  , CAST(#{ssUserNo} AS INTEGER)
+	  , #{flshdTrdeThingResnCode}
+	  , #{cn}
+	  , NOW()
+	  , 'N'
+	  )
+	</insert>
+
+	<!-- 컨설턴트 목록 조회 -->
+	<select id="selectConsultantList" parameterType="java.util.Map" resultType="egovMap">
+	SELECT A.USER_NO AS CHRG_CNSTNT_USER_NO     /* 사용자번호 */
+		 , A.USER_NM                            /* 사용자명 */
+		 , A.TELNO                              /* 전화번호 */
+		 , A.EMAIL_ADRES                        /* 이메일주소 */
+	  FROM TB_USER A
+	 WHERE 1=1
+	   AND A.USER_SE_CODE = 'US02'
+	   AND A.CONFM_STTUS_CODE = 'CS01'
+	   AND A.SECSN_AT = 'N'
+	 ORDER BY A.USER_NM ASC
+	</select>
+
+	<!-- 마이페이지 점포관리확인 컨설턴트배정 수정 -->
+	<update id="updateAssignConsultant" parameterType="java.util.Map">
+	UPDATE TB_TRDE_THING_BBS
+	   SET CHRG_CNSTNT_USER_NO = CAST(#{chrgCnstntUserNo} AS INTEGER)
+		 , LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		 , UPDT_DT = NOW()
+	 WHERE TRDE_THING_REGIST_NO::TEXT = #{trdeThingRegistNo}
+	</update>
+
+	<!-- 정보공개 저장 -->
+	<insert id="insertInfoOthbcBbs" parameterType="java.util.Map">
+	/* BoardDao.insertInfoOthbcBbs 정보공개 저장 */
+	INSERT INTO TB_INFO_OTHBC_BBS (
+		INFO_OTHBC_SE_CODE,
+		REGIST_USER_NO,
+		SJ,
+		CN,
+		<if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+		ATCHMNFL_NO,
+		</if>
+		DELETE_AT,
+		REGIST_DT,
+		UPDT_DT,
+		<if test='!@org.springframework.util.StringUtils@isEmpty(expsrSn)'>
+		EXPSR_SN,
+		</if>
+		USE_AT
+	)VALUES(
+		#{infoOthbcSeCode},
+		#{ssUserNo}::INTEGER,
+		#{sj},
+		#{cn},
+		<if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+		CAST(#{atchmnflNo} AS INTEGER),
+		</if>
+		'N',
+		now(),
+		now(),
+		<if test='!@org.springframework.util.StringUtils@isEmpty(expsrSn)'>
+		CAST(COALESCE(#{expsrSn},'0') AS INTEGER),
+		</if>
+		COALESCE(#{useAt},'N')
+	)
+	</insert>
+
+	<!-- 정보공개 수정 -->
+	<update id="updateInfoOthbcBbs" parameterType="java.util.Map">
+	/* BoardDao.updateInfoOthbcBbs 정보공개 수정 */
+	UPDATE TB_INFO_OTHBC_BBS SET
+<!-- 		INFO_OTHBC_SE_CODE = #{infoOthbcSeCode}, -->
+		LAST_UPDT_USER_NO = #{ssUserNo}::INTEGER,
+		SJ = #{sj},
+		CN = #{cn},
+		<if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+		ATCHMNFL_NO = #{atchmnflNo}::INTEGER,
+		</if>
+		UPDT_DT = now(),
+		<if test='!@org.springframework.util.StringUtils@isEmpty(expsrSn)'>
+		EXPSR_SN = COALESCE(#{expsrSn}::INTEGER,0),
+		</if>
+		USE_AT = COALESCE(#{useAt},'N')
+	WHERE
+		INFO_OTHBC_SN = CAST(#{infoOthbcSn} AS INTEGER)
+	</update>
+
+	<!-- 정보공개 삭제 -->
+	<delete id="deleteInfoOthbcBbs" parameterType="java.util.Map">
+	/* BoardDao.deleteInfoOthbcBbs 정보공개 삭제 */
+	UPDATE TB_INFO_OTHBC_BBS SET
+		LAST_UPDT_USER_NO = #{ssUserNo}::INTEGER,
+		DELETE_AT = 'Y',
+		UPDT_DT = now()
+	WHERE
+		INFO_OTHBC_SN = CAST(#{infoOthbcSn} AS INTEGER)
+	</delete>
+
+	<!-- 정보공개 교육신청 -->
+	<insert id="insertInfoOpenEdc" parameterType="java.util.Map">
+	/* BoardDao.insertInfoOpenEdc 정보공개 교육신청 */
+	INSERT INTO tb_frnchs_info_edc 
+	VALUES (
+			 #{brandNm}
+			,#{brandAdres}
+			,#{rprsntvNm}
+			,#{applcntNm}
+			,#{telNo}
+			,#{emailAdres}
+			,#{brandQuest}
+			,#{divComp}
+			,now()
+			)
+	</insert>
+	
+	<!-- 익명제보 신청 -->
+	<insert id="insertAnnymtyBoard" parameterType="java.util.Map">
+	/* BoardDao.insertAnnymtyBoard 정보공개 교육신청 */
+	INSERT INTO tb_annymty_board
+	(
+			annymty_title , 
+			<!-- applcnt_nm,  -->
+			tel_no, 
+			email_adres, 
+			annymty_quest,
+			regist_dt,
+			atchmnfl_no
+		)
+	VALUES (
+			 #{annymtyTitle}
+			<!-- ,#{applcntNm} -->
+			,#{telNo}
+			,#{emailAdres}
+			,#{annymtyQuest}
+			,now()
+			<!-- , COALESCE(#{atchmnflNo},'0')::INTEGER -->
+			,#{atchmnflNo}::INTEGER
+			)
+	</insert>
+
+	<!-- 마이페이지 정보공개서등록 > 교육신청 관리 조회 - 22.03.29 김진호 -->
+	<select id="selectInfoDcsEduList" parameterType="java.util.Map" resultType="egovMap">
+		SELECT 
+			   ROW_NUMBER() OVER (ORDER BY regist_dt DESC) AS RN
+			 , div_comp
+			 , brand_nm
+			 , rprsntv_nm
+			 , brand_adres
+			 , applcnt_nm
+			 , tel_no
+			 , email_adres
+			 , brand_quest
+			 , edu_id
+		  FROM TB_FRNCHS_INFO_EDC
+		 WHERE 1=1
+		 	AND delete_at = 'N'
+		 <if test='!@org.springframework.util.StringUtils@isEmpty(comCode)'>
+		   <if test='comCode == "1"'>
+		    AND div_comp = '1'
+		   </if>
+		   <if test='comCode == "2"'>
+		    AND div_comp = '2'
+		   </if>
+		 </if>
+		 <if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+		   <if test='schSeCode == "1"'>
+		    AND brand_nm like '%'|| #{schTxt} ||'%'
+		   </if>
+		   <if test='schSeCode == "2"'>
+		    AND brand_adres like '%'|| #{schTxt} ||'%'
+		   </if>
+		   <if test='schSeCode == "3"'>
+		    AND rprsntv_nm like '%'|| #{schTxt} ||'%'
+		   </if>
+		   <if test='schSeCode == "4"'>
+		    AND applcnt_nm like '%'|| #{schTxt} ||'%'
+		   </if>
+		 </if>
+		 ORDER BY regist_dt DESC
+		 LIMIT #{recordCountPerPage} OFFSET #{firstRecordIndex}
+	</select>
+	
+	<select id="selectAnnymtyList" parameterType="java.util.Map" resultType="egovMap">
+		SELECT 
+			   ROW_NUMBER() OVER (ORDER BY A.regist_dt DESC) AS RN
+			 , A.annymty_title
+			 <!-- , applcnt_nm -->
+			 , A.tel_no
+			 , A.email_adres
+			 , A.annymty_quest
+			 , A.annymty_id
+			 ,COALESCE(D.ATCHMNFL_NO, 0) as ATCHMNFL_NO
+			 ,COALESCE(D.FILE_SIZE, 0) as FILE_SIZE
+			 ,COALESCE(D.FILE_SN, 0) as FILE_SN
+			 ,COALESCE(D.INPUT_FILE_NM, '') as INPUT_FILE_NM
+			 ,COALESCE(D.ATCHMNFL_STTUS_CODE, '') as ATCHMNFL_STTUS_CODE
+		  FROM TB_ANNYMTY_BOARD A
+	 LEFT JOIN TB_ATCHMNFL_STRE D ON D.ATCHMNFL_NO = A.ATCHMNFL_NO AND D.ATCHMNFL_STTUS_CODE = 'FS02'
+		 WHERE 1=1
+		   AND delete_at = 'N'
+		   <if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+			   <if test='schSeCode == "1"'>
+			    AND A.annymty_title like '%'|| #{schTxt} ||'%'
+			   </if>
+			   <if test='schSeCode == "2"'>
+			    AND A.annymty_quest like '%'|| #{schTxt} ||'%'
+			   </if>
+		   </if>
+		 ORDER BY A.regist_dt DESC
+		 LIMIT #{recordCountPerPage} OFFSET #{firstRecordIndex}
+	</select>
+
+	<!-- 마이페이지 정보공개서등록 > 교육신청 관리 목록수 조회 - 22.03.29 김진호 -->
+	<select id="selectInfoDcsEduListCount" parameterType="java.util.Map" resultType="int">
+		SELECT count(*)
+		  FROM TB_FRNCHS_INFO_EDC
+		 WHERE delete_at = 'N'
+	</select>
+	
+	<select id="selectAnnymtyListCount" parameterType="java.util.Map" resultType="int">
+		SELECT count(*)
+		  FROM TB_ANNYMTY_BOARD
+		 WHERE delete_at = 'N'
+	</select>
+
+	<!-- 마이페이지 교육신청 관리 > 삭제 - 22.04.11 김진호 -->
+	<update id="updateInfoDcsEduDelete" parameterType="egovMap">
+	/*updateInfoDcsEduDelete*/
+		UPDATE 
+			   TB_FRNCHS_INFO_EDC 
+	       SET
+			   DELETE_AT = 'Y'
+		 WHERE 1=1
+		   AND edu_id = #{infoDcsRegistNo}::INTEGER
+	</update>
+
+	<!-- 익명게시판 관리 > 삭제 - 22.06.20 김진호 -->
+	<update id="updateAnnymtyListDelete" parameterType="egovMap">
+	/*updateAnnymtyListDelete*/
+		UPDATE 
+			   TB_ANNYMTY_BOARD
+	       SET
+			   DELETE_AT = 'Y'
+		 WHERE 1=1
+		   AND annymty_id = #{infoDcsRegistNo}::INTEGER
+	</update>
+	
+	<!-- 정보공개 목록 개수 조회 -->
+	<select id="selectInfoOthbcBbsListCount" parameterType="java.util.Map" resultType="int">
+	SELECT COUNT(1)
+	  FROM TB_INFO_OTHBC_BBS A
+	 WHERE A.DELETE_AT = 'N'
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schCode)'>
+       AND A.INFO_OTHBC_SE_CODE = #{schCode}
+	</if>
+	<if test='noSchCode == "IN03"'>
+	   AND A.INFO_OTHBC_SE_CODE != #{noSchCode}
+	</if>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+	   AND A.SJ like '%'|| #{schTxt} ||'%'
+	</if>
+	</select>
+
+	<!-- 정보공개 이전/다음 조회 -->
+	<select id="selectInfoOthbcBbsNextInfo" parameterType="java.util.Map" resultType="egovMap">
+	SELECT AA.*
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INFO_OTHBC_SE_CODE' AND X.CODE_VALUE = (SELECT Z.INFO_OTHBC_SE_CODE FROM TB_INFO_OTHBC_BBS Z WHERE Z.INFO_OTHBC_SN = AA.INFO_OTHBC_SN_PR)) AS INFO_OTHBC_SE_CODE_NM_PR
+		 , (SELECT X.SJ FROM TB_INFO_OTHBC_BBS X WHERE X.INFO_OTHBC_SN = AA.INFO_OTHBC_SN_PR) AS SJ_PR
+		 , TO_CHAR((SELECT X.UPDT_DT FROM TB_INFO_OTHBC_BBS X WHERE X.INFO_OTHBC_SN = AA.INFO_OTHBC_SN_PR), 'YYYY-MM-DD') AS UPDT_DT_PR
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INFO_OTHBC_SE_CODE' AND X.CODE_VALUE = (SELECT Z.INFO_OTHBC_SE_CODE FROM TB_INFO_OTHBC_BBS Z WHERE Z.INFO_OTHBC_SN = AA.INFO_OTHBC_SN_NX)) AS INFO_OTHBC_SE_CODE_NM_NX
+		 , (SELECT X.SJ FROM TB_INFO_OTHBC_BBS X WHERE X.INFO_OTHBC_SN = AA.INFO_OTHBC_SN_NX) AS SJ_NX
+		 , TO_CHAR((SELECT X.UPDT_DT FROM TB_INFO_OTHBC_BBS X WHERE X.INFO_OTHBC_SN = AA.INFO_OTHBC_SN_NX), 'YYYY-MM-DD') AS UPDT_DT_NX
+	  FROM (
+	SELECT TMP.*
+		 <![CDATA[
+		 , (SELECT MAX(X.INFO_OTHBC_SN) FROM TB_INFO_OTHBC_BBS X WHERE X.DELETE_AT = 'N' AND X.INFO_OTHBC_SN < TMP.INFO_OTHBC_SN
+		 ]]>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(schCodeVal)'>
+	       AND X.INFO_OTHBC_SE_CODE = #{schCodeVal}
+		</if>
+		<!-- 시큐어 코딩 수정 - 21.03.17 -->
+		<if test='!@org.springframework.util.StringUtils@isEmpty(schTxtVal)'>
+		   AND X.SJ like '%'|| #{schTxtVal} ||'%'
+		</if>
+		<if test='noSchCode == "IN03"'>
+		   AND X.INFO_OTHBC_SE_CODE != #{noSchCode}
+		</if>
+			 ) AS INFO_OTHBC_SN_PR
+		 <![CDATA[
+		 , (SELECT MIN(X.INFO_OTHBC_SN) FROM TB_INFO_OTHBC_BBS X WHERE X.DELETE_AT = 'N' AND X.INFO_OTHBC_SN > TMP.INFO_OTHBC_SN
+		 ]]>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(schCodeVal)'>
+	       AND X.INFO_OTHBC_SE_CODE = #{schCodeVal}
+		</if>
+		<!-- 시큐어 코딩 수정 - 21.03.17 -->
+		<if test='!@org.springframework.util.StringUtils@isEmpty(schTxtVal)'>
+		   AND X.SJ like '%'|| #{schTxtVal} ||'%'
+		</if>
+		<if test='noSchCode == "IN03"'>
+		   AND X.INFO_OTHBC_SE_CODE != #{noSchCode}
+		</if>
+		 ) AS INFO_OTHBC_SN_NX
+	  FROM (
+	SELECT A.INFO_OTHBC_SN
+	  FROM TB_INFO_OTHBC_BBS A
+	 WHERE 1=1
+	   AND A.DELETE_AT = 'N'
+	   AND A.INFO_OTHBC_SN::TEXT = #{infoOthbcSn}
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schCodeVal)'>
+       AND A.INFO_OTHBC_SE_CODE = #{schCodeVal}
+	</if>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schTxtVal)'>
+	   AND A.SJ like '%'|| #{schTxtVal} ||'%'
+	</if>
+	<if test='noSchCode == "IN03"'>
+	   AND A.INFO_OTHBC_SE_CODE != #{noSchCode}
+	</if>
+		 ) TMP
+		 ) AA
+	</select>
+
+	<!-- 정보공개 목록 조회 -->
+	<select id="selectInfoOthbcBbsList" parameterType="java.util.Map" resultType="egovMap">
+	<![CDATA[
+	SELECT TMP.*
+		 , ROW_NUMBER() OVER (ORDER BY INFO_OTHBC_SN DESC) AS RN
+	  FROM (
+	SELECT A.INFO_OTHBC_SN
+		 , A.INFO_OTHBC_SE_CODE
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INFO_OTHBC_SE_CODE' AND X.CODE_VALUE = A.INFO_OTHBC_SE_CODE) AS INFO_OTHBC_SE_CODE_NM
+		 , A.SJ
+		 , TO_CHAR(A.UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+		 , TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+		 , CASE WHEN A.UPDT_DT > NOW()::DATE - 6 THEN 'NEW' END AS UPDT_DT_AWEEK
+		 , A.EXPSR_SN
+		 , A.USE_AT
+	  FROM TB_INFO_OTHBC_BBS A
+	 WHERE 1=1
+	   AND A.DELETE_AT = 'N'
+	]]>
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schCode)'>
+       AND A.INFO_OTHBC_SE_CODE = #{schCode}
+	</if>
+	<if test='noSchCode == "IN03"'>
+	   AND A.INFO_OTHBC_SE_CODE != #{noSchCode}
+	</if>
+	<!-- 시큐어 코딩 수정 - 21.03.17 -->
+	<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+	   AND A.SJ like '%'|| #{schTxt} ||'%'
+	</if>
+		 ) TMP
+	 LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+
+	<!-- 정보공개 내용 조회 -->
+	<select id="selectInfoOthbcBbs" parameterType="java.util.Map" resultType="egovMap">
+	SELECT A.INFO_OTHBC_SN
+		 , A.INFO_OTHBC_SE_CODE
+		 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INFO_OTHBC_SE_CODE' AND X.CODE_VALUE = A.INFO_OTHBC_SE_CODE) AS INFO_OTHBC_SE_CODE_NM
+		 , A.REGIST_USER_NO
+		 , A.SJ
+		 , A.CN
+		 , COALESCE(A.ATCHMNFL_NO,NULL) AS ATCHMNFL_NO
+		 , TO_CHAR(A.UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+		 , TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+		 , A.EXPSR_SN
+		 , A.USE_AT
+	  FROM TB_INFO_OTHBC_BBS A
+	 WHERE INFO_OTHBC_SN::TEXT = #{infoOthbcSn}
+	</select>
+
+	<!-- 정보공개 목록 > 공정거래홍보관 조회 - 21.03.04-->
+	<!-- 21.11.29  공통코드 추가 및 조건식 변경-->
+<!-- 	<select id="selectFairTradePrList" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			A.INFO_OTHBC_SN
+			, (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INFO_OTHBC_SE_CODE' AND X.CODE_VALUE = A.INFO_OTHBC_SE_CODE) AS INFO_OTHBC_SE_CODE_NM
+			, A.SJ
+			, A.CN
+			, TO_CHAR(A.UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+			, TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+			, CASE WHEN A.UPDT_DT > NOW()::DATE - 6 THEN 'NEW' END AS UPDT_DT_AWEEK
+			, (SELECT TAS.ATCHMNFL_NO || '_' || TAS.FILE_SN FROM TB_ATCHMNFL_STRE TAS WHERE TAS.ATCHMNFL_NO = A.ATCHMNFL_NO AND TAS.ATCHMNFL_STTUS_CODE = 'FS02') AS INFO_OTHBC_BBS_KEY
+			, A.INFO_OTHBC_SE_CODE
+		FROM
+			TB_INFO_OTHBC_BBS A
+		WHERE
+			A.DELETE_AT = 'N'
+			AND A.INFO_OTHBC_SE_CODE = 'IN03'
+		ORDER BY
+			A.EXPSR_SN ASC
+	</select> -->
+	<!--공정거래홍보관 조회 - 21.11.30 주한별 추가-->
+	<select id="selectFairTradePrList" parameterType="java.util.Map" resultType="egovMap">
+	SELECT
+		A.FAIR_TRADE_SN
+		, A.FAIR_TRADE_SE_CODE
+		, (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'FAIR_TRADE_SE_CODE' AND X.CODE_VALUE = A.FAIR_TRADE_SE_CODE) AS FAIR_TRADE_SE_CODE_NM
+		, A.SJ
+		, A.CN
+		, TO_CHAR(A.PST_SRT_DT,'YYYY-MM-DD') AS PST_SRT_DT
+		, TO_CHAR(A.PST_AND_DT,'YYYY-MM-DD') AS PST_AND_DT
+		, TO_CHAR(A.UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+		, TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+		, CASE WHEN A.UPDT_DT > NOW()::DATE - 6 THEN 'NEW' END AS UPDT_DT_AWEEK
+		, (SELECT TAS.ATCHMNFL_NO || '_' || TAS.FILE_SN FROM TB_ATCHMNFL_STRE TAS WHERE TAS.ATCHMNFL_NO = A.ATCHMNFL_NO AND TAS.ATCHMNFL_STTUS_CODE = 'FS02') AS FAIT_TRADE_BBS_KEY
+	FROM
+		TB_FAIR_TRADE_BBS AS A
+	WHERE
+		A.DELETE_AT = 'N'	
+	AND pst_and_dt::date <![CDATA[>=]]> NOW()
+	<if test='!@org.springframework.util.StringUtils@isEmpty(fairTradeSeCode)'>
+		AND A.FAIR_TRADE_SE_CODE = #{fairTradeSeCode}
+	</if>
+	ORDER BY
+		A.FAIR_TRADE_SN DESC
+	<if test='@org.springframework.util.StringUtils@isEmpty(fairTradeSeCode)'>
+		LiMIT 10
+	</if>
+	</select>
+	
+	<!-- 공정거래 > 공정거래홍보관 영상목록 조회 모바일에서 사용 -->
+	<select id="selectFairTradePrListAjax" parameterType="java.util.Map" resultType="egovMap">
+	/*selectFairTradePrListAjax*/
+		SELECT
+			A.FAIR_TRADE_SN
+			, A.FAIR_TRADE_SE_CODE
+			, (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'FAIR_TRADE_SE_CODE' AND X.CODE_VALUE = A.FAIR_TRADE_SE_CODE) AS FAIR_TRADE_SE_CODE_NM
+			, A.SJ
+			, A.CN
+			, TO_CHAR(A.PST_SRT_DT,'YYYY-MM-DD') AS PST_SRT_DT
+			, TO_CHAR(A.PST_AND_DT,'YYYY-MM-DD') AS PST_AND_DT
+			, TO_CHAR(A.UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+			, TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+			, CASE WHEN A.UPDT_DT > NOW()::DATE - 6 THEN 'NEW' END AS UPDT_DT_AWEEK
+			, (SELECT TAS.ATCHMNFL_NO || '_' || TAS.FILE_SN FROM TB_ATCHMNFL_STRE TAS WHERE TAS.ATCHMNFL_NO = A.ATCHMNFL_NO AND TAS.ATCHMNFL_STTUS_CODE = 'FS02') AS FAIT_TRADE_BBS_KEY
+		FROM
+			TB_FAIR_TRADE_BBS AS A
+		WHERE
+			A.DELETE_AT = 'N'	
+			AND pst_and_dt::date <![CDATA[>=]]> NOW()
+			AND A.FAIR_TRADE_SE_CODE = #{fairTradeSeCode}
+		ORDER BY
+			A.FAIR_TRADE_SN DESC
+		LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+	
+	<!-- 공정거래 > 공정거래홍보관 영상목록 수 조회 모바일에서 사용 -->
+	<select id="selectFairTradePrListCountAjax" parameterType="java.util.Map" resultType="int">
+		/*selectFairTradePrListCountAjax*/
+		SELECT
+			COUNT(*)
+		FROM
+			TB_FAIR_TRADE_BBS AS A
+		WHERE
+			A.DELETE_AT = 'N'	
+			AND pst_and_dt::date <![CDATA[>=]]> NOW()
+		<if test='!@org.springframework.util.StringUtils@isEmpty(fairTradeSeCode)'>
+			AND A.FAIR_TRADE_SE_CODE = #{fairTradeSeCode}
+		</if>
+	</select>
+	
+	<!-- 통합게시판 목록 조회  - 21.11.30 주한별 수정-->
+	<select id="selectIntegList" parameterType="java.util.Map" resultType="egovMap">
+		<if test='selectType == "ADMIN"'>
+    	SELECT /*selectIntegList*/
+			ROW_NUMBER() OVER (ORDER BY TMP.SN DESC) AS RN
+			,TMP.SN
+			,TMP.SE_CODE
+			,TMP.SE_CODE_NM
+			,TMP.SJ
+			,TMP.UPDT_DT
+			,TMP.REGIST_DT
+			,TMP.DELETE_AT
+		FROM (
+			SELECT
+				INTEG_SN AS SN
+				,INTEG_SE_CODE AS SE_CODE
+				,(SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INTEG_SE_CODE' AND X.CODE_VALUE = INTEG_SE_CODE) AS SE_CODE_NM
+				,SJ
+				,TO_CHAR(UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+				,TO_CHAR(REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+				,DELETE_AT
+			FROM
+				TB_INTEG_BBS
+		) AS TMP
+		WHERE 1=1
+			AND TMP.DELETE_AT = 'N'
+			<if test='!@org.springframework.util.StringUtils@isEmpty(boardMngType)'>
+				AND TMP.SE_CODE LIKE #{boardMngType} ||'%'
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(schCode)'>
+				AND TMP.SE_CODE LIKE '%'|| #{schCode} ||'%'
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+				AND TMP.SJ LIKE '%'|| #{schTxt} ||'%'
+			</if>
+		ORDER BY TMP.DELETE_AT DESC
+		LIMIT #{recordCountPerPage} OFFSET #{firstRecordIndex}
+		</if>
+		<if test='selectType != "ADMIN"'>
+<!-- 			SELECT 
+				ROW_NUMBER() OVER (ORDER BY C.REGIST_DT DESC) AS RN 
+				, C.*  
+			from
+				(
+				SELECT 
+					A.*
+				FROM 
+					(
+					SELECT
+						TMP.SN
+						,TMP.SE_CODE
+						,TMP.SE_CODE_NM
+						,TMP.SJ
+						,TMP.UPDT_DT
+						,TMP.REGIST_DT
+						,TMP.DELETE_AT
+						,1 AS TOP
+					FROM (
+						SELECT
+							INTEG_SN AS SN
+							,INTEG_SE_CODE AS SE_CODE
+							,(SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INTEG_SE_CODE' AND X.CODE_VALUE = INTEG_SE_CODE) AS SE_CODE_NM
+							,SJ
+							,TO_CHAR(UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+							,TO_CHAR(REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+							,DELETE_AT
+						FROM
+							TB_INTEG_BBS
+					) AS TMP
+					WHERE 1=1
+						AND TMP.DELETE_AT = 'N'
+						AND TMP.SE_CODE = 'NS01'
+					ORDER BY TMP.REGIST_DT DESC
+					LIMIT 3
+				) A
+				UNION
+				SELECT 
+					B.*
+				FROM (
+					SELECT 
+						TMP.SN
+						,TMP.SE_CODE
+						,TMP.SE_CODE_NM
+						,TMP.SJ
+						,TMP.UPDT_DT
+						,TMP.REGIST_DT
+						,TMP.DELETE_AT
+						,2 AS TOP
+					FROM (
+						SELECT
+							INTEG_SN AS SN
+							,INTEG_SE_CODE AS SE_CODE
+							,(SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INTEG_SE_CODE' AND X.CODE_VALUE = INTEG_SE_CODE) AS SE_CODE_NM
+							,SJ
+							,TO_CHAR(UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+							,TO_CHAR(REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+							,DELETE_AT
+						FROM
+							TB_INTEG_BBS
+					) AS TMP
+				WHERE 1=1
+					AND TMP.DELETE_AT = 'N'
+				<if test='!@org.springframework.util.StringUtils@isEmpty(boardMngType)'>
+						AND TMP.SE_CODE LIKE #{boardMngType} ||'%'
+					</if>
+					<if test='!@org.springframework.util.StringUtils@isEmpty(schCode)'>
+						AND TMP.SE_CODE LIKE '%'|| #{schCode} ||'%'
+					</if>
+					<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+						AND TMP.SJ LIKE '%'|| #{schTxt} ||'%'
+					</if>
+				ORDER BY TMP.REGIST_DT DESC
+				LIMIT 7 OFFSET ${firstRecordIndex}
+				) B
+			) C
+			ORDER BY C.TOP ASC, C.SN DESC -->
+			<if test='@org.springframework.util.StringUtils@isEmpty(mob)'>
+			SELECT A.* 
+			  FROM (
+			        SELECT 0 AS RN 
+			            , TMP.SN
+			           , TMP.SE_CODE
+			           , TMP.SE_CODE_NM
+			           , TMP.SJ
+			           , TMP.UPDT_DT
+			           , TMP.REGIST_DT
+			           , TMP.DELETE_AT
+			           , 1 AS TOP
+			      FROM (
+			            SELECT INTEG_SN AS SN
+			                 , INTEG_SE_CODE AS SE_CODE
+			                 , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INTEG_SE_CODE' AND X.CODE_VALUE = INTEG_SE_CODE) AS SE_CODE_NM
+			                 , SJ
+			                 , TO_CHAR(UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+			                 , TO_CHAR(REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+			                 , DELETE_AT
+			            FROM TB_INTEG_BBS
+			           WHERE 1=1
+			              AND DELETE_AT = 'N'
+			              AND INTEG_SE_CODE = 'NS01'
+			            ORDER BY REGIST_DT DESC
+			            LIMIT 3
+			      ) AS TMP
+			  ) A
+			   UNION
+			  </if>
+			 SELECT * 
+			   FROM (
+			       SELECT  B.*
+			          FROM (
+			              SELECT ROW_NUMBER() OVER (ORDER BY TMP.REGIST_DT DESC) AS RN
+			                  , TMP.SN
+			                       , TMP.SE_CODE
+			                     , TMP.SE_CODE_NM
+			                     , TMP.SJ
+			                     , TMP.UPDT_DT
+			                     , TMP.REGIST_DT
+			                     , TMP.DELETE_AT
+			                     , 2 AS TOP
+			                 FROM (
+			                     SELECT INTEG_SN AS SN
+			                         , INTEG_SE_CODE AS SE_CODE
+			                         , (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INTEG_SE_CODE' AND X.CODE_VALUE = INTEG_SE_CODE) AS SE_CODE_NM
+			                         , SJ
+			                         , TO_CHAR(UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+			                         , TO_CHAR(REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+			                         , DELETE_AT
+			                       FROM TB_INTEG_BBS
+			                     WHERE 1=1
+			                          AND DELETE_AT = 'N'
+			                        <if test='!@org.springframework.util.StringUtils@isEmpty(boardMngType)'>
+										AND INTEG_SE_CODE LIKE #{boardMngType} ||'%'
+									</if>
+									<if test='!@org.springframework.util.StringUtils@isEmpty(schCode)'>
+										AND INTEG_SE_CODE LIKE '%'|| #{schCode} ||'%'
+									</if>
+									<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+										AND SJ LIKE '%'|| #{schTxt} ||'%'
+									</if>
+			                      ORDER BY REGIST_DT DESC
+			                    ) AS TMP
+			              ) B
+	                <if test='!@org.springframework.util.StringUtils@isEmpty(mob)'>
+			        	LIMIT ${firstIndex} OFFSET ${firstRecordIndex}
+			        </if>
+			         <if test='@org.springframework.util.StringUtils@isEmpty(mob)'>
+			        	LIMIT 7  OFFSET ${firstRecordIndex}
+			        </if>
+			        ) B
+			 ORDER BY rn, sn ASC
+		</if>
+	</select>
+	
+	<select id="selectIntegListCount" parameterType="java.util.Map" resultType="int">
+		/*selectUnitNoticeList*/
+		SELECT 
+			COUNT(1)
+		FROM (
+			SELECT
+				INTEG_SN AS SN
+				,INTEG_SE_CODE AS SE_CODE
+				,(SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INTEG_SE_CODE' AND X.CODE_VALUE = INTEG_SE_CODE) AS SE_CODE_NM
+				,SJ
+				,TO_CHAR(UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+				,TO_CHAR(REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+				,DELETE_AT
+			FROM
+				TB_INTEG_BBS
+		) AS TMP
+		WHERE 1=1
+			AND TMP.DELETE_AT = 'N'
+			<if test='!@org.springframework.util.StringUtils@isEmpty(boardMngType)'>
+				AND TMP.SE_CODE LIKE #{boardMngType} ||'%'
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(schCode)'>
+				AND TMP.SE_CODE LIKE '%'|| #{schCode} ||'%'
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+				AND TMP.SJ LIKE '%'|| #{schTxt} ||'%'
+			</if>
+	</select>
+	
+	<!--관리자 게시판관리 목록조회  -->
+	<select id="selectUnitNoticeList" parameterType="java.util.Map" resultType="egovMap">
+		/*selectUnitNoticeList*/
+		SELECT TMP.*
+			 , ROW_NUMBER() OVER (ORDER BY SN DESC) AS RN
+		  FROM (
+				SELECT A.BBS_SN AS SN
+					 , (SELECT CODE_VALUE_NM FROM tb_cmmn_code B WHERE B.code_value = A.INTEG_SE_CODE AND B.CODE_ID = 'INTEG_SE_CODE') AS SE_CODE_NM
+					 , (SELECT CODE_VALUE FROM tb_cmmn_code B WHERE B.code_value = A.INTEG_SE_CODE AND B.CODE_ID = 'INTEG_SE_CODE') AS SE_CODE
+					 , A.SJ
+					 , CASE WHEN A.UPDT_DT > NOW()::DATE - 6 THEN 'NEW' END AS UPDT_DT_AWEEK
+					 , TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+				  FROM TB_BBS A
+				 WHERE DELETE_AT = 'N'
+				   AND MASTER_SN = CAST(#{unitType}AS INTEGER)
+			 	ORDER BY A.BBS_SN DESC
+				) AS TMP
+		 WHERE 1=1
+	 		<if test='!@org.springframework.util.StringUtils@isEmpty(boardMngType)'>
+				AND TMP.SE_CODE LIKE #{boardMngType} ||'%'
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(schCode)'>
+				AND TMP.SE_CODE LIKE '%'|| #{schCode} ||'%'
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+				AND TMP.SJ LIKE '%'|| #{schTxt} ||'%'
+			</if>
+		LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}	
+	</select>
+	
+	<!--관리자 게시판관리 목록조회 개수  -->
+	<select id="selectUnitNoticeListCount" parameterType="java.util.Map" resultType="int">
+		/*selectUnitNoticeListCount*/
+		SELECT COUNT(TMP.*)
+		  FROM (
+				SELECT A.BBS_SN AS SN
+					 , (SELECT CODE_VALUE_NM FROM tb_cmmn_code B WHERE B.code_value = A.INTEG_SE_CODE AND B.CODE_ID = 'INTEG_SE_CODE') AS SE_CODE_NM
+					 , (SELECT CODE_VALUE FROM tb_cmmn_code B WHERE B.code_value = A.INTEG_SE_CODE AND B.CODE_ID = 'INTEG_SE_CODE') AS SE_CODE
+					 , A.SJ
+					 , CASE WHEN A.UPDT_DT > NOW()::DATE - 6 THEN 'NEW' END AS UPDT_DT_AWEEK
+					 , TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+				  FROM TB_BBS A
+				 WHERE DELETE_AT = 'N'
+				   AND MASTER_SN = CAST(#{unitType} AS INTEGER)
+				) AS TMP
+		 WHERE 1=1
+	 		<if test='!@org.springframework.util.StringUtils@isEmpty(boardMngType)'>
+				AND TMP.SE_CODE LIKE #{boardMngType} ||'%'
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(schCode)'>
+				AND TMP.SE_CODE LIKE '%'|| #{schCode} ||'%'
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+				AND TMP.SJ LIKE '%'|| #{schTxt} ||'%'
+			</if>
+	</select>
+	
+	<!-- 통합게시판 내용 조회  - 21.11.30 주한별 수정-->
+	<select id="selectIntegBbs" parameterType="java.util.Map" resultType="egovMap">
+	 SELECT /*selectIntegBbs*/
+		B.INFO_SN
+		,B.SE_CODE
+		,B.SE_CODE_NM
+		,B.USER_NO
+		,B.SJ
+		,B.CN
+		,COALESCE(B.ATCHMNFL_NO, 0) AS ATCHMNFL_NO
+		,B.UPDT_DT
+		,B.REGIST_DT
+		,COALESCE(B.EXPSR_SN, 0) AS EXPSR_SN
+		,COALESCE(B.USE_AT, '') AS USE_AT
+	FROM (
+		SELECT 
+			INTEG_SN AS INFO_SN
+			, INTEG_SE_CODE AS SE_CODE
+			, (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INTEG_SE_CODE' AND X.CODE_VALUE = INTEG_SE_CODE) AS SE_CODE_NM
+			, REGIST_USER_NO AS USER_NO
+			, SJ
+			, CN
+			, COALESCE(ATCHMNFL_NO,NULL) AS ATCHMNFL_NO
+			, TO_CHAR(UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+			, TO_CHAR(REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+			, EXPSR_SN
+			, USE_AT
+		FROM 
+			TB_INTEG_BBS 
+	) AS B
+	WHERE 
+		B.INFO_SN::TEXT = #{sn} 
+	</select>
+	
+	<select id="selectUnitBbs" parameterType="java.util.Map" resultType="egovMap">
+	SELECT /*selectUnitBbs*/
+		 B.BBS_SN
+		,B.SE_CODE
+		,B.SE_CODE_NM
+		,B.USER_NO
+		,B.SJ
+		,B.CN
+		,COALESCE(B.ATCHMNFL_NO, 0) AS ATCHMNFL_NO
+		,B.UPDT_DT
+		,B.REGIST_DT
+	FROM (
+		SELECT 
+			BBS_SN AS BBS_SN
+			, INTEG_SE_CODE AS SE_CODE
+			, (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INTEG_SE_CODE' AND X.CODE_VALUE = INTEG_SE_CODE) AS SE_CODE_NM
+			, REGIST_USER_NO AS USER_NO
+			, SJ
+			, CN
+			, COALESCE(ATCHMNFL_NO,NULL) AS ATCHMNFL_NO
+			, TO_CHAR(UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+			, TO_CHAR(REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+		FROM 
+			TB_BBS 
+	) AS B
+	WHERE 
+		B.BBS_SN::TEXT = #{sn}
+	</select>
+	
+	<!-- 통합게시판 이전/다음 조회  - 21.11.30 주한별 수정-->
+	<select id="selectIntegBbsNextInfo" parameterType="java.util.Map" resultType="egovMap">
+	SELECT /*selectIntegBbsNextInfo*/ 
+		C.*
+		, (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INTEG_SE_CODE' AND X.CODE_VALUE = 
+			(SELECT Z.SE_CODE FROM
+			 (SELECT INTEG_SN AS SN,INTEG_SE_CODE AS SE_CODE,DELETE_AT,SJ FROM TB_INTEG_BBS) AS Z
+				WHERE Z.SN = C.SN_PR)) AS SE_CODE_NM_PR
+		, (SELECT X.SJ FROM
+		   (SELECT INTEG_SN AS SN,SJ,INTEG_SE_CODE AS SE_CODE FROM TB_INTEG_BBS) AS X 
+		   		WHERE X.SN = C.SN_PR) AS SJ_PR
+		, TO_CHAR(
+			(SELECT X.UPDT_DT FROM
+			 (SELECT INTEG_SN AS SN,UPDT_DT,INTEG_SE_CODE AS SE_CODE FROM TB_INTEG_BBS) AS X
+				WHERE X.SN = C.SN_PR), 'YYYY-MM-DD') AS UPDT_DT_PR
+		, (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INTEG_SE_CODE' AND X.CODE_VALUE = 
+			(SELECT Z.SE_CODE FROM
+			 (SELECT INTEG_SN AS SN,INTEG_SE_CODE AS SE_CODE,DELETE_AT,SJ FROM TB_INTEG_BBS) AS Z
+				WHERE Z.SN = C.SN_NX)) AS SE_CODE_NM_NX
+		, (SELECT X.SJ FROM
+		   (SELECT INTEG_SN AS SN,SJ,INTEG_SE_CODE AS SE_CODE FROM TB_INTEG_BBS) AS X 
+		   		WHERE X.SN = C.SN_NX) AS SJ_NX
+		, TO_CHAR(
+			(SELECT X.UPDT_DT from
+			(SELECT INTEG_SN AS SN,UPDT_DT,INTEG_SE_CODE AS SE_CODE FROM TB_INTEG_BBS) AS X 
+				WHERE X.SN = C.SN_NX), 'YYYY-MM-DD') AS UPDT_DT_NX
+	FROM (
+		SELECT 
+			TMP.*
+			, (
+			SELECT 
+					MAX(B.SN) 
+				FROM (
+					SELECT 
+						INTEG_SN AS SN
+						,INTEG_SE_CODE AS SE_CODE
+						,DELETE_AT
+						,SJ
+					FROM TB_INTEG_BBS
+				) AS B
+				WHERE B.DELETE_AT = 'N' 
+					AND B.SN <![CDATA[<]]> TMP.SN
+			) AS SN_PR
+			, (
+				SELECT 
+					MIN(B.SN) 
+				FROM (
+					SELECT 
+						INTEG_SN AS SN
+						,INTEG_SE_CODE AS SE_CODE
+						,DELETE_AT
+						,SJ
+					FROM TB_INTEG_BBS
+				) AS B
+				WHERE B.DELETE_AT = 'N' 
+					AND B.SN <![CDATA[>]]> TMP.SN
+			) AS SN_NX
+		FROM (
+			SELECT 
+				A.SN
+			FROM (
+				SELECT 
+					INTEG_SN AS SN
+					,INTEG_SE_CODE AS SE_CODE
+					,DELETE_AT
+					,SJ
+				FROM TB_INTEG_BBS
+			) AS A
+			WHERE 1=1
+				AND A.DELETE_AT = 'N'
+				AND A.SN::TEXT = #{sn}
+		) AS TMP
+	) AS C
+	</select>
+	
+	<!-- 마이페이지 > 관리자 게시판관리 > 게시글 수정 - 21.12.14 -->
+	<update id="updateIntegBbs" parameterType="java.util.Map">
+<!-- 	UPDATE TB_INTEG_BBS
+	   SET
+		 LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+		 , SJ = #{sj}
+		 , CN = #{cn}
+		 <if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+		 , ATCHMNFL_NO = CAST(#{atchmnflNo} AS INTEGER)
+		 </if>
+		 , UPDT_DT = now()
+	 WHERE INTEG_SN::TEXT = #{infoSn} -->
+	 UPDATE TB_BBS
+	   SET
+		 updt_user_no = CAST(#{ssUserNo} AS INTEGER)
+		 <if test='!@org.springframework.util.StringUtils@isEmpty(boardMngType)'>
+			 , INTEG_SE_CODE =
+			 <if test='boardMngType == "I" '>
+				#{inSeCode}
+			</if>
+			<if test='boardMngType == "N" '>
+				#{nsSeCode}
+			</if>
+			<if test='boardMngType == "C" '>
+				#{cCode}
+			</if>
+		</if>
+		 , SJ = #{sj}
+		 , CN = #{cn}
+		 <if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+		 , ATCHMNFL_NO = CAST(#{atchmnflNo} AS INTEGER)
+		 </if>
+		 , UPDT_DT = now()
+	 WHERE BBS_SN::TEXT = #{infoSn}
+	</update>
+	
+	<!-- 마이페이지 > 관리자 게시판관리 > 게시글 삭제 -  21.12.14 -->
+	<update id="deleteIntegBbs" parameterType="java.util.Map">
+<!-- 	UPDATE TB_INTEG_BBS
+	   SET DELETE_AT = 'Y'
+	 WHERE INTEG_SN::TEXT = #{infoSn} -->
+ 	UPDATE TB_BBS
+	   SET DELETE_AT = 'Y'
+	 WHERE BBS_SN::TEXT = #{infoSn}
+	</update>
+	
+	<!-- 마이페이지 > 관리자 게시판관리 > 게시글 등록 -21.12.14 -->
+	<!-- <insert id="insertIntegBbs" parameterType="java.util.Map">
+	INSERT INTO TB_INTEG_BBS (
+		INTEG_SE_CODE, 
+		REGIST_USER_NO, 
+		SJ, 
+		CN, 
+	<if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+		ATCHMNFL_NO,
+	</if>
+		DELETE_AT, 
+		REGIST_DT, 
+		UPDT_DT, 
+		USE_AT
+	) VALUES (
+	<if test='boardMngType == "I" '>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(inSeCode)'>
+			#{inSeCode},
+		</if>
+	</if>
+	<if test='boardMngType == "N" '>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(nsSeCode)'>
+			#{nsSeCode},
+		</if>
+	</if>
+	
+		 CAST(#{ssUserNo} AS INTEGER)
+		 , #{sj}
+		 , #{cn}
+		 <if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+		 , CAST(#{atchmnflNo} AS INTEGER)
+		 </if>
+		 , 'N'
+		 , now()
+		 , now()
+		 , 'Y'
+	     )
+	</insert> -->
+	
+	<!-- 마이페이지 > 관리자 게시판관리 > 게시글 등록 -21.01.14 -->
+	<insert id="insertIntegBbs" parameterType="java.util.Map">
+	INSERT INTO TB_BBS (
+	    MASTER_SN,
+	    <if test='boardMngType == "I" '>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(inSeCode)'>
+			INTEG_SE_CODE, 
+		</if>
+	</if>
+	<if test='boardMngType == "N" '>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(nsSeCode)'>
+			INTEG_SE_CODE, 
+		</if>
+	</if>
+	<if test='boardMngType == "C" '>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(cCode)'>
+			INTEG_SE_CODE, 
+		</if>
+	</if>
+		REGIST_USER_NO, 
+		SJ, 
+		CN, 
+	<if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+		ATCHMNFL_NO,
+	</if>
+		DELETE_AT, 
+		REGIST_DT, 
+		UPDT_DT 
+	) VALUES (
+	 		CAST(#{unitType} AS INTEGER),
+	<if test='boardMngType == "I" '>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(inSeCode)'>
+			#{inSeCode},
+		</if>
+	</if>
+	<if test='boardMngType == "N" '>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(nsSeCode)'>
+			#{nsSeCode},
+		</if>
+	</if>
+	<if test='boardMngType == "C" '>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(cCode)'>
+			#{cCode},
+		</if>
+	</if>
+	
+		 CAST(#{ssUserNo} AS INTEGER)
+		 , #{sj}
+		 , #{cn}
+		 <if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+		 , CAST(#{atchmnflNo} AS INTEGER)
+		 </if>
+		 , 'N'
+		 , now()
+		 , now()
+	     )
+	</insert>
+	
+	<!-- 마이페이지 정보공개서 정보공개서등록 > 등록 - 21.12.09 주한별 -->
+	<insert id="insertInfoDcsEnrol" parameterType="java.util.Map">
+	/*insertInfoDcsEnrol*/
+		INSERT INTO TB_INFO_DCS_BBS 
+		(
+			CHARGER_NM , 
+			ATCHMNFL_NO, 
+			CONFM_STTUS_CODE, 
+			REGIST_DT, 
+			DELETE_AT, 
+			FRNCHS_NM, 
+			MLSFC_INDUTY_CODE, 
+			CHARGER_NO, 
+			FRNCHS_NO,
+			YEAR
+		)
+		VALUES(
+			#{ssUserNm},
+			#{atchmnflNo}::INTEGER, 
+			<choose>
+				<when test='ssUserSeCode == "US04"'>
+		    'CS03',
+				</when>
+				<otherwise>
+			'CS00',	
+				</otherwise>
+			</choose>
+			NOW(),
+			'N',
+			#{bsnSgnal},
+			#{brandMdClass},
+			#{ssUserNo}::INTEGER,
+			#{infoFrcClass},
+			#{infoYear}
+		)
+	</insert>
+	
+	<!-- 마에페이지 정보공개서 정보공개서등록 > 등록시 가맹점 번호로 이름 조회 - 21.12.13 주한별  -->
+	<select id="selectInfoDcsFrnchsNm" parameterType="java.util.Map" resultType="string">
+	/*selectInfoDcsFrnchsNm*/
+		SELECT 
+			BSN_SGNAL 
+		FROM TB_FRNCHS_INFO
+		WHERE 1 = 1
+		AND FRNCHS_NO = #{infoFrcClass}
+	</select>
+	
+	<!-- 마이페이지 정보공개서 정보공개서 등록 > 수정 - 21.12.09 주한별 -->
+	<update id="updateInfoDcsEnrol" parameterType="java.util.Map">
+	/*updateInfoDcsEnrol*/
+		UPDATE TB_INFO_DCS_BBS
+		SET
+			ATCHMNFL_NO = #{atchmnflNo}::INTEGER
+			,YEAR = #{infoYear}
+			, UPDT_DT = NOW()
+		WHERE
+			INFO_DCS_REGIST_NO = #{infoDcsRegistNo}::INTEGER
+	</update>
+	
+	<!-- 마이페이지 정보공개서관리 > 목록 조회 - 21.12.10 주한별 -->
+	<select id="selectInfoDcsList" parameterType="java.util.Map" resultType="egovMap">
+	/*selectInfoDcsList*/
+		SELECT 
+			ROW_NUMBER() OVER (ORDER BY A.INFO_DCS_REGIST_NO DESC) AS RN
+			,A.INFO_DCS_REGIST_NO 
+			,A.CHARGER_NM
+			,A.CHARGER_NO
+			, CASE 
+				WHEN (SELECT email_adres FROM tb_brand_hedofc_mngr m WHERE m.user_no = a.charger_no) IS NULL THEN '-'
+				ELSE (SELECT email_adres FROM tb_brand_hedofc_mngr m WHERE m.user_no = a.charger_no)
+			  END AS email_adres
+			, CASE 
+				WHEN (SELECT telno FROM tb_brand_hedofc_mngr m WHERE m.user_no = a.charger_no) IS NULL THEN '-'
+				ELSE (SELECT telno FROM tb_brand_hedofc_mngr m WHERE m.user_no = a.charger_no)
+			  END AS telno
+			,A.ATCHMNFL_NO 
+			,A.CHRG_CNSTNT_USER_NO 
+			,A.CONFM_STTUS_CODE 
+			,A.CONFM_USER_NO 
+			,A.LAST_UPDT_USER_NO 
+			,TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT 
+			,TO_CHAR(A.CONFM_DT,'YYYY-MM-DD') AS CONFM_DT
+			,TO_CHAR(A.UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+			,A.DELETE_AT 
+			,A.FRNCHS_NM 
+			,A.FRNCHS_NO 
+			,A.YEAR
+			,A.MLSFC_INDUTY_CODE 
+			,(SELECT X.CODE_VALUE_NM 
+			FROM TB_CMMN_CODE X
+			WHERE X.CODE_ID = 'CONFM_STTUS_CODE' 
+			AND X.CODE_VALUE = A.CONFM_STTUS_CODE) AS CONFM_STTUS_CODE_NM
+			,COALESCE(B.USER_NM, '배정중', B.USER_NM) AS CHRG_CNSTNT_USER_NM
+			,COALESCE(D.ATCHMNFL_NO, 0) as ATCHMNFL_NO
+			,COALESCE(D.FILE_SIZE, 0) as FILE_SIZE
+			,COALESCE(D.FILE_SN, 0) as FILE_SN
+			,COALESCE(D.INPUT_FILE_NM, '') as INPUT_FILE_NM
+			,COALESCE(D.ATCHMNFL_STTUS_CODE, '') as ATCHMNFL_STTUS_CODE
+		FROM 
+			TB_INFO_DCS_BBS AS A 
+			LEFT JOIN TB_USER AS B ON A.CHRG_CNSTNT_USER_NO = B.USER_NO AND B.USER_SE_CODE = 'US06'
+			LEFT JOIN TB_ATCHMNFL_STRE D ON D.ATCHMNFL_NO = A.ATCHMNFL_NO AND D.ATCHMNFL_STTUS_CODE = 'FS02'
+		WHERE 1=1
+		AND A.DELETE_AT = 'N'
+		<if test='ssUserSeCode == "US06"'>
+	    AND A.chrg_cnstnt_user_no = CAST(#{ssUserNo} AS INTEGER)
+		</if>
+		<if test='ssUserSeCode == "US04"'>
+	    AND A.CONFM_STTUS_CODE IN ('CS01','CS02','CS03','CS04')
+		</if>
+		<if test='!@org.springframework.util.StringUtils@isEmpty("schTxt")'>
+			<if test='schTxt != ""'>
+				<if test='schSeCode == ""'>
+					AND ((A.CHARGER_NM LIKE '%'||#{schTxt}||'%') 
+					  OR (A.CHRG_CNSTNT_USER_NO IN (
+								SELECT USER_NO
+								FROM TB_USER
+								WHERE USER_NM LIKE '%'||#{schTxt}||'%'
+								AND USER_SE_CODE = 'US06'
+							) /* 접수자(정보공개서 관리자) */)
+					  OR (A.FRNCHS_NM LIKE '%'||#{schTxt}||'%' /* 프랜차이즈 */)
+					  OR ( A.CONFM_STTUS_CODE IN (
+								SELECT CODE_VALUE 
+								FROM TB_CMMN_CODE
+								WHERE CODE_ID = 'CONFM_STTUS_CODE' 
+								AND CODE_VALUE_NM LIKE '%'||#{schTxt}||'%'
+							)  /* 진행상태 */))		
+				</if>
+				<if test='schSeCode == "chargerNm"'>
+					AND A.CHARGER_NM LIKE '%'||#{schTxt}||'%' /* 신청자(브랜드관리자) */
+				</if>
+				<if test='schSeCode == "chrgCnstntUserNm"'>
+					AND A.CHRG_CNSTNT_USER_NO IN (
+						SELECT USER_NO
+						FROM TB_USER
+						WHERE USER_NM LIKE '%'||#{schTxt}||'%'
+						AND USER_SE_CODE = 'US06'
+					) /* 접수자(정보공개서 관리자) */				
+				</if>
+				<if test='schSeCode == "frnchsNm"'>
+		 			AND A.FRNCHS_NM LIKE '%'||#{schTxt}||'%' /* 프랜차이즈 */
+				</if>
+				<if test='schSeCode == "confmSttusCodeNm"'>
+			 		AND A.CONFM_STTUS_CODE IN (
+						SELECT CODE_VALUE 
+						FROM TB_CMMN_CODE
+						WHERE CODE_ID = 'CONFM_STTUS_CODE' 
+						AND CODE_VALUE_NM LIKE '%'||#{schTxt}||'%'
+					)  /* 진행상태 */
+				</if>
+			</if>
+		</if>
+		 LIMIT #{recordCountPerPage} OFFSET #{firstRecordIndex}
+	</select>
+	
+	<!-- 마이페이지 정보공개서관리 > 목록 수 조회 - 21.12.10 주한별 -->
+	<select id="selectInfoDcsListCount" parameterType="java.util.Map" resultType="int">
+	/*selectInfoDcsListCount*/
+		SELECT 
+			COUNT(1)
+		FROM 
+			TB_INFO_DCS_BBS AS A 
+			LEFT JOIN TB_USER AS B ON A.CHRG_CNSTNT_USER_NO = B.USER_NO AND B.USER_SE_CODE = 'US06'
+			LEFT JOIN TB_ATCHMNFL_STRE D ON D.ATCHMNFL_NO = A.ATCHMNFL_NO AND D.ATCHMNFL_STTUS_CODE = 'FS02'
+		WHERE 1=1
+		AND A.DELETE_AT = 'N'
+		<if test='ssUserSeCode == "US06"'>
+	    AND A.chrg_cnstnt_user_no = CAST(#{ssUserNo} AS INTEGER)
+		</if>
+		<if test='ssUserSeCode == "US04"'>
+	    AND A.CONFM_STTUS_CODE IN ('CS01','CS02','CS03','CS04')
+		</if>
+		<if test='!@org.springframework.util.StringUtils@isEmpty("schTxt")'>
+			<if test='schTxt != ""'>
+				<if test='schSeCode == ""'>
+					AND ((A.CHARGER_NM LIKE '%'||#{schTxt}||'%') 
+					  OR (A.CHRG_CNSTNT_USER_NO IN (
+								SELECT USER_NO
+								FROM TB_USER
+								WHERE USER_NM LIKE '%'||#{schTxt}||'%'
+								AND USER_SE_CODE = 'US06'
+							) /* 접수자(정보공개서 관리자) */)
+					  OR (A.FRNCHS_NM LIKE '%'||#{schTxt}||'%' /* 프랜차이즈 */)
+					  OR ( A.CONFM_STTUS_CODE IN (
+								SELECT CODE_VALUE 
+								FROM TB_CMMN_CODE
+								WHERE CODE_ID = 'CONFM_STTUS_CODE' 
+								AND CODE_VALUE_NM LIKE '%'||#{schTxt}||'%'
+							)  /* 진행상태 */))		
+				</if>
+				<if test='schSeCode == "chargerNm"'>
+					AND A.CHARGER_NM LIKE '%'||#{schTxt}||'%' /* 신청자(브랜드관리자) */
+				</if>
+				<if test='schSeCode == "chrgCnstntUserNm"'>
+					AND A.CHRG_CNSTNT_USER_NO IN (
+						SELECT USER_NO
+						FROM TB_USER
+						WHERE USER_NM LIKE '%'||#{schTxt}||'%'
+						AND USER_SE_CODE = 'US06'
+					) /* 접수자(정보공개서 관리자) */				
+				</if>
+				<if test='schSeCode == "frnchsNm"'>
+		 			AND A.FRNCHS_NM LIKE '%'||#{schTxt}||'%' /* 프랜차이즈 */
+				</if>
+				<if test='schSeCode == "confmSttusCodeNm"'>
+			 		AND A.CONFM_STTUS_CODE IN (
+						SELECT CODE_VALUE 
+						FROM TB_CMMN_CODE
+						WHERE CODE_ID = 'CONFM_STTUS_CODE' 
+						AND CODE_VALUE_NM LIKE '%'||#{schTxt}||'%'
+					)  /* 진행상태 */
+				</if>
+			</if>
+		</if>
+	</select>
+
+	<!-- 마이페이지 정보공개서 관리 > 정보공개서 관리자(배정) 목록 조회 - 21.12.10  주한별 -->
+	<select id="selectInfoAdminList" parameterType="java.util.Map" resultType="egovMap">
+	/*"selectInfoAdminList"*/
+	SELECT 
+		 ROW_NUMBER() OVER (ORDER BY A.USER_NO DESC) AS RN
+		 ,A.USER_NO AS CHRG_CNSTNT_USER_NO     /* 사용자번호 */
+		 ,A.USER_NM                            /* 사용자명 */
+		 ,A.TELNO                              /* 전화번호 */
+		 ,A.EMAIL_ADRES                        /* 이메일주소 */
+	FROM TB_USER A
+	WHERE 1=1
+		AND A.USER_SE_CODE = 'US06'
+		AND A.CONFM_STTUS_CODE = 'CS01'
+		AND A.SECSN_AT = 'N'
+	ORDER BY A.USER_NO DESC
+	LIMIT #{recordCountPerPage} OFFSET #{firstRecordIndex}
+	</select>
+	
+	<!-- 마이페이지 정보공개서 관리 > 정보공개서 관리자(배정) 목록 수 조회 - 21.12.10  주한별  -->
+	<select id="selectInfoAdminListCount" parameterType="java.util.Map" resultType="int">
+	/*selectInfoAdminListCount*/
+		SELECT 
+			COUNT(A.*)
+		FROM TB_USER A
+		WHERE 1=1
+		AND A.USER_SE_CODE = 'US06'
+		AND A.CONFM_STTUS_CODE = 'CS01'
+		AND A.SECSN_AT = 'N'
+	</select>
+	
+	<!-- 마이페이지 정보공개서 관리 > 정보공개서 관리자 배정 - 21.12.10  주한별 -->
+	<update id="updateAssignInfoAdmin" parameterType="java.util.Map">
+	UPDATE TB_INFO_DCS_BBS
+		<if test='!@org.springframework.util.StringUtils@isEmpty(chrgCnstntUserNo)'>
+		   SET CHRG_CNSTNT_USER_NO = #{chrgCnstntUserNo}::INTEGER
+	   </if>
+	   <if test='@org.springframework.util.StringUtils@isEmpty(chrgCnstntUserNo)'>
+		   SET CHRG_CNSTNT_USER_NO = null
+	   </if>
+		 , LAST_UPDT_USER_NO = #{ssUserNo}::INTEGER
+		 , UPDT_DT = NOW()
+	 WHERE INFO_DCS_REGIST_NO = #{infoDcsRegistNo}::INTEGER
+	</update>
+	
+	<!-- 마이페이지 정보공개서 관리 > 정보공개서 승인 or 반려 처리 - 21.12.10  주한별 -->
+	<update id="updateInfoDcsSttus" parameterType="egovMap">
+	/*updateInfoDcsSttus*/
+		UPDATE 
+			TB_INFO_DCS_BBS 
+	   SET
+	     CONFM_STTUS_CODE = #{confmSttusCode} 
+		 , LAST_UPDT_USER_NO = #{ssUserNo}::INTEGER
+		 , CONFM_USER_NO = #{ssUserNo}::INTEGER
+		 , UPDT_DT = NOW()
+		WHERE 1=1
+		<if test='!@org.springframework.util.StringUtils@isEmpty(infoDcsRegistNoArr)'>
+		  AND INFO_DCS_REGIST_NO IN
+			<foreach collection="infoDcsRegistNoArr" item="item" index="index" open="(" separator="," close=")">
+			#{item}::INTEGER
+			</foreach>
+		</if>
+	</update>
+	
+	<!-- 마이페이지 정보공개서등록 > 목록조회 - 21.12.10  주한별 -->
+	<select id="selectInfoDcsInfoList" parameterType="java.util.Map" resultType="egovMap">
+	/*selectInfoDcsInfoList*/
+	SELECT 
+		ROW_NUMBER() OVER (ORDER BY A.INFO_DCS_REGIST_NO DESC) AS RN
+		,A.INFO_DCS_REGIST_NO 
+		,B.MLSFC_INDUTY_NM 
+		,C.LCLAS_INDUTY_NM 
+		,A.FRNCHS_NM 
+		,A.CONFM_STTUS_CODE 
+		,A.YEAR
+		,(SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X
+		WHERE X.CODE_ID = 'CONFM_STTUS_CODE' 
+		AND X.CODE_VALUE = A.CONFM_STTUS_CODE) AS CONFM_STTUS_CODE_NM
+		,TO_CHAR(A.REGIST_DT, 'YYYY-MM-DD') AS REGIST_DT
+		--,A.ATCHMNFL_NO 
+		,COALESCE(D.ATCHMNFL_NO, 0) as ATCHMNFL_NO
+		,COALESCE(D.FILE_SIZE, 0) as FILE_SIZE
+		,COALESCE(D.FILE_SN, 0) as FILE_SN
+		,COALESCE(D.INPUT_FILE_NM, '') as INPUT_FILE_NM
+		,COALESCE(D.ATCHMNFL_STTUS_CODE, '') as ATCHMNFL_STTUS_CODE
+	FROM TB_INFO_DCS_BBS AS A
+	INNER JOIN TB_FRNCHS_MLSFC_CODE B ON
+		B.MLSFC_INDUTY_CODE = A.MLSFC_INDUTY_CODE
+	INNER JOIN TB_FRNCHS_LCLAS_CODE C ON
+		C.LCLAS_INDUTY_CODE = B.LCLAS_INDUTY_CODE
+	LEFT JOIN TB_ATCHMNFL_STRE D ON D.ATCHMNFL_NO = A.ATCHMNFL_NO AND D.ATCHMNFL_STTUS_CODE = 'FS02'
+	WHERE 1=1
+	AND A.DELETE_AT = 'N'
+	<if test='ssUserSeCode == "US03"'>
+	AND A.charger_no = CAST(#{ssUserNo} AS INTEGER)
+	</if>
+	<if test='!@org.springframework.util.StringUtils@isEmpty("schTxt")'>
+		<if test='schTxt != ""'>
+			<if test='schSeCode == "frnchsNm"'>
+				AND A.FRNCHS_NM LIKE '%'||#{schTxt}||'%'
+			</if>
+			<if test='schSeCode == "mdClass"'>
+				AND B.MLSFC_INDUTY_NM LIKE '%'||#{schTxt}||'%'		
+			</if>
+			<if test='schSeCode == "ldClass"'>
+	 			AND C.LCLAS_INDUTY_NM LIKE '%'||#{schTxt}||'%'
+			</if>
+		</if>
+	</if>
+	ORDER BY A.INFO_DCS_REGIST_NO DESC
+	LIMIT #{recordCountPerPage} OFFSET #{firstRecordIndex}
+	</select>
+	
+	<!-- 마이페이지 정보공개서등록 > 목록 수 조회 - 21.12.10  주한별 -->
+	<select id="selectInfoDcsInfoListCount" parameterType="java.util.Map" resultType="int">
+	/*selectInfoDcsInfoListCount*/
+		SELECT 
+			COUNT(1)
+		FROM TB_INFO_DCS_BBS AS A
+		INNER JOIN TB_FRNCHS_MLSFC_CODE B ON
+			B.MLSFC_INDUTY_CODE = A.MLSFC_INDUTY_CODE
+		INNER JOIN TB_FRNCHS_LCLAS_CODE C ON
+			C.LCLAS_INDUTY_CODE = B.LCLAS_INDUTY_CODE
+		LEFT JOIN TB_ATCHMNFL_STRE D ON D.ATCHMNFL_NO = A.ATCHMNFL_NO AND D.ATCHMNFL_STTUS_CODE = 'FS02'
+		WHERE 1=1
+		AND A.DELETE_AT = 'N'
+		<if test='ssUserSeCode == "US03"'>
+		AND A.charger_no = CAST(#{ssUserNo} AS INTEGER)
+		</if>
+		<if test='!@org.springframework.util.StringUtils@isEmpty("schTxt")'>
+			<if test='schTxt != ""'>
+				<if test='schSeCode == "frnchsNm"'>
+					AND A.FRNCHS_NM LIKE '%'||#{schTxt}||'%'
+				</if>
+				<if test='schSeCode == "mdClass"'>
+					AND B.MLSFC_INDUTY_NM LIKE '%'||#{schTxt}||'%'		
+				</if>
+				<if test='schSeCode == "ldClass"'>
+		 			AND C.LCLAS_INDUTY_NM LIKE '%'||#{schTxt}||'%'
+				</if>
+			</if>
+		</if>
+	</select>
+	
+	<!-- 마이페이지 정보공개서 관리 > 삭제 - 21.12.10  주한별 -->
+	<update id="updateInfoDcsInfoDelete" parameterType="egovMap">
+	/*updateInfoDcsSttus*/
+		UPDATE 
+			TB_INFO_DCS_BBS 
+	   SET
+		 LAST_UPDT_USER_NO = #{ssUserNo}::INTEGER
+		 , DELETE_AT = 'Y'
+		 , UPDT_DT = NOW()
+		WHERE 1=1
+		 AND INFO_DCS_REGIST_NO = #{infoDcsRegistNo}
+		<!-- <if test='!@org.springframework.util.StringUtils@isEmpty(infoDcsRegistNoArr)'>
+		  AND INFO_DCS_REGIST_NO IN
+			<foreach collection="infoDcsRegistNoArr" item="item" index="index" open="(" separator="," close=")">
+			#{item}::INTEGER
+			</foreach>
+		</if> -->
+	</update>
+	
+	<!-- 마이페이지 정보공개서 관리 > 삭제시 파일 제거를 위한 정보 조회  -->
+	<select id="selectInfoDcsInfoByNo" parameterType="java.util.Map" resultType="egovMap">
+	/*selectInfoDcsInfoByNo*/
+		SELECT
+			INFO_DCS_REGIST_NO
+			,ATCHMNFL_NO
+		FROM 
+			TB_INFO_DCS_BBS
+		WHERE
+			INFO_DCS_REGIST_NO = #{infoDcsRegistNo}::INTEGER
+	</select>
+	
+	<!-- 마이페이지 정보공개서관리 > 정보공개서등록 > 등록화면 기존데이터 조회 - 21.12.13 -->
+	<select id="selectInfoDcsEnrollData" parameterType="java.util.Map" resultType="egovMap">
+	/*selectInfoDcsEnrollData*/
+		SELECT 
+			B.MLSFC_INDUTY_NM 
+			,B.MLSFC_INDUTY_CODE 
+			,C.LCLAS_INDUTY_NM 
+			,C.LCLAS_INDUTY_CODE 
+			,A.INFO_DCS_REGIST_NO
+			,A.FRNCHS_NM 
+			,A.FRNCHS_NO 
+			,A.YEAR
+			,COALESCE(D.ATCHMNFL_NO, 0) as ATCHMNFL_NO
+			,COALESCE(D.INPUT_FILE_NM, '') as INPUT_FILE_NM
+		FROM TB_INFO_DCS_BBS AS A
+		INNER JOIN TB_FRNCHS_MLSFC_CODE B ON
+			B.MLSFC_INDUTY_CODE = A.MLSFC_INDUTY_CODE
+		INNER JOIN TB_FRNCHS_LCLAS_CODE C ON
+			C.LCLAS_INDUTY_CODE = B.LCLAS_INDUTY_CODE
+		LEFT JOIN TB_ATCHMNFL_STRE D ON D.ATCHMNFL_NO = A.ATCHMNFL_NO AND D.ATCHMNFL_STTUS_CODE = 'FS02'
+		WHERE 1=1
+		AND A.INFO_DCS_REGIST_NO = #{infoDcsRegistNo}::INTEGER
+	</select>
+	<!-- 매물 점포 문의 등록 -->
+	<insert id="insertTradeinqry" parameterType="java.util.Map">
+	INSERT INTO TB_TRDE_THING_INQRY (
+		
+		TRDE_THING_REGIST_NO, 
+		INQR_EMAIL_ADRES,
+		INQR_TELNO,
+		INQR_CN,
+		ATCHMNFL_NO,
+		ANSWER_STTUS_SE_CODE,
+		INQRY_USER_NO,
+		LAST_UPDT_USER_NO,
+		REGIST_DT,
+		UPDT_DT
+	)VALUES(
+		  CAST(#{paramTrdeThingRegistNo} AS INTEGER)
+		, #{ssEmailAdres}
+		, #{telno}
+		, #{inqryCn}
+		, CAST(#{atchmnflNo} AS INTEGER)
+		, 'AN02' 
+		, CAST(#{ssUserNo} AS INTEGER)
+		, CAST(#{ssUserNo} AS INTEGER)
+		, now()
+		, now()
+	)
+	</insert>
+	
+	<!-- 통합 게시판관리 > 게시글 등록 -21.12.28  서가영 -->
+	<insert id="insertUnityBbs" parameterType="java.util.Map">
+		INSERT INTO TB_BBS (
+			REGIST_USER_NO, 
+			MASTER_SN,
+			SJ, 
+			CN, 
+		<if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+			ATCHMNFL_NO,
+		</if>
+			REGIST_DT, 
+			UPDT_DT,
+			DELETE_AT
+			<if test="upperBbsSn != ''">
+			, UPPER_BBS_SN
+			</if>
+		) VALUES (
+			 CAST(#{ssUserNo} AS INTEGER)
+			 , CAST(#{masterSn} AS INTEGER)
+			 , #{sj}
+			 , #{cn}
+			 <if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+			 , CAST(#{atchmnflNo} AS INTEGER)
+			 </if>
+			 , now()
+			 , now()
+			 , 'N'
+			 <if test="upperBbsSn != ''">
+			 , CAST(#{upperBbsSn} AS INTEGER)
+			</if>
+		     )
+	</insert>
+	
+	<!-- 게시판 댓글등록 -22.01.10 염종찬 -->
+	<insert id="insertBbsComment" parameterType="java.util.Map">
+		INSERT INTO TB_BBS_COMMENT (
+			MASTER_SN,
+			BBS_SN,
+			CN, 
+			REGIST_DT, 
+			REGIST_USER_NO, 
+			UPDT_DT,
+			DELETE_AT
+			<if test='!@org.springframework.util.StringUtils@isEmpty(upperCommentSn)'>
+			, UPPER_COMMENT_SN
+			</if>
+		) VALUES (
+			   CAST(#{masterSn} AS INTEGER)
+			 , CAST(#{bbsSn} AS INTEGER)
+			 , #{cn}
+			 , now()
+			 , CAST(#{ssUserNo} AS INTEGER)
+			 , now()
+			 , 'N'
+			 <if test='!@org.springframework.util.StringUtils@isEmpty(upperCommentSn)'>
+			 , CAST(#{upperCommentSn} AS INTEGER)
+			</if>
+		     )
+	</insert>
+	
+	<!-- 관리게시판 목록  -->
+	<select id="selectUnityBoard" parameterType="java.util.Map" resultType="egovMap">
+	<!-- WITH RECURSIVE /* selectUnityBoard */ 
+	  tb(bbs_sn, master_sn, sj, cn, atchmnfl_no, upper_bbs_sn, regist_dt, lev_num, level, path, CYCLE, REGIST_USER_NO, RDCNT) 
+	  AS (
+		     SELECT A.bbs_sn
+		     	  , A.master_sn
+		     	  , A.sj
+		     	  , A.cn
+		     	  , A.atchmnfl_no
+		     	  , A.upper_bbs_sn
+		     	  , A.regist_dt
+		     	  , A.bbs_sn
+		     	  , 0
+		     	  , ARRAY[A.bbs_sn]
+		     	  , FALSE
+		     	  , A.REGIST_USER_NO
+		     	  , A.RDCNT
+			   FROM TB_BBS A
+			  WHERE A.MASTER_SN = #{masterSn}::INTEGER
+			    AND A.delete_at = 'N'
+			    AND A.upper_bbs_sn IS NULL
+		      UNION ALL 
+		     SELECT B.bbs_sn
+		     	  , B.master_sn
+		     	  , B.sj
+		     	  , B.cn
+		     	  , B.atchmnfl_no
+		     	  , B.upper_bbs_sn
+		     	  , B.regist_dt
+		     	  , lev_num
+		     	  , level + 1
+		     	  , path || B.bbs_sn
+		     	  , B.bbs_sn = ANY(path)
+		     	  , B.REGIST_USER_NO
+		     	  , B.RDCNT
+		       FROM TB_BBS B
+		       	  , tb
+		      WHERE B.upper_bbs_sn = tb.bbs_sn
+	      		AND B.MASTER_SN = #{masterSn}::INTEGER
+			    AND B.delete_at = 'N'
+		        AND NOT CYCLE
+	  )
+	  SELECT ROW_NUMBER() OVER (ORDER BY A.REGIST_DT DESC) AS RN 
+	       , A.* 
+		FROM (
+		  
+		       SELECT TMP.bbs_sn
+                    , TMP.master_sn
+                    , TMP.sj
+                    , TMP.cn
+                    , TMP.atchmnfl_no
+                    , TMP.upper_bbs_sn
+                    , TMP.REGIST_DT
+                    , TMP.RDCNT
+                    , TMP.USER_NM
+                    , TMP.comment_count
+                    , TMP.lev_num
+		            , 1 AS TOP
+		         FROM (
+			            SELECT A.bbs_sn
+							 , A.master_sn 
+							 , A.sj
+							 , A.cn 
+							 , A.atchmnfl_no
+							 , A.upper_bbs_sn
+							 , to_char(A.regist_dt, 'YYYY-MM-DD') AS REGIST_DT
+							 , A.RDCNT
+							 , B.USER_NM
+							 , COALESCE((SELECT COUNT(*) FROM TB_BBS_COMMENT C WHERE C.bbs_sn = A.bbs_sn AND C.delete_at = 'N'),0) AS comment_count
+							 , 0 as lev_num
+						  FROM TB_BBS A
+						  LEFT JOIN TB_USER AS B ON A.REGIST_USER_NO = B.USER_NO
+						  WHERE 1=1
+							AND A.MASTER_SN = #{masterSn}::INTEGER
+				    		AND A.delete_at = 'N'
+				    		AND A.INTEG_SE_CODE = 'NS01'
+			            ORDER BY A.regist_dt DESC 
+			            LIMIT 3
+		      		  ) AS TMP
+		  		) A
+		  UNION
+		 SELECT * 
+			   FROM (
+			       SELECT  B.*
+			          FROM (
+			              SELECT TMP.bbs_sn
+			                   , TMP.master_sn
+			                   , TMP.sj
+			                   , TMP.cn
+			                   , TMP.atchmnfl_no
+			                   , TMP.upper_bbs_sn
+			                   , TMP.REGIST_DT
+			                   , TMP.RDCNT
+			                   , TMP.USER_NM
+			                   , TMP.comment_count
+			                   , TMP.lev_num
+			                   , 2 AS TOP
+			                 FROM (
+									SELECT A.bbs_sn
+										 , A.master_sn 
+										 , A.sj
+										 , A.cn 
+										 , A.atchmnfl_no
+										 , A.upper_bbs_sn
+										 , to_char(A.regist_dt, 'YYYY-MM-DD') AS REGIST_DT
+										 , A.RDCNT
+										 , B.USER_NM
+										 , COALESCE((SELECT COUNT(*) FROM TB_BBS_COMMENT C WHERE C.bbs_sn = A.bbs_sn AND C.delete_at = 'N'),0) AS comment_count
+										 , lev_num
+								      FROM tb A
+								      LEFT JOIN TB_USER AS B ON A.REGIST_USER_NO = B.USER_NO
+									 WHERE 1=1
+								<if test='!@org.springframework.util.StringUtils@isEmpty("schTxt")'>
+									 <if test='schTxt != ""'>
+									 	 <if test='schCode == ""'>
+									 		AND ((A.SJ LIKE '%'|| #{schTxt} ||'%')
+											OR (A.CN LIKE '%'|| #{schTxt} ||'%')
+											OR (B.USER_NM LIKE '%' || #{schTxt} || '%'))
+									 	 </if>
+										 <if test='schCode == "sj"'>
+											AND A.SJ LIKE '%'|| #{schTxt} ||'%'
+										 </if>
+										<if test='schCode == "us"'>
+											AND B.USER_NM LIKE '%'|| #{schTxt} ||'%'
+									    </if>
+									    <if test='schCode == "cn"'>
+										   AND A.CN LIKE '%'|| #{schTxt} ||'%'
+									    </if> 
+									 </if>
+								 </if>
+									 ORDER BY lev_num DESC, A.regist_dt ASC
+			                    ) AS TMP
+			                    ORDER BY lev_num DESC, TMP.regist_dt asc
+			              ) B      
+			         <if test='!@org.springframework.util.StringUtils@isEmpty(mob)'>
+			        	LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+			         </if>
+			         <if test='@org.springframework.util.StringUtils@isEmpty(mob)'>
+			           <if test='firstRecordIndex == 0'>
+							LIMIT (${recordCountPerPage} - ${noticeCount}) OFFSET 0
+					   </if>
+					   <if test='firstRecordIndex != 0'>
+							LIMIT (${recordCountPerPage} - ${noticeCount}) OFFSET (${firstRecordIndex} - (${noticeCount} * (${firstRecordIndex}/10)))
+					   </if>
+			         </if>
+			        ) B
+			 ORDER BY TOP, bbs_sn DESC
+			) A -->
+	WITH RECURSIVE /* selectUnityBoard */ 
+	  tb(bbs_sn, master_sn, sj, cn, atchmnfl_no, upper_bbs_sn, regist_dt, lev_num, level, path, CYCLE, REGIST_USER_NO, RDCNT) 
+	  AS (
+		     SELECT A.bbs_sn
+		     	  , A.master_sn
+		     	  , A.sj
+		     	  , A.cn
+		     	  , A.atchmnfl_no
+		     	  , A.upper_bbs_sn
+		     	  , A.regist_dt
+		     	  , A.bbs_sn
+		     	  , 0
+		     	  , ARRAY[A.bbs_sn]
+		     	  , FALSE
+		     	  , A.REGIST_USER_NO
+		     	  , A.RDCNT
+			   FROM TB_BBS A
+			  WHERE A.MASTER_SN = #{masterSn}::INTEGER
+			    AND A.delete_at = 'N'
+			    AND A.upper_bbs_sn IS NULL
+		      UNION ALL 
+		     SELECT B.bbs_sn
+		     	  , B.master_sn
+		     	  , B.sj
+		     	  , B.cn
+		     	  , B.atchmnfl_no
+		     	  , B.upper_bbs_sn
+		     	  , B.regist_dt
+		     	  , lev_num
+		     	  , level + 1
+		     	  , path || B.bbs_sn
+		     	  , B.bbs_sn = ANY(path)
+		     	  , B.REGIST_USER_NO
+		     	  , B.RDCNT
+		       FROM TB_BBS B
+		       	  , tb
+		      WHERE B.upper_bbs_sn = tb.bbs_sn
+	      		AND B.MASTER_SN = #{masterSn}::INTEGER
+			    AND B.delete_at = 'N'
+		        AND NOT CYCLE
+	  )
+	  select A.RN 
+	  	   , A.bbs_sn
+           , A.master_sn
+           , A.sj
+           , A.cn
+           , A.atchmnfl_no
+           , A.upper_bbs_sn
+           , A.REGIST_DT
+           , A.RDCNT
+           , A.USER_NM
+           , A.comment_count
+           , A.lev_num
+    	   , A.TOP
+	  	FROM(
+	  	  SELECT A.* 
+			FROM (
+		       SELECT 0 AS rn
+		            , TMP.bbs_sn
+                    , TMP.master_sn
+                    , TMP.sj
+                    , TMP.cn
+                    , TMP.atchmnfl_no
+                    , TMP.upper_bbs_sn
+                    , TMP.REGIST_DT
+                    , TMP.RDCNT
+                    , TMP.USER_NM
+                    , TMP.comment_count
+                    , 0 as lev_num
+		            , 1 AS TOP
+		            , TMP.path
+		         FROM (
+			            SELECT A.bbs_sn
+							 , A.master_sn 
+							 , A.sj
+							 , A.cn 
+							 , A.atchmnfl_no
+							 , A.upper_bbs_sn
+							 , to_char(A.regist_dt, 'YYYY-MM-DD') AS REGIST_DT
+							 , A.RDCNT
+							 , B.USER_NM
+							 , COALESCE((SELECT COUNT(*) FROM TB_BBS_COMMENT C WHERE C.bbs_sn = A.bbs_sn AND C.delete_at = 'N' AND C.upper_comment_sn IS NULL),0) AS comment_count
+							 , '0' as lev_num
+							 , ARRAY[A.bbs_sn] as path
+						  FROM TB_BBS A
+						  LEFT JOIN TB_USER AS B ON A.REGIST_USER_NO = B.USER_NO
+						  WHERE 1=1
+							AND A.MASTER_SN = #{masterSn}::INTEGER
+				    		AND A.delete_at = 'N'
+				    		AND A.INTEG_SE_CODE = 'NS01'
+			            ORDER BY A.regist_dt DESC 
+			            LIMIT 3
+		      		  ) AS TMP
+		  		) A
+		  UNION
+		 SELECT * 
+		   FROM (
+		   	  SELECT * 
+		        FROM (
+			       SELECT ROW_NUMBER() OVER (ORDER BY TOP ASC, lev_num DESC, path, bbs_sn desc) AS RN 
+			            , B.*
+			          FROM (
+			              SELECT TMP.bbs_sn
+			                   , TMP.master_sn
+			                   , TMP.sj
+			                   , TMP.cn
+			                   , TMP.atchmnfl_no
+			                   , TMP.upper_bbs_sn
+			                   , TMP.REGIST_DT
+			                   , TMP.RDCNT
+			                   , TMP.USER_NM
+			                   , TMP.comment_count
+			                   , lev_num
+			                   , 2 AS TOP
+			                   , path
+			                 FROM (
+									SELECT A.bbs_sn
+										 , A.master_sn 
+										 , A.sj
+										 , A.cn 
+										 , A.atchmnfl_no
+										 , A.upper_bbs_sn
+										 , to_char(A.regist_dt, 'YYYY-MM-DD') AS REGIST_DT
+										 , A.RDCNT
+										 , B.USER_NM
+										 , COALESCE((SELECT COUNT(*) FROM TB_BBS_COMMENT C WHERE C.bbs_sn = A.bbs_sn AND C.delete_at = 'N' AND C.upper_comment_sn IS NULL),0) AS comment_count
+										 , lev_num
+										 , path
+								      FROM tb A
+								      LEFT JOIN (
+								      	SELECT USER_NM, USER_NO
+								      	FROM TB_USER
+								      	UNION
+								      	SELECT CHARGER_NM, USER_NO
+									  	FROM TB_BRAND_HEDOFC_MNGR
+								      ) AS B ON A.REGIST_USER_NO = B.USER_NO
+									 WHERE 1=1
+								<if test='!@org.springframework.util.StringUtils@isEmpty("schTxt")'>
+									 <if test='schTxt != ""'>
+									 	 <if test='schCode == ""'>
+									 		AND ((A.SJ LIKE '%'|| #{schTxt} ||'%')
+											OR (A.CN LIKE '%'|| #{schTxt} ||'%')
+											OR (B.USER_NM LIKE '%' || #{schTxt} || '%'))
+									 	 </if>
+										 <if test='schCode == "sj"'>
+											AND A.SJ LIKE '%'|| #{schTxt} ||'%'
+										 </if>
+										<if test='schCode == "us"'>
+											AND B.USER_NM LIKE '%'|| #{schTxt} ||'%'
+									    </if>
+									    <if test='schCode == "cn"'>
+										   AND A.CN LIKE '%'|| #{schTxt} ||'%'
+									    </if> 
+									 </if>
+								 </if>
+									 ORDER BY lev_num DESC, A.regist_dt asc
+			                    ) AS TMP
+			                    ORDER BY lev_num DESC, TMP.regist_dt asc
+			              ) B      
+   					   	  LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+			        ) B
+			 	ORDER BY TOP ASC, lev_num DESC, path, bbs_sn desc
+			 ) B
+	  	   ) A	
+	  	   ORDER BY TOP ASC, lev_num DESC, path, bbs_sn desc
+	</select>
+	
+	<!-- 게시판 댓글 목록  -->
+	<select id="selectBbsComment" parameterType="java.util.Map" resultType="egovMap">
+	WITH RECURSIVE /* selectBbsComment */ 
+	  tb(COMMENT_SN, MASTER_SN, CN, UPPER_COMMENT_SN, regist_dt, BBS_SN, lev_num, level, path, CYCLE, REGIST_USER_NO) 
+	  AS (
+		     SELECT A.COMMENT_SN
+		     	  , A.MASTER_SN
+		     	  , A.CN
+		     	  , A.UPPER_COMMENT_SN
+		     	  , A.regist_dt
+		     	  , A.BBS_SN
+		     	  , A.COMMENT_SN
+		     	  , 0
+		     	  , ARRAY[A.COMMENT_SN]
+		     	  , FALSE
+		     	  , A.REGIST_USER_NO
+			   FROM TB_BBS_COMMENT A
+			  WHERE A.MASTER_SN = #{masterSn}::INTEGER
+			  	AND A.BBS_SN = #{bbsSn}::INTEGER
+			    AND A.delete_at = 'N'
+			    AND A.UPPER_COMMENT_SN IS NULL
+		    <!--   UNION ALL 
+		     SELECT B.COMMENT_SN
+		     	  , B.MASTER_SN
+		     	  , B.CN
+		     	  , B.UPPER_COMMENT_SN
+		     	  , B.regist_dt
+		     	  , B.BBS_SN
+		     	  , lev_num
+		     	  , level + 1
+		     	  , path || B.COMMENT_SN
+		     	  , B.COMMENT_SN = ANY(path)
+		     	  , B.REGIST_USER_NO
+		       FROM TB_BBS_COMMENT B
+		       	  , tb
+		      WHERE B.UPPER_COMMENT_SN = tb.COMMENT_SN
+		      	AND B.MASTER_SN = #{masterSn}::INTEGER
+			  	AND B.BBS_SN = #{bbsSn}::INTEGER
+			    AND B.delete_at = 'N'
+		        AND NOT CYCLE -->
+	  )
+		 	 SELECT A.COMMENT_SN
+				  , A.REGIST_USER_NO 
+				  , A.CN 
+				  , A.UPPER_COMMENT_SN
+				  , to_char(A.regist_dt, 'YYYY-MM-DD HH24:MI') AS REGIST_DT
+				  , B.USER_NM
+				  , SUBSTRING(B.EMAIL_ADRES,1,4) || LPAD('*',length(B.EMAIL_ADRES)-4,'*') AS EMAIL_ADRES
+				  , SUM(1) OVER(PARTITION BY 0) AS result_count
+			   FROM tb A
+			   LEFT JOIN  (
+			      	SELECT USER_NM, USER_NO, EMAIL_ADRES
+			      	FROM TB_USER
+			      	UNION
+			      	SELECT CHARGER_NM, USER_NO, EMAIL_ADRES
+				  	FROM TB_BRAND_HEDOFC_MNGR
+		      ) AS B ON A.REGIST_USER_NO = B.USER_NO
+			  WHERE 1=1
+		   ORDER BY lev_num DESC, A.regist_dt ASC  	
+	</select>
+	
+	<!-- 관리게시판  합계  -->
+	<select id="selectUnityBoardCount" resultType="int">
+<!-- 		SELECT /* selectUnityBoardCount */
+			   COUNT(*)
+		  FROM tb_bbs
+		 WHERE delete_at = 'N' -->
+	WITH RECURSIVE /* selectUnityBoardCount */
+	  tb(bbs_sn, master_sn, sj, cn, atchmnfl_no, upper_bbs_sn, regist_dt, lev_num, level, path, CYCLE, REGIST_USER_NO) 
+	  AS (
+		     SELECT A.bbs_sn
+		     	  , A.master_sn
+		     	  , A.sj
+		     	  , A.cn
+		     	  , A.atchmnfl_no
+		     	  , A.upper_bbs_sn
+		     	  , A.regist_dt
+		     	  , A.bbs_sn
+		     	  , 0
+		     	  , ARRAY[A.bbs_sn]
+		     	  , FALSE
+		     	  , A.REGIST_USER_NO
+			   FROM TB_BBS A
+			  WHERE A.MASTER_SN = #{masterSn}::INTEGER
+			    AND A.delete_at = 'N'
+			    AND A.upper_bbs_sn IS NULL
+		      UNION ALL 
+		     SELECT B.bbs_sn
+		     	  , B.master_sn
+		     	  , B.sj
+		     	  , B.cn
+		     	  , B.atchmnfl_no
+		     	  , B.upper_bbs_sn
+		     	  , B.regist_dt
+		     	  , lev_num
+		     	  , level + 1
+		     	  , path || B.bbs_sn
+		     	  , B.bbs_sn = ANY(path)
+		     	  , B.REGIST_USER_NO
+		       FROM TB_BBS B
+		       	  , tb
+		      WHERE B.upper_bbs_sn = tb.bbs_sn
+		      	AND B.MASTER_SN = #{masterSn}::INTEGER
+			    AND B.delete_at = 'N'
+		        AND NOT CYCLE
+	  )
+	      SELECT COUNT(*)
+		  	FROM (
+				  	SELECT A.bbs_sn
+						 , A.master_sn 
+						 , A.upper_bbs_sn
+						 , to_char(A.regist_dt, 'YYYY-MM-DD') AS REGIST_DT
+					  FROM tb A
+					  LEFT JOIN (
+				      	SELECT USER_NM, USER_NO
+				      	FROM TB_USER
+				      	UNION
+				      	SELECT CHARGER_NM, USER_NO
+					  	FROM TB_BRAND_HEDOFC_MNGR
+				      ) AS B ON A.REGIST_USER_NO = B.USER_NO
+					  WHERE 1=1
+				  	<if test='!@org.springframework.util.StringUtils@isEmpty("schTxt")'>
+						 <if test='schTxt != ""'>
+						 	 <if test='schCode == ""'>
+						 		AND ((A.SJ LIKE '%'|| #{schTxt} ||'%')
+								OR (A.CN LIKE '%'|| #{schTxt} ||'%')
+								OR (B.USER_NM LIKE '%' || #{schTxt} || '%'))
+						 	 </if>
+							 <if test='schCode == "sj"'>
+								AND A.SJ LIKE '%'|| #{schTxt} ||'%'
+							 </if>
+							<if test='schCode == "us"'>
+								AND B.USER_NM LIKE '%'|| #{schTxt} ||'%'
+						    </if>
+						    <if test='schCode == "cn"'>
+							   AND A.CN LIKE '%'|| #{schTxt} ||'%'
+						    </if> 
+						 </if>
+					 </if>
+		   			ORDER BY lev_num DESC, A.regist_dt ASC 
+		  		) TMP
+	</select>
+	
+	<select id="selectUnityNoticeCount" resultType="int">
+	      SELECT COUNT(*) /* selectUnityNoticeCount */
+		  	FROM (
+				  	SELECT A.bbs_sn
+						 , A.master_sn 
+						 , A.upper_bbs_sn
+						 , to_char(A.regist_dt, 'YYYY-MM-DD') AS REGIST_DT
+					  FROM TB_BBS A
+					  LEFT JOIN TB_USER AS B ON A.REGIST_USER_NO = B.USER_NO
+					  WHERE 1=1
+					    AND A.MASTER_SN = CAST(#{masterSn} AS INTEGER)
+					    AND A.INTEG_SE_CODE = 'NS01'
+					    AND A.DELETE_AT = 'N'
+					    ORDER BY A.regist_dt ASC
+					  LIMIT 3
+		  		) TMP
+	</select>
+	
+	<!-- 통합게시판 상세  -->
+	<select id="selectUnityBbs" parameterType="java.util.Map" resultType="egovMap">
+		SELECT /*selectUnityBbs*/
+		 B.BBS_SN
+		,B.SJ
+		,B.CN
+		,COALESCE(B.ATCHMNFL_NO, 0) AS ATCHMNFL_NO
+		,B.UPDT_DT
+		,B.REGIST_DT
+		,B.REGIST_USER_NO
+	FROM (
+		SELECT 
+			BBS_SN AS BBS_SN
+			, SJ
+			, CN
+			, COALESCE(ATCHMNFL_NO,NULL) AS ATCHMNFL_NO
+			, TO_CHAR(UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+			, TO_CHAR(REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+			, REGIST_USER_NO
+		FROM 
+			TB_BBS 
+	) AS B
+	WHERE 
+		B.BBS_SN::TEXT = #{sn}
+	</select>
+	
+	<!-- 댓글 삭제 -->
+	<delete id="deleteComment" parameterType="java.util.Map">
+		UPDATE TB_BBS_COMMENT
+		SET delete_at = 'Y'
+		WHERE COMMENT_SN = #{commentSn}::INTEGER
+		   OR UPPER_COMMENT_SN = #{commentSn}::INTEGER
+	</delete>
+	
+	<!-- 통합게시판 게시물 삭제 -->
+	<delete id="deleteUnityBoard" parameterType="java.util.Map">
+		UPDATE TB_BBS
+		SET delete_at = 'Y'
+		WHERE BBS_SN = #{sn}::INTEGER
+	</delete>
+	
+	<!-- 통합게시판 게시물 수정 -->
+	<update id="updateUnityBbs" parameterType="java.util.Map">
+		UPDATE TB_BBS
+		SET SJ = #{sj}
+		  , CN = #{cn}
+		  , UPDT_DT = now()
+		  , UPDT_USER_NO = #{updtUserNo}
+	      <if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+		  , ATCHMNFL_NO = CAST(#{atchmnflNo} AS INTEGER)
+	      </if>
+		WHERE BBS_SN = #{sn}::INTEGER
+	</update>
+	<!-- 통합게시판 게시물 조회수 추가 -->
+	<update id="updateBoardRdcnt" parameterType="java.util.Map">
+		UPDATE TB_BBS
+		SET RDCNT = RDCNT + 1
+		WHERE BBS_SN = #{sn}::INTEGER
+	</update>
+	
+	<!-- 통합게시판 게시물 이전/다음 -->
+	<select id="selectUnityBbsNextInfo" parameterType="java.util.Map" resultType="egovMap">
+		SELECT /*selectUnityBbsNextInfo*/ 
+		C.*
+		, (SELECT X.SJ FROM
+		   (SELECT BBS_SN AS SN,SJ FROM TB_BBS) AS X 
+		   		WHERE X.SN = C.SN_PR) AS SJ_PR
+		, TO_CHAR(
+			(SELECT X.UPDT_DT FROM
+			 (SELECT BBS_SN AS SN,UPDT_DT FROM TB_BBS) AS X
+				WHERE X.SN = C.SN_PR), 'YYYY-MM-DD') AS UPDT_DT_PR
+		, (SELECT X.SJ FROM
+		   (SELECT BBS_SN AS SN,SJ FROM TB_BBS) AS X 
+		   		WHERE X.SN = C.SN_NX) AS SJ_NX
+		, TO_CHAR(
+			(SELECT X.UPDT_DT from
+			(SELECT BBS_SN AS SN,UPDT_DT FROM TB_BBS) AS X 
+				WHERE X.SN = C.SN_NX), 'YYYY-MM-DD') AS UPDT_DT_NX
+		FROM (
+			SELECT 
+				TMP.*
+				, (
+				SELECT 
+						MAX(B.SN) 
+					FROM (
+						SELECT 
+							BBS_SN AS SN
+							,DELETE_AT
+							,SJ
+						FROM TB_BBS
+						WHERE MASTER_SN = #{masterSn}::INTEGER
+						 AND UPPER_BBS_SN IS NULL
+					) AS B
+					WHERE B.DELETE_AT = 'N' 
+						AND B.SN <![CDATA[<]]> TMP.SN
+				) AS SN_PR
+				, (
+					SELECT 
+						MIN(B.SN) 
+					FROM (
+						SELECT 
+							BBS_SN AS SN
+							,DELETE_AT
+							,SJ
+						FROM TB_BBS
+						WHERE MASTER_SN = #{masterSn}::INTEGER
+						  AND UPPER_BBS_SN IS NULL
+					) AS B
+					WHERE B.DELETE_AT = 'N' 
+						AND B.SN <![CDATA[>]]> TMP.SN
+				) AS SN_NX
+			FROM (
+				SELECT 
+					A.SN
+				FROM (
+					SELECT 
+						BBS_SN AS SN
+						,DELETE_AT
+						,SJ
+					FROM TB_BBS
+				) AS A
+				WHERE 1=1
+					AND A.DELETE_AT = 'N'
+					AND A.SN::TEXT = #{sn}
+			) AS TMP
+		) AS C
+	</select>
+	
+	<!-- 통합게시판 게시물 합계  -->
+	<select id="selectBbsMasterCount" parameterType="String" resultType="int">
+		/* selectBbsMasterCount */
+		select count(*)
+	      from tb_bbs_master
+	     where master_sn = #{masterSn}::INTEGER
+	       AND delete_at = 'N'
+	</select>
+	
+	<!-- 통합게시판 메타 정보  -->
+ 	<select id="selectBbsMaster" parameterType="String" resultType="egovMap">
+		select /*selectBbsMaster*/
+			   master_sn
+		     , bbs_lc 
+			 , bbs_nm
+			 , bbs_dc
+			 , atchmnfl_co
+			 , answer_at
+			 , delete_at
+			 , atchmnfl_at 
+			 , comment_at 
+			 , use_at
+			 , menu_group_code
+	      from tb_bbs_master
+	     where master_sn = #{masterSn}::INTEGER
+	</select>
+	
+	<!-- 관리자 게시판 관리 옵션  -->
+	<select id="selectUnitNoticeOption" parameterType="String" resultType="egovMap">
+		/* selectUnitNoticeOption */
+	    SELECT MASTER_SN AS CODE
+	    	 , BBS_NM AS CODE_NM
+	      FROM TB_BBS_MASTER
+	     WHERE DELETE_AT = 'N'
+	     ORDER BY MASTER_SN ASC
+	</select>
+	
+	<select id="selectIntegBbsUrl" resultType="String">
+		/* selectIntegBbsUrl */
+		SELECT BBS_LC || MASTER_SN FROM TB_BBS_MASTER TBM 
+	  	WHERE BBS_NM = '통합게시판';
+	</select>
+	
+	<select id="selectTotalSwiper" parameterType="java.util.Map" resultType="egovMap">
+	/*selectTotalSwiper 메인 통합게시판 스와이퍼 조회*/
+	SELECT A.bbs_sn
+		 , A.sj
+<!-- 		 , A.master_sn  -->
+	  FROM TB_BBS A
+	  WHERE 1=1
+		AND A.MASTER_SN = 
+		(
+			SELECT MASTER_SN
+			FROM TB_BBS_MASTER 
+			WHERE 1=1
+			AND BBS_NM LIKE '%'|| #{bbsNm} ||'%'
+		)
+		AND A.delete_at = 'N'
+	ORDER BY A.regist_dt DESC 
+	LIMIT 20
+	</select>
+	
+	<select id="selectMainBbsInteg" parameterType="java.util.Map" resultType="egovMap">
+	/*selectMainBbsInteg 메인 통합게시판 2건 조회*/
+	SELECT A.bbs_sn
+		 , A.master_sn 
+		 , A.sj
+		 , A.cn 
+		 , A.atchmnfl_no
+		 , A.upper_bbs_sn
+		 , to_char(A.regist_dt, 'YYYY-MM-DD') AS REGIST_DT
+		 , A.RDCNT
+		 , B.USER_NM
+		 , COALESCE((SELECT COUNT(*) FROM TB_BBS_COMMENT C WHERE C.bbs_sn = A.bbs_sn AND C.delete_at = 'N'),0) AS comment_count
+		 , '0' as lev_num
+		 , A.integ_se_code
+		 ,(SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INTEG_SE_CODE' AND X.CODE_VALUE = INTEG_SE_CODE) AS integ_se_nm
+	  FROM TB_BBS A
+	  LEFT JOIN TB_USER AS B ON A.REGIST_USER_NO = B.USER_NO
+	  WHERE 1=1
+		AND A.MASTER_SN = 
+		(
+			SELECT MASTER_SN
+			FROM TB_BBS_MASTER 
+			WHERE 1=1
+			AND BBS_NM LIKE '%'|| #{bbsNm} ||'%'
+		)
+		AND A.delete_at = 'N'
+	ORDER BY A.regist_dt DESC 
+	LIMIT 2
+	</select>
+	
+	<select id="selectUserUnityBoard" parameterType="java.util.Map" resultType="egovMap">
+	<!-- 	WITH RECURSIVE /* selectUserUnityBoard 로그인한 사용자의 등록 게시물 과 댓글 목록 조회 */ 
+		  tb(bbs_sn, master_sn, sj, cn, atchmnfl_no, upper_bbs_sn, regist_dt, lev_num, level, path, CYCLE, REGIST_USER_NO, RDCNT) 
+		  AS (
+		     SELECT A.bbs_sn
+		     	  , A.master_sn
+		     	  , A.sj
+		     	  , A.cn
+		     	  , A.atchmnfl_no
+		     	  , A.upper_bbs_sn
+		     	  , A.regist_dt
+		     	  , A.bbs_sn
+		     	  , 0
+		     	  , ARRAY[A.bbs_sn]
+		     	  , FALSE
+		     	  , A.REGIST_USER_NO
+		     	  , A.RDCNT
+			   FROM TB_BBS A
+			  WHERE 1=1
+			  	AND A.MASTER_SN = #{unitType}::INTEGER
+			    AND A.delete_at = 'N'
+			    AND A.upper_bbs_sn IS NULL
+		      UNION ALL 
+		     SELECT B.bbs_sn
+		     	  , B.master_sn
+		     	  , B.sj
+		     	  , B.cn
+		     	  , B.atchmnfl_no
+		     	  , B.upper_bbs_sn
+		     	  , B.regist_dt
+		     	  , lev_num
+		     	  , level + 1
+		     	  , path || B.bbs_sn
+		     	  , B.bbs_sn = ANY(path)
+		     	  , B.REGIST_USER_NO
+		     	  , B.RDCNT
+		       FROM TB_BBS B
+		       	  , tb
+		      WHERE B.upper_bbs_sn = tb.bbs_sn
+		        AND B.MASTER_SN = #{unitType}::INTEGER
+			    AND B.delete_at = 'N'
+		        AND NOT CYCLE
+	  )
+	  select A.RN 
+	  	   , A.bbs_sn
+           , A.master_sn
+           , A.sj
+           , A.cn
+           , A.atchmnfl_no
+           , A.upper_bbs_sn
+           , A.REGIST_DT
+           , A.RDCNT
+           , A.USER_NM
+           , A.comment_count
+           , A.lev_num
+	  	FROM(
+		 SELECT * 
+		   FROM (
+		   	  SELECT * 
+		        FROM (
+			       SELECT ROW_NUMBER() OVER (ORDER BY lev_num DESC, path, bbs_sn desc) AS RN 
+			            , B.*
+			          FROM (
+			              SELECT TMP.bbs_sn
+			                   , TMP.master_sn
+			                   , TMP.sj
+			                   , TMP.cn
+			                   , TMP.atchmnfl_no
+			                   , TMP.upper_bbs_sn
+			                   , TMP.REGIST_DT
+			                   , TMP.RDCNT
+			                   , TMP.USER_NM
+			                   , TMP.comment_count
+			                   , lev_num
+			                   , path
+			                 FROM (
+									SELECT A.bbs_sn
+										 , A.master_sn 
+										 , A.sj
+										 , A.cn 
+										 , A.atchmnfl_no
+										 , A.upper_bbs_sn
+										 , to_char(A.regist_dt, 'YYYY-MM-DD') AS REGIST_DT
+										 , A.RDCNT
+										 , B.USER_NM
+										 , COALESCE((SELECT COUNT(*) FROM TB_BBS_COMMENT C WHERE C.bbs_sn = A.bbs_sn AND C.delete_at = 'N'),0) AS comment_count
+										 , lev_num
+										 , path
+								      FROM tb A
+								      LEFT JOIN (
+								      	SELECT USER_NM, USER_NO
+								      	FROM TB_USER
+								      	UNION
+								      	SELECT CHARGER_NM, USER_NO
+									  	FROM TB_BRAND_HEDOFC_MNGR
+								      ) AS B ON A.REGIST_USER_NO = B.USER_NO
+									 WHERE 1=1
+								<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+									 <if test='schTxt != ""'>
+									 	 <if test='schCode == ""'>
+									 		AND ((A.SJ LIKE '%'|| #{schTxt} ||'%')
+											OR (A.CN LIKE '%'|| #{schTxt} ||'%')
+											OR (B.USER_NM LIKE '%' || #{schTxt} || '%'))
+									 	 </if>
+										 <if test='schCode == "sj"'>
+											AND A.SJ LIKE '%'|| #{schTxt} ||'%'
+										 </if>
+										<if test='schCode == "us"'>
+											AND B.USER_NM LIKE '%'|| #{schTxt} ||'%'
+									    </if>
+									    <if test='schCode == "cn"'>
+										   AND A.CN LIKE '%'|| #{schTxt} ||'%'
+									    </if> 
+									 </if>
+								 </if>
+								 <if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+									 AND REGIST_USER_NO = #{ssUserNo}::integer
+								 </if>
+									 ORDER BY lev_num DESC, A.regist_dt asc
+			                    ) AS TMP
+			                    ORDER BY lev_num DESC, TMP.regist_dt asc
+			              ) B      
+   					   	  LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+			        ) B
+			 	ORDER BY lev_num DESC, path, bbs_sn desc
+			 ) B
+	  	   ) A	
+	  	   ORDER BY lev_num DESC, path, bbs_sn DESC -->
+	  	   WITH RECURSIVE /* selectUserUnityBoard 로그인한 사용자의 등록 게시물 과 댓글 목록 조회 */ 
+			tb(bbs_sn, master_sn, sj, cn, atchmnfl_no, upper_bbs_sn, regist_dt, lev_num, level, path, CYCLE, REGIST_USER_NO, RDCNT) 
+			AS ( 
+				SELECT 
+					A.bbs_sn 
+					, A.master_sn 
+					, A.sj 
+					, A.cn 
+					, A.atchmnfl_no 
+					, A.upper_bbs_sn 
+					, A.regist_dt 
+					, A.bbs_sn 
+					, 0 
+					, ARRAY[A.bbs_sn] 
+					, FALSE 
+					, A.REGIST_USER_NO 
+					, A.RDCNT 
+					, A.updt_dt
+				FROM TB_BBS A 
+				WHERE 1=1 
+				AND A.MASTER_SN = #{unitType}::INTEGER 
+				AND A.delete_at = 'N'
+				AND A.upper_bbs_sn IS NULL 
+				UNION ALL 
+				SELECT 
+					B.bbs_sn 
+					, B.master_sn 
+					, B.sj 
+					, B.cn 
+					, B.atchmnfl_no 
+					, B.upper_bbs_sn 
+					, B.regist_dt 
+					, lev_num 
+					, level + 1 
+					, path || B.bbs_sn 
+					, B.bbs_sn = ANY(path) 
+					, B.REGIST_USER_NO 
+					, B.RDCNT 
+					, B.updt_dt
+				FROM TB_BBS B , tb 
+				WHERE B.upper_bbs_sn = tb.bbs_sn 
+				AND B.MASTER_SN = #{unitType}::INTEGER 
+				AND B.delete_at = 'N' 
+				AND NOT CYCLE 
+			) 
+			select 
+				A.RN 
+				, A.bbs_sn 
+				, A.master_sn 
+				, A.sj 
+				, A.cn 
+				, A.atchmnfl_no 
+				, A.upper_sn 
+				, A.REGIST_DT 
+				, A.RDCNT 
+				, A.USER_NM 
+				, A.comment_count 
+				, A.lev_num 
+				, A.BOARD_TYPE
+				, A.UPDT_DT_AWEEK
+			FROM( 
+			SELECT * FROM ( 
+				SELECT * FROM ( 
+					SELECT 
+					ROW_NUMBER() OVER (ORDER BY lev_num DESC, bbs_sn desc) AS RN 
+					, B.* FROM ( 
+						SELECT 
+						TMP.bbs_sn 
+						, TMP.master_sn 
+						, TMP.sj 
+						, TMP.cn 
+						, TMP.atchmnfl_no 
+						, TMP.upper_sn 
+						, TMP.REGIST_DT 
+						, TMP.RDCNT 
+						, TMP.USER_NM 
+						, TMP.comment_count 
+						, TMP.lev_num
+						, TMP.BOARD_TYPE
+						, TMP.UPDT_DT_AWEEK
+						FROM ( 
+							SELECT 
+								A.BBS_SN
+								, 0 AS comment_sn
+								, A.master_sn 
+								, A.sj 
+								, A.cn 
+								, A.atchmnfl_no 
+								, A.upper_bbs_sn AS upper_sn
+								, to_char(A.regist_dt, 'YYYY-MM-DD') AS REGIST_DT 
+								, A.RDCNT 
+								, B.USER_NM 
+								, 0 AS REGIST_USER_NO
+								, COALESCE((SELECT COUNT(*) FROM TB_BBS_COMMENT C WHERE C.bbs_sn = A.bbs_sn AND C.delete_at = 'N' AND C.upper_comment_sn IS NULL),0) AS comment_count 
+								, lev_num
+								, B.EMAIL_ADRES 
+								, CASE WHEN A.upper_bbs_sn IS NULL THEN 1 ELSE 2 END AS BOARD_TYPE
+								, CASE WHEN A.UPDT_DT > NOW()::DATE - 6 THEN 'NEW' END AS UPDT_DT_AWEEK
+							FROM tb A 
+							LEFT JOIN ( 
+								SELECT USER_NM, USER_NO, EMAIL_ADRES
+								FROM TB_USER 
+								UNION 
+								SELECT CHARGER_NM AS USER_NM, USER_NO, EMAIL_ADRES 
+								FROM TB_BRAND_HEDOFC_MNGR 
+							) AS B ON A.REGIST_USER_NO = B.USER_NO
+							WHERE 1=1 
+							<if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+		                        AND REGIST_USER_NO = #{ssUserNo}::integer
+		                    </if>
+							UNION 
+							SELECT /*대댓글*/
+								A.BBS_SN 
+								, A.COMMENT_SN AS comment_sn
+								, A.MASTER_SN
+								, (SELECT SJ FROM tb_bbs WHERE BBS_SN = A.BBS_SN) AS sj
+								, A.CN 
+								, 0 AS atchmnfl_no
+								, A.UPPER_COMMENT_SN AS upper_sn
+								, to_char(A.regist_dt, 'YYYY-MM-DD') AS REGIST_DT
+								, 0 AS rdcnt 
+								, B.USER_NM
+								, A.REGIST_USER_NO 
+								, 0 AS comment_count
+								, 0 AS lev_num
+								, SUBSTRING(B.EMAIL_ADRES,1,4) || LPAD('*',length(B.EMAIL_ADRES)-4,'*') AS EMAIL_ADRES
+								, 3 AS BOARD_TYPE
+								, CASE WHEN A.UPDT_DT > NOW()::DATE - 6 THEN 'NEW' END AS UPDT_DT_AWEEK
+							FROM TB_BBS_COMMENT AS A
+							LEFT JOIN ( 
+								SELECT USER_NM, USER_NO, EMAIL_ADRES 
+								FROM TB_USER 
+								UNION 
+								SELECT CHARGER_NM AS USER_NM, USER_NO, EMAIL_ADRES
+								FROM TB_BRAND_HEDOFC_MNGR 
+							) AS B ON A.REGIST_USER_NO = B.USER_NO
+							WHERE 1=1 
+							<if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+		                        AND REGIST_USER_NO = #{ssUserNo}::integer
+		                    </if>
+							AND DELETE_AT = 'N'
+							AND MASTER_SN = #{unitType}::INTEGER 
+							ORDER BY lev_num DESC, regist_dt asc 
+						) AS TMP
+						WHERE 1=1
+						AND TMP.UPPER_SN IS NULL
+						ORDER BY lev_num DESC, TMP.regist_dt ASC
+					) B 
+					WHERE 1=1
+					<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+					 AND B.SJ LIKE '%'|| #{schTxt} ||'%'
+					 </if>
+					<if test='!@org.springframework.util.StringUtils@isEmpty(schCode)'>
+					AND B.BOARD_TYPE = #{schCode}::integer
+					</if>
+		            LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+				) B ORDER BY lev_num DESC, bbs_sn desc 
+			) B 
+		) A 
+		ORDER BY lev_num DESC, bbs_sn DESC
+	</select>
+	
+	<select id="selectUserUnityBoardCount" resultType="int">
+<!-- 		SELECT /* selectUnityBoardCount */
+			   COUNT(*)
+		  FROM tb_bbs
+		 WHERE delete_at = 'N' -->
+	WITH RECURSIVE /* selectUnityBoardCount 로그인한 사용자의 등록 게시물 과 댓글 목록  수 조회 */
+	  tb(bbs_sn, master_sn, sj, cn, atchmnfl_no, upper_bbs_sn, regist_dt, lev_num, level, path, CYCLE, REGIST_USER_NO) 
+	  AS (
+		     SELECT A.bbs_sn
+		     	  , A.master_sn
+		     	  , A.sj
+		     	  , A.cn
+		     	  , A.atchmnfl_no
+		     	  , A.upper_bbs_sn
+		     	  , A.regist_dt
+		     	  , A.bbs_sn
+		     	  , 0
+		     	  , ARRAY[A.bbs_sn]
+		     	  , FALSE
+		     	  , A.REGIST_USER_NO
+			   FROM TB_BBS A
+			  WHERE 1=1
+			  	AND A.MASTER_SN = #{unitType}::INTEGER
+			    AND A.delete_at = 'N'
+			    AND A.upper_bbs_sn IS NULL
+		      UNION ALL 
+		     SELECT B.bbs_sn
+		     	  , B.master_sn
+		     	  , B.sj
+		     	  , B.cn
+		     	  , B.atchmnfl_no
+		     	  , B.upper_bbs_sn
+		     	  , B.regist_dt
+		     	  , lev_num
+		     	  , level + 1
+		     	  , path || B.bbs_sn
+		     	  , B.bbs_sn = ANY(path)
+		     	  , B.REGIST_USER_NO
+		       FROM TB_BBS B
+		       	  , tb
+		      WHERE B.upper_bbs_sn = tb.bbs_sn
+			    AND B.delete_at = 'N'
+		        AND NOT CYCLE
+	  )
+	      SELECT COUNT(*)
+		  	FROM (
+			  	  SELECT 
+					A.BBS_SN
+					, 0 AS comment_sn
+					, A.master_sn 
+					, A.sj 
+					, A.cn 
+					, A.atchmnfl_no 
+					, A.upper_bbs_sn AS upper_sn
+					, to_char(A.regist_dt, 'YYYY-MM-DD') AS REGIST_DT 
+					, B.USER_NM 
+					, 0 AS REGIST_USER_NO
+					, COALESCE((SELECT COUNT(*) FROM TB_BBS_COMMENT C WHERE C.bbs_sn = A.bbs_sn AND C.delete_at = 'N' AND C.upper_comment_sn IS NULL),0) AS comment_count 
+					, lev_num
+					, CASE WHEN A.upper_bbs_sn IS NULL THEN 1 ELSE 2 END AS BOARD_TYPE
+				  FROM tb A 
+				  LEFT JOIN (
+			      	SELECT USER_NM, USER_NO
+			      	FROM TB_USER
+			      	UNION
+			      	SELECT CHARGER_NM, USER_NO
+				  	FROM TB_BRAND_HEDOFC_MNGR
+			      ) AS B ON A.REGIST_USER_NO = B.USER_NO
+				  WHERE 1=1
+				 <if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+				 AND REGIST_USER_NO = #{ssUserNo}::integer
+				 </if>
+				 UNION 
+					SELECT /*대댓글*/
+						A.BBS_SN 
+						, A.COMMENT_SN AS comment_sn
+						, A.MASTER_SN
+						, '' AS sj
+						, A.CN 
+						, 0 AS atchmnfl_no
+						, A.UPPER_COMMENT_SN AS upper_sn
+						, to_char(A.regist_dt, 'YYYY-MM-DD HH24:MI') AS REGIST_DT
+						, B.USER_NM
+						, A.REGIST_USER_NO 
+						, 0 AS comment_count
+						, 0 AS lev_num
+						, 3 AS BOARD_TYPE
+					FROM TB_BBS_COMMENT AS A
+					LEFT JOIN ( 
+						SELECT USER_NM, USER_NO, EMAIL_ADRES 
+						FROM TB_USER 
+						UNION 
+						SELECT CHARGER_NM AS USER_NM, USER_NO, EMAIL_ADRES
+						FROM TB_BRAND_HEDOFC_MNGR 
+					) AS B ON A.REGIST_USER_NO = B.USER_NO
+					WHERE 1=1 
+					<if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+                        AND REGIST_USER_NO = #{ssUserNo}::integer
+                    </if>
+					AND DELETE_AT = 'N'
+					AND MASTER_SN = #{unitType}::INTEGER 
+	  		) TMP
+	  	WHERE 1=1
+	  	<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+		AND TMP.SJ LIKE '%'|| #{schTxt} ||'%'
+		</if>
+  		<if test='!@org.springframework.util.StringUtils@isEmpty(schCode)'>
+		AND TMP.BOARD_TYPE = #{schCode}::integer
+		</if>
+		AND TMP.UPPER_SN IS NULL
+	</select>
+	
+	<select id="selectUserUnitBbs" parameterType="java.util.Map" resultType="egovMap">
+	SELECT /*selectUserUnitBbs 로그인한 사용자의 등록 게시물 상세 조회*/
+		 B.BBS_SN
+		,B.SE_CODE
+		,B.SE_CODE_NM
+		,B.USER_NO
+		,B.SJ
+		,B.CN
+		,COALESCE(B.ATCHMNFL_NO, 0) AS ATCHMNFL_NO
+		,B.UPDT_DT
+		,B.REGIST_DT
+	FROM (
+		SELECT 
+			BBS_SN AS BBS_SN
+			, INTEG_SE_CODE AS SE_CODE
+			, (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'INTEG_SE_CODE' AND X.CODE_VALUE = INTEG_SE_CODE) AS SE_CODE_NM
+			, REGIST_USER_NO AS USER_NO
+			, SJ
+			, CN
+			, COALESCE(ATCHMNFL_NO,NULL) AS ATCHMNFL_NO
+			, TO_CHAR(UPDT_DT,'YYYY-MM-DD') AS UPDT_DT
+			, TO_CHAR(REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+		FROM 
+			TB_BBS 
+	) AS B
+	WHERE 
+		B.BBS_SN::TEXT = #{sn}
+	</select>
+</mapper>

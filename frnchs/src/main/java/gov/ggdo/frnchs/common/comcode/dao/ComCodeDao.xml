@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="gov.ggdo.frnchs.common.comcode.dao.ComCodeDao">
+	<!-- 공통코드 -->
+	<select id="selectComCodeList" parameterType="string" resultType="egovMap">
+		/*selectComCodeList - 공통코드*/
+		SELECT CODE_ID
+				,CODE_NM
+				,CODE_VALUE
+				,CODE_VALUE_NM
+		FROM TB_CMMN_CODE
+		WHERE 1 = 1
+		<if test='!@org.springframework.util.StringUtils@isEmpty(codeId)'>
+			AND CODE_ID = #{codeId}
+		</if>
+		ORDER BY CODE_VALUE
+	</select>
+
+	<!-- 코드 아이디랑 밸류로 코드명 찾기 - 21.01.19 -->
+	<select id="selectCodeValueNmByIdAndValue" parameterType="egovMap" resultType="string">
+		SELECT
+			CODE_VALUE_NM
+		FROM
+			TB_CMMN_CODE
+		WHERE
+			CODE_ID = #{codeId}
+			AND CODE_Value = #{codeValue}
+	</select>
+
+	<!-- 대분류 업종 -->
+	<select id="selectFranchLclasList" parameterType="egovMap" resultType="egovMap">
+	/*selectFranchLclasList - 대분류 업종*/
+	SELECT
+		LCLAS_INDUTY_CODE,
+		LCLAS_INDUTY_NM
+	FROM
+		TB_FRNCHS_LCLAS_CODE
+	ORDER BY LCLAS_INDUTY_CODE
+	</select>
+
+	<!-- 중분류 업종 -->
+	<select id="selectFrnchsMlsfcList" parameterType="egovMap" resultType="egovMap">
+	/*selectFrnchsMlsfcList - 중분류 업종*/
+	SELECT
+		MLSFC_INDUTY_CODE,
+		MLSFC_INDUTY_NM,
+		LCLAS_INDUTY_CODE
+	FROM TB_FRNCHS_MLSFC_CODE
+	WHERE LCLAS_INDUTY_CODE = #{lclasIndutyCode}
+	ORDER BY MLSFC_INDUTY_CODE
+	</select>
+
+	<!-- 시도 목록 조회 -->
+	<select id="selectCtprvnRelmList" parameterType="egovMap" resultType="egovMap">
+	SELECT 
+		CTPRVN_CODE,
+		CTPRVN_NM,
+		<if test='geom eq "N"'>
+		   '' AS
+		</if> FRM
+		
+	FROM TB_CTPRVN_RELM
+	ORDER BY CTPRVN_CODE
+	</select>
+	<!-- 시군구 목록 조회 -->
+	<select id="selectSignguRelmList" parameterType="egovMap" resultType="egovMap">
+	SELECT
+		SIGNGU_CODE,
+		SIGNGU_NM,
+		CTPRVN_CODE,
+		FRM
+	FROM TB_SIGNGU_RELM
+	WHERE CTPRVN_CODE = #{ctprvnCode}
+	ORDER BY SIGNGU_NM
+	</select>
+	<!-- 행정동 목록 조회 -->
+	<select id="selectAdstrdRelmList" parameterType="egovMap" resultType="egovMap">
+	SELECT
+		ADSTRD_CODE,
+		ADSTRD_NM,
+		SIGNGU_CODE,
+		FRM FROM
+	TB_ADSTRD_RELM
+	WHERE SIGNGU_CODE = #{signguCode}
+	ORDER BY ADSTRD_NM
+	</select>
+
+	<!-- 관심프랜차이즈 넣기 -->
+	<insert id="insertIntrstFrnchs" parameterType="java.util.Map">
+		INSERT INTO
+			TB_INTRST_FRNCHS
+		(
+			USER_NO,
+			FRNCHS_NO,
+			DELETE_AT,
+			LAST_UPDT_USER_NO,
+			REGIST_DT,
+			UPDT_DT
+		)
+		VALUES
+		(
+			#{userNo}::int,
+			#{frnchsNo},
+			#{flag},
+			#{userNo}::int,
+			CURRENT_TIMESTAMP,
+			CURRENT_TIMESTAMP
+		)
+
+		ON CONFLICT ON CONSTRAINT pk_intrst_frnchs
+		DO UPDATE
+		SET (DELETE_AT, LAST_UPDT_USER_NO, UPDT_DT) = (#{flag},#{userNo}::int, CURRENT_TIMESTAMP)
+	</insert>
+
+	<!-- 관심프랜차이즈 빼기 -->
+	<update id="updateIntrstFrnchs" parameterType="java.util.Map">
+		UPDATE
+			TB_INTRST_FRNCHS
+		SET
+			DELETE_AT = #{flag} ,
+			LAST_UPDT_USER_NO = #{userNo}::int ,
+			UPDT_DT = CURRENT_TIMESTAMP
+		WHERE
+			USER_NO = #{userNo}::int
+		AND FRNCHS_NO = #{frnchsNo}
+	</update>
+</mapper>

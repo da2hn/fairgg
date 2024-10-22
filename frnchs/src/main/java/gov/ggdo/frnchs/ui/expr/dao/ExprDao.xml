@@ -1,0 +1,892 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="gov.ggdo.frnchs.ui.expr.dao.ExprDao">
+	<!-- 프랜차이즈체험등록 목록 총건수 조회 -->
+	
+	<select id="selectFrnchsExprnRegistListCount" parameterType="egovMap" resultType="int">
+	/* ExprDao.selectFrnchsExprnRegistListCount 프랜차이즈체험등록 목록 총건수 조회*/
+		SELECT
+			COUNT(1)
+		FROM TB_FRNCHS_EXPRN_REGIST A, TB_FRNCHS_INFO B
+		WHERE DELETE_AT = 'N'
+		  AND A.CANCL_AT = 'N' 
+		  AND A.FRNCHS_NO = B.FRNCHS_NO
+		  
+<!-- 	  <if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+ 		  AND A.FRNCHS_NO IN (SELECT FRNCHS_NO FROM TB_CHRG_BRAND WHERE USER_NO = ${ssUserNo})
+ 		  </if>
+ 		  
+		  <if test='!@org.springframework.util.StringUtils@isEmpty(confmSttusCode)'>
+		  AND A.CONFM_STTUS_CODE = #{confmSttusCode}
+		  </if>
+		  <if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+			  <if test='"A".equals(searchType)'>
+			  	AND B.BSN_SGNAL LIKE '%' || #{searchText} || '%'
+			  </if>
+			  <if test='"B".equals(searchType)'>
+			    AND B.MLSFC_INDUTY_CODE = (SELECT MLSFC_INDUTY_CODE FROM TB_FRNCHS_MLSFC_CODE WHERE MLSFC_INDUTY_NM LIKE '%' || #{searchText} || '%')
+			  </if>
+			  <if test='"C".equals(searchType)'>
+			  	AND A.BHF_NM LIKE '%' || #{searchText} || '%'
+			  </if>
+			  <if test='"D".equals(searchType)'>
+			  	AND (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = A.CONFM_STTUS_CODE) LIKE '%' || #{searchText} || '%'
+			  </if>
+		  </if> -->
+  				  <!-- 기관관리자의 경우 전체 브랜드 체험 신청 정보를 봐야함 - 21.12.17  -->
+		  <if test='ssUserSeCode != "US04" '>
+		  	AND A.FRNCHS_NO IN (SELECT FRNCHS_NO FROM TB_CHRG_BRAND WHERE USER_NO = ${ssUserNo})
+		  </if> 
+		  <if test='!@org.springframework.util.StringUtils@isEmpty(confmSttusCode)'>
+		  AND A.CONFM_STTUS_CODE = #{confmSttusCode}
+		  </if>
+		  <if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+			  <if test='"A".equals(searchType)'>
+			  	AND B.BSN_SGNAL LIKE '%' || #{searchText} || '%'
+			  </if>
+			  <if test='"B".equals(searchType)'>
+			    AND B.MLSFC_INDUTY_CODE = (SELECT MLSFC_INDUTY_CODE FROM TB_FRNCHS_MLSFC_CODE WHERE MLSFC_INDUTY_NM LIKE '%' || #{searchText} || '%')
+			  </if>
+			  <if test='"C".equals(searchType)'>
+			  	AND CONCAT(A.BHF_NM,B.BSN_SGNAL) LIKE '%' || #{searchText} || '%'
+			  </if>
+			  <if test='"D".equals(searchType)'>
+			  	AND (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = A.CONFM_STTUS_CODE) LIKE '%' || #{searchText} || '%'
+			  </if>
+		  </if>
+	</select>
+	<!-- 프랜차이즈체험등록 목록 조회 -->
+	<select id="selectFrnchsExprnRegistList" parameterType="egovMap" resultType="egovMap">
+	/* ExprDao.selectFrnchsExprnRegistList 프랜차이즈체험등록 목록 조회 */
+		SELECT TMP.*
+		 , ROW_NUMBER() OVER (ORDER BY EXPRN_REGIST_NO DESC) AS RN
+	  	FROM (
+				SELECT
+					A.EXPRN_REGIST_NO,
+					A.ADSTRD_CODE,
+					A.FRNCHS_NO,
+					A.BHF_NM,
+					B.BSN_SGNAL,
+					A.BHF_ADRES,
+					A.OPER_BEGIN_TIME,
+					A.OPER_END_TIME,
+					A.EXPRN_BEGIN_DE,
+					A.EXPRN_END_DE,
+					A.RCRIT_NMPR,
+					A.EMPLY_CO,
+					A.EDC_DE,
+					A.IMAGE_FILE_NO,
+					(SELECT ATCHMNFL_NO || '_' || FILE_SN FROM TB_ATCHMNFL_STRE WHERE ATCHMNFL_NO = A.IMAGE_FILE_NO AND ATCHMNFL_STTUS_CODE = 'FS02') AS IMAGE_FILE_KEY,
+					A.EDC_FILE_NO,
+					A.DROPER_STOR_AR,
+					A.CONFM_STTUS_CODE,
+					(SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = A.CONFM_STTUS_CODE) AS CONFM_STTUS_CODE_NM,
+					TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT,
+					(SELECT MLSFC_INDUTY_NM FROM TB_FRNCHS_MLSFC_CODE WHERE MLSFC_INDUTY_CODE = B.MLSFC_INDUTY_CODE) AS MLSFC_INDUTY_NM,
+					(SELECT LCLAS_INDUTY_NM FROM TB_FRNCHS_LCLAS_CODE WHERE LCLAS_INDUTY_CODE = (SELECT LCLAS_INDUTY_CODE FROM TB_FRNCHS_MLSFC_CODE WHERE MLSFC_INDUTY_CODE = B.MLSFC_INDUTY_CODE)) AS LCLAS_INDUTY_NM
+				FROM TB_FRNCHS_EXPRN_REGIST A, TB_FRNCHS_INFO B
+				WHERE A.DELETE_AT = 'N'
+				  AND A.CANCL_AT = 'N'
+				  AND A.FRNCHS_NO = B.FRNCHS_NO
+				  
+				  <!-- 기관관리자의 경우 전체 브랜드 체험 신청 정보를 봐야함 - 21.12.17  -->
+ 				  <if test='ssUserSeCode != "US04" '>
+ 				  	AND A.FRNCHS_NO IN (SELECT FRNCHS_NO FROM TB_CHRG_BRAND WHERE USER_NO = ${ssUserNo})
+ 				  </if> 
+ 				  
+				  <if test='!@org.springframework.util.StringUtils@isEmpty(confmSttusCode)'>
+				  AND A.CONFM_STTUS_CODE = #{confmSttusCode}
+				  </if>
+				  <if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+					  <if test='"A".equals(searchType)'>
+					  	AND B.BSN_SGNAL LIKE '%' || #{searchText} || '%'
+					  </if>
+					  <if test='"B".equals(searchType)'>
+					    AND B.MLSFC_INDUTY_CODE = (SELECT MLSFC_INDUTY_CODE FROM TB_FRNCHS_MLSFC_CODE WHERE MLSFC_INDUTY_NM LIKE '%' || #{searchText} || '%')
+					  </if>
+					  <if test='"C".equals(searchType)'>
+					  	AND CONCAT(A.BHF_NM,B.BSN_SGNAL) LIKE '%' || #{searchText} || '%'
+					  </if>
+					  <if test='"D".equals(searchType)'>
+					  	AND (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = A.CONFM_STTUS_CODE) LIKE '%' || #{searchText} || '%'
+					  </if>
+				  </if>
+		) TMP
+	 LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+	<!-- 프랜차이즈체험등록 조회 -->
+	<select id="selectFrnchsExprnRegistInfo" parameterType="egovMap" resultType="egovMap">
+	/* ExprDao.selectFrnchsExprnRegistInfo 프랜차이즈체험등록 조회 */
+		SELECT
+			A.EXPRN_REGIST_NO,
+			A.ADSTRD_CODE,
+			A.FRNCHS_NO,
+			(SELECT BSN_SGNAL FROM TB_FRNCHS_INFO WHERE FRNCHS_NO = A.FRNCHS_NO) AS BSN_SGNAL,
+			A.BHF_NM,
+			A.BHF_ADRES,
+			A.OPER_BEGIN_TIME,
+			A.OPER_END_TIME,
+			A.EXPRN_BEGIN_DE,
+			A.EXPRN_END_DE,
+			A.RCRIT_NMPR,
+			A.EMPLY_CO,
+			A.EDC_DE,
+			A.IMAGE_FILE_NO,
+			A.EDC_FILE_NO,
+			A.DROPER_STOR_AR,
+			A.CONFM_STTUS_CODE,
+			A.PROGRS_STTUS_SE_CODE,
+			A.DELETE_AT,
+			A.CONFM_USER_NO,
+			A.LAST_UPDT_USER_NO,
+			A.REGIST_DT,
+			A.CONFM_DT,
+			A.UPDT_DT,
+			B.ADSTRD_CODE,
+			B.ADSTRD_NM,
+			B.SIGNGU_CODE,
+			B.SIGNGU_NM,
+			(SELECT
+				BBB.RPRSNTV_NM
+			FROM TB_FRNCHS_INFO AAA, TB_FRNCHS_HEDOFC BBB
+			WHERE AAA.HEDOFC_NO = BBB.HEDOFC_NO
+			  AND AAA.FRNCHS_NO = A.FRNCHS_NO
+			) AS RPRSNTV_NM,
+			C.EXCTV_CO + C.EMP_CO AS EXCTV_EMP_SUM
+		FROM TB_FRNCHS_EXPRN_REGIST A
+		LEFT OUTER JOIN (
+						SELECT
+								AA.ADSTRD_CODE,
+								AA.ADSTRD_NM ,
+								BB.SIGNGU_CODE,
+								BB.SIGNGU_NM
+						FROM TB_ADSTRD_RELM AA, TB_SIGNGU_RELM BB
+						WHERE AA.SIGNGU_CODE = BB.SIGNGU_CODE
+						) B
+		ON A.ADSTRD_CODE = B.ADSTRD_CODE
+		INNER JOIN TB_FRNCHS_EXCTV_EMP C
+		ON A.FRNCHS_NO = C.FRNCHS_NO
+		WHERE A.EXPRN_REGIST_NO::TEXT = #{exprnRegistNo}
+		  AND C.YEAR = (SELECT MAX(YEAR) FROM TB_FRNCHS_EXCTV_EMP WHERE FRNCHS_NO = C.FRNCHS_NO )
+	</select>
+	<!-- 프랜차이즈체험등록 입력 -->
+	<insert id="insertFrnchsExprnRegist" parameterType="egovMap">
+	/* ExprDao.insertFrnchsExprnRegist 프랜차이즈체험등록 */
+		INSERT INTO TB_FRNCHS_EXPRN_REGIST (
+			ADSTRD_CODE,
+			FRNCHS_NO,
+			BHF_NM,
+			BHF_ADRES,
+			OPER_BEGIN_TIME,
+			OPER_END_TIME,
+			EXPRN_BEGIN_DE,
+			EXPRN_END_DE,
+			RCRIT_NMPR,
+			EMPLY_CO,
+			EDC_DE,
+			IMAGE_FILE_NO,
+			EDC_FILE_NO,
+			DROPER_STOR_AR,
+			CONFM_STTUS_CODE,
+			PROGRS_STTUS_SE_CODE,
+			CANCL_AT,
+			DELETE_AT,
+			LAST_UPDT_USER_NO,
+			REGIST_DT,
+			UPDT_DT
+		)VALUES(
+			#{adstrdCode},
+			#{frnchsNo},
+			#{bhfNm},
+			#{bhfAdres},
+			#{operBeginTime},
+			#{operEndTime},
+			CAST(#{exprnBeginDe} AS DATE),
+			CAST(#{exprnEndDe} AS DATE),
+			CAST(#{rcritNmpr} AS INTEGER),
+			CAST(#{emplyCo} AS INTEGER),
+			CAST(#{edcDe} AS DATE),
+			CAST(#{atchmnflNo_f1} AS INTEGER),
+			CAST(#{atchmnflNo_f2} AS INTEGER),
+			CAST(#{droperStorAr} AS INTEGER),
+			'CS03',/*승인상태코드*/
+			'PS03',/*진행상태코드*/
+			'N',
+			'N',
+			CAST(#{ssUserNo} AS INTEGER),
+			NOW(),
+			NOW()
+		)
+	</insert>
+	<!-- 프랜차이즈체험등록 수정 -->
+	<update id="updateFrnchsExprnRegist" parameterType="egovMap">
+	/* ExprDao.updateFrnchsExprnRegist 프랜차이즈체험등록 수정 */
+		UPDATE TB_FRNCHS_EXPRN_REGIST SET
+			ADSTRD_CODE = #{adstrdCode},
+			FRNCHS_NO = #{frnchsNo},
+			BHF_NM = #{bhfNm},
+			BHF_ADRES = #{bhfAdres},
+			OPER_BEGIN_TIME = #{operBeginTime},
+			OPER_END_TIME = #{operEndTime},
+			EXPRN_BEGIN_DE = CAST(#{exprnBeginDe} AS DATE),
+			EXPRN_END_DE = CAST(#{exprnEndDe} AS DATE),
+			RCRIT_NMPR = CAST(#{rcritNmpr} AS INTEGER),
+			EMPLY_CO = CAST(#{emplyCo} AS INTEGER),
+			EDC_DE = CAST(#{edcDe} AS DATE),
+			IMAGE_FILE_NO = CAST(#{atchmnflNo_f1} AS INTEGER),
+			EDC_FILE_NO = CAST(#{atchmnflNo_f2} AS INTEGER),
+			DROPER_STOR_AR = CAST(#{droperStorAr} AS INTEGER),
+			LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER),
+			UPDT_DT = NOW()
+		WHERE EXPRN_REGIST_NO::TEXT = #{exprnRegistNo}
+	</update>
+	<!-- 프랜차이즈체험등록 상태 변경 -->
+	<update id="updateFrnchsExprnRegistSttus" parameterType="egovMap">
+	/* ExprDao.updateFrnchsExprnRegistSttus 프랜차이즈체험등록 상태 변경 */
+		UPDATE TB_FRNCHS_EXPRN_REGIST SET
+			<if test='!@org.springframework.util.StringUtils@isEmpty(confmSttusCode)'>
+			CONFM_STTUS_CODE = #{confmSttusCode},
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(progrsSttusSeCode)'>
+			PROGRS_STTUS_SE_CODE = #{progrsSttusSeCode},
+			</if>
+			<if test='"CS01".equals(confmSttusCode)'>
+			CONFM_USER_NO = CAST(#{ssUserNo} AS INTEGER),
+			CONFM_DT = NOW(),
+			</if>
+			LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER),
+			UPDT_DT = NOW()
+		WHERE 1=1
+		<if test='!@org.springframework.util.StringUtils@isEmpty(exprnRegistNoArr)'>
+		  AND EXPRN_REGIST_NO::TEXT IN
+			<foreach collection="exprnRegistNoArr" item="item" index="index" open="(" separator="," close=")">
+			#{item}
+			</foreach>
+		</if>
+	</update>
+	<!-- 프랜차이즈체험등록 취소 처리 -->
+	<update id="updateFrnchsExprnRegistCancl" parameterType="egovMap">
+	/* ExprDao.updateFrnchsExprnRegistCancl 프랜차이즈체험등록 취소 처리 */
+		UPDATE TB_FRNCHS_EXPRN_REGIST SET
+			CANCL_AT = 'Y',
+			LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER),
+			UPDT_DT = NOW()
+		WHERE 1=1
+		  AND CONFM_STTUS_CODE = 'CS03'/*신청 상태인것만*/
+		<if test='!@org.springframework.util.StringUtils@isEmpty(exprnRegistNoArr)'>
+		  AND EXPRN_REGIST_NO::TEXT IN
+			<foreach collection="exprnRegistNoArr" item="item" index="index" open="(" separator="," close=")">
+			#{item}
+			</foreach>
+		</if>
+	</update>
+	<!-- 프랜차이즈체험신청 등록 여부 체크 -->
+	<select id="selectFrnchsExprnReqstCheckCount" parameterType="egovMap" resultType="int">
+	SELECT
+		COUNT(*)
+	FROM TB_FRNCHS_EXPRN_REQST
+	WHERE USER_NO::TEXT = #{ssUserNo}
+	  AND EXPRN_REGIST_NO::TEXT = #{exprnRegistNo}
+	  AND CANCL_AT = 'N'
+	</select>
+
+	<!-- 프랜차이즈체험신청 목록 개수 조회 -->
+	<select id="selectFrnchsExprnReqstListCount" parameterType="egovMap" resultType="int">
+	/* ExprDao.selectFrnchsExprnReqstListCount 프랜차이즈체험신청 목록 개수 조회 */
+		SELECT COUNT(*)
+		  FROM (
+		  	  SELECT *
+		  	  	   , (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'FNTN_STTUS_SE_CODE' AND CODE_VALUE = 'CP' || substring(A.CONFM_STTUS_CODE,4,1) || substring(A.PROGRS_STTUS_SE_CODE,4,1)) AS FNTN_STTUS_SE_CODE_NM
+				FROM TB_FRNCHS_EXPRN_REQST A, TB_FRNCHS_EXPRN_REGIST B, TB_FRNCHS_INFO C
+				WHERE A.EXPRN_REGIST_NO = B.EXPRN_REGIST_NO
+				  AND B.FRNCHS_NO = C.FRNCHS_NO
+				  AND A.USER_NO::TEXT = #{ssUserNo}
+				  AND A.CANCL_AT = 'N'
+		<!-- 		  AND A.CONFM_STTUS_CODE = #{confmSttusCode} -->
+				 <if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+				 	<if test='"A".equals(searchType)'>
+				  	AND C.BSN_SGNAL LIKE '%' || #{searchText} || '%'
+				 	</if>
+				 	<if test='"C".equals(searchType)'>
+				  	AND B.BHF_ADRES LIKE '%' || #{searchText} || '%'
+				 	</if>
+				 </if>   
+		  ) A
+		  WHERE 1=1
+			<if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+				<if test='"B".equals(searchType)'>
+				 	AND A.FNTN_STTUS_SE_CODE_NM LIKE '%' || #{searchText} || '%'
+				</if>
+			</if>   
+	</select>
+	
+	<!-- 프랜차이즈체험신청 목록 조회 -->
+	<select id="selectFrnchsExprnReqstList" parameterType="egovMap" resultType="egovMap">
+	/* ExprDao.selectFrnchsExprnReqstList 프랜차이즈체험신청 목록 조회 */
+	SELECT A.* 
+		 , ROW_NUMBER() OVER (ORDER BY A.EXPRN_REGIST_NO DESC) AS RN
+	  FROM (
+			SELECT TMP.*
+				 , (CASE WHEN tmp.EXPRN_END_DE <![CDATA[<]]> NOW() THEN '마감'
+				 		 ELSE (CASE WHEN tmp.FNTN_STTUS_SE_CODE_NM = '매칭완료' AND D.RANK = 2 THEN '마감' 
+							 	    WHEN tmp.FNTN_STTUS_SE_CODE_NM = '체험중' AND D.RANK = 2 THEN '검토중'
+							 	 ELSE tmp.FNTN_STTUS_SE_CODE_NM END )
+						END ) AS FNTN_STTUS_SE_CODE_NM_R
+			  	FROM (
+						SELECT DISTINCT 
+							B.FRNCHS_NO ,
+							C.BSN_SGNAL ,
+							B.BHF_NM ,
+							A.EXPRN_REQST_NO,
+							A.EXPRN_REGIST_NO,
+							A.USER_NO,
+							A.CONFM_STTUS_CODE,
+							(SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = A.CONFM_STTUS_CODE) AS CONFM_STTUS_CODE_NM,
+							A.PROGRS_STTUS_SE_CODE,
+							(SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'PROGRS_STTUS_SE_CODE' AND CODE_VALUE = A.PROGRS_STTUS_SE_CODE) AS PROGRS_STTUS_SE_CODE_NM,
+							(SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'FNTN_STTUS_SE_CODE' AND CODE_VALUE = 'CP' || substring(A.CONFM_STTUS_CODE,4,1) || substring(A.PROGRS_STTUS_SE_CODE,4,1)) AS FNTN_STTUS_SE_CODE_NM,
+							A.CANCL_AT,
+							A.CONFM_USER_NO,
+							A.LAST_UPDT_USER_NO,
+							TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT,
+							A.CONFM_DT,
+							A.UPDT_DT ,
+							B.EXPRN_END_DE ,
+							B.BHF_ADRES
+						FROM TB_FRNCHS_EXPRN_REQST A 
+						   , TB_FRNCHS_EXPRN_REGIST B
+						   , TB_FRNCHS_INFO C
+						WHERE A.EXPRN_REGIST_NO = B.EXPRN_REGIST_NO
+						  AND B.FRNCHS_NO = C.FRNCHS_NO
+						  AND A.USER_NO::TEXT = #{ssUserNo}
+						  AND A.CANCL_AT = 'N'
+						 <if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+						 	<if test='"A".equals(searchType)'>
+						  	AND C.BSN_SGNAL LIKE '%' || #{searchText} || '%'
+						 	</if>
+						 	<if test='"C".equals(searchType)'>
+						  	AND B.BHF_ADRES LIKE '%' || #{searchText} || '%'
+						 	</if>
+						 </if>   
+					) TMP
+					, (
+						SELECT AA.exprn_regist_no
+							 , AA.user_no
+							 , AA.RANK
+						  FROM (
+						  	    SELECT b.exprn_regist_no
+						 	  	     , a.regist_dt 
+							  		 , a.user_no
+							  		 , c.BSN_SGNAL
+							  		 , b.BHF_ADRES
+							  		 , a.PROGRS_STTUS_SE_CODE
+							  		 , a.CONFM_STTUS_CODE
+							  		 , (CASE WHEN ROW_NUMBER() OVER (PARTITION BY b.exprn_regist_no ORDER BY a.regist_dt ASC) > b.rcrit_nmpr THEN 2 ELSE 1 END) AS RANK
+						   		  FROM TB_FRNCHS_EXPRN_REQST A, TB_FRNCHS_EXPRN_REGIST B, TB_FRNCHS_INFO C
+						  		 WHERE A.EXPRN_REGIST_NO = B.EXPRN_REGIST_NO
+								   AND B.FRNCHS_NO = C.FRNCHS_NO
+								   AND A.CANCL_AT = 'N'
+						  		 ORDER BY b.exprn_regist_no, a.regist_dt
+						  	   ) AA
+					  	   WHERE AA.USER_NO::TEXT = #{ssUserNo}
+						 <if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+						  <if test='"A".equals(searchType)'>
+						  	AND AA.BSN_SGNAL LIKE '%' || #{searchText} || '%'
+						  </if>
+						  <if test='"C".equals(searchType)'>
+						  	AND AA.BHF_ADRES LIKE '%' || #{searchText} || '%'
+						  </if>
+						 </if>  
+					  	) D
+				WHERE TMP.exprn_regist_no = D.exprn_regist_no  	  
+	  ) A
+	WHERE 1=1 
+	<if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+		<if test='"B".equals(searchType)'>
+		 	AND A.FNTN_STTUS_SE_CODE_NM_R LIKE '%' || #{searchText} || '%'
+		</if>
+	</if>  
+	 LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+	<!-- 프랜차이즈체험신청 입력 -->
+	<insert id="insertFrnchsExprnReqst" parameterType="egovMap">
+	/* ExprDao.insertFrnchsExprnReqst 프랜차이즈체험신청 입력 */
+		INSERT INTO TB_FRNCHS_EXPRN_REQST (
+			EXPRN_REGIST_NO,
+			USER_NO,
+			CONFM_STTUS_CODE,
+			PROGRS_STTUS_SE_CODE,
+			CANCL_AT,
+			LAST_UPDT_USER_NO,
+			REGIST_DT,
+			UPDT_DT
+		)VALUES(
+			CAST(#{exprnRegistNo} AS INTEGER),
+			CAST(#{ssUserNo} AS INTEGER),
+			'CS03',
+			'PS03',
+			'N',
+			CAST(#{ssUserNo} AS INTEGER),
+			NOW(),
+			NOW()
+		)
+	</insert>
+	<!-- 프랜차이즈체험신청 수정 -->
+	<update id="updateFrnchsExprnReqst" parameterType="egovMap">
+		UPDATE TB_FRNCHS_EXPRN_REQST SET
+			EXPRN_REGIST_NO = 0,
+			USER_NO = 0,
+			CONFM_STTUS_CODE = '',
+			PROGRS_STTUS_SE_CODE = '',
+			CANCL_AT = '',
+			CONFM_USER_NO = 0,
+			LAST_UPDT_USER_NO = 0,
+			REGIST_DT = '',
+			CONFM_DT = '',
+			UPDT_DT = ''
+		WHERE EXPRN_REQST_NO::TEXT = #{exprnReqstNo}
+	</update>
+	<!-- 프랜차이즈체험신청 상태 변경 -->
+	<update id="updateFrnchsExprnReqstSttus" parameterType="egovMap">
+		UPDATE TB_FRNCHS_EXPRN_REQST SET
+			<if test='!@org.springframework.util.StringUtils@isEmpty(confmSttusCode)'>
+			CONFM_STTUS_CODE = #{confmSttusCode},
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(progrsSttusSeCode)'>
+			PROGRS_STTUS_SE_CODE = #{progrsSttusSeCode},
+			</if>
+			<if test='"CS01".equals(confmSttusCode)'>
+			CONFM_USER_NO = CAST(#{ssUserNo} AS INTEGER),
+			CONFM_DT = NOW(),
+			</if>
+			LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER),
+			UPDT_DT = NOW()
+		WHERE 1=1
+		<if test='!@org.springframework.util.StringUtils@isEmpty(exprnReqstNoArr)'>
+		  AND EXPRN_REQST_NO::TEXT IN
+			<foreach collection="exprnReqstNoArr" item="item" index="index" open="(" separator="," close=")">
+			#{item}
+			</foreach>
+		</if>
+	</update>
+	<!-- 프랜차이즈체험신청 취소 처리 -->
+	<update id="updateFrnchsExprnReqstCancl" parameterType="egovMap">
+		UPDATE TB_FRNCHS_EXPRN_REQST SET
+			CANCL_AT = 'Y',
+			LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER),
+			UPDT_DT = NOW()
+		WHERE USER_NO::TEXT = #{ssUserNo}
+		  AND CONFM_STTUS_CODE = 'CS03'/*신청 상태인것만*/
+		<if test='!@org.springframework.util.StringUtils@isEmpty(exprnReqstNoArr)'>
+		  AND EXPRN_REQST_NO::TEXT IN
+			<foreach collection="exprnReqstNoArr" item="item" index="index" open="(" separator="," close=")">
+			#{item}
+			</foreach>
+		</if>
+	</update>
+	<!-- 체험 프랜차이즈 매칭현황 목록 총건수 조회 -->
+	<select id="selectFranMtchgMngListCount" parameterType="egovMap" resultType="int">
+	/* ExprDao.selectFranMtchgMngListCount 체험 프랜차이즈 매칭현황 목록 총건수 조회 */
+		SELECT
+			COUNT(1)
+		FROM TB_FRNCHS_EXPRN_REGIST A, TB_FRNCHS_INFO B
+		WHERE A.DELETE_AT = 'N'
+		  AND A.CANCL_AT = 'N'
+		  AND A.FRNCHS_NO = B.FRNCHS_NO
+		  AND A.CONFM_STTUS_CODE = 'CS01'
+		  <if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+			  <if test='"A".equals(searchType)'>
+			  	AND B.BSN_SGNAL LIKE '%' || #{searchText} || '%'
+			  </if>
+			  <if test='"B".equals(searchType)'>
+			    AND B.MLSFC_INDUTY_CODE IN (SELECT MLSFC_INDUTY_CODE FROM TB_FRNCHS_MLSFC_CODE WHERE MLSFC_INDUTY_NM LIKE '%' || #{searchText} || '%')
+			  </if>
+			  <if test='"C".equals(searchType)'>
+			  	AND CONCAT(A.BHF_NM,B.BSN_SGNAL) LIKE '%' || #{searchText} || '%'
+			  </if>
+		  </if>
+	</select>
+	<!-- 체험 프랜차이즈 매칭현황 목록 조회 -->
+	<select id="selectFranMtchgMngList" parameterType="egovMap" resultType="egovMap">
+	/* ExprDao.selectFranMtchgMngList 체험 프랜차이즈 매칭현황 목록 조회 */
+		SELECT TMP.*
+		 , ROW_NUMBER() OVER (ORDER BY EXPRN_REGIST_NO DESC) AS RN
+	  	FROM (
+				SELECT
+					(SELECT MLSFC_INDUTY_NM FROM TB_FRNCHS_MLSFC_CODE WHERE MLSFC_INDUTY_CODE = B.MLSFC_INDUTY_CODE) AS MLSFC_INDUTY_NM,
+					A.EXPRN_REGIST_NO,
+					A.FRNCHS_NO,
+					A.BHF_NM,
+					B.BSN_SGNAL,
+					A.BHF_ADRES,
+					TO_CHAR(A.EXPRN_BEGIN_DE,'YYYY-MM-DD') AS EXPRN_BEGIN_DE,
+					TO_CHAR(A.EXPRN_END_DE ,'YYYY-MM-DD') AS EXPRN_END_DE,
+					TO_CHAR(A.CONFM_DT ,'YYYY-MM-DD') AS CONFM_DT,
+					A.EDC_DE,
+					A.CONFM_STTUS_CODE,
+					A.RCRIT_NMPR,
+					(SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = A.CONFM_STTUS_CODE) AS CONFM_STTUS_CODE_NM,
+					(SELECT COUNT(*) FROM TB_FRNCHS_EXPRN_REQST WHERE EXPRN_REGIST_NO = A.EXPRN_REGIST_NO AND CANCL_AT = 'N') AS REQST_CNT,
+					A.PROGRS_STTUS_SE_CODE,
+					(SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'PROGRS_STTUS_SE_CODE' AND CODE_VALUE = A.PROGRS_STTUS_SE_CODE) AS PROGRS_STTUS_SE_CODE_NM,
+					(SELECT LCLAS_INDUTY_NM FROM TB_FRNCHS_LCLAS_CODE WHERE LCLAS_INDUTY_CODE = (SELECT LCLAS_INDUTY_CODE FROM TB_FRNCHS_MLSFC_CODE WHERE MLSFC_INDUTY_CODE = B.MLSFC_INDUTY_CODE)) AS LCLAS_INDUTY_NM,
+					TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+				FROM TB_FRNCHS_EXPRN_REGIST A, TB_FRNCHS_INFO B
+				WHERE A.DELETE_AT = 'N'
+				  AND A.CANCL_AT = 'N'
+				  AND A.FRNCHS_NO = B.FRNCHS_NO
+				  AND A.CONFM_STTUS_CODE = 'CS01'
+				  <if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+					  <if test='"A".equals(searchType)'>
+					  	AND B.BSN_SGNAL LIKE '%' || #{searchText} || '%'
+					  </if>
+					  <if test='"B".equals(searchType)'>
+					    AND B.MLSFC_INDUTY_CODE IN (SELECT MLSFC_INDUTY_CODE FROM TB_FRNCHS_MLSFC_CODE WHERE MLSFC_INDUTY_NM LIKE '%' || #{searchText} || '%')
+					  </if>
+					  <if test='"C".equals(searchType)'>
+					  	AND CONCAT(A.BHF_NM,B.BSN_SGNAL) LIKE '%' || #{searchText} || '%'
+					  </if>
+				  </if>
+		) TMP
+	 LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+	<!-- 체험 프랜차이즈 신청자 현황 목록 조회 -->
+	<select id="selectFrnchsExprnReqstUserInfo" parameterType="egovMap" resultType="egovMap">
+	/* ExprDao.selectFrnchsExprnReqstUserInfo 체험 프랜차이즈 신청자 현황 목록 조회 */
+	SELECT
+		ROW_NUMBER() OVER (ORDER BY A.REGIST_DT ASC) AS RN,
+		B.USER_NM,
+		B.TELNO,
+		B.EMAIL_ADRES,
+		A.CONFM_STTUS_CODE,
+		(SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = A.CONFM_STTUS_CODE) AS CONFM_STTUS_CODE_NM,
+		TO_CHAR(A.REGIST_DT,'YYYY-MM-DD HH24:MI:SS') AS REGIST_DT,
+		TO_CHAR(A.CONFM_DT,'YYYY-MM-DD HH24:MI:SS') AS CONFM_DT,
+		TO_CHAR(A.UPDT_DT,'YYYY-MM-DD HH24:MI:SS') AS UPDT_DT,
+		A.EXPRN_REQST_NO
+	FROM TB_FRNCHS_EXPRN_REQST A, TB_USER B
+	WHERE A.USER_NO = B.USER_NO
+	  AND A.EXPRN_REGIST_NO::TEXT = #{exprnRegistNo}
+	  AND A.CANCL_AT = 'N'
+	</select>
+	<!-- 체험 프랜차이즈 매칭현황 삭제하기 -->
+	<update id="updateFrnchsExprnRegistDelete" parameterType="egovMap">
+	/* ExprDao.updateFrnchsExprnRegistDelete 체험 프랜차이즈 매칭현황 삭제하기 */
+	UPDATE TB_FRNCHS_EXPRN_REGIST SET
+		DELETE_AT = 'Y'
+	WHERE DELETE_AT = 'N'
+	  AND CANCL_AT = 'N'
+	  AND PROGRS_STTUS_SE_CODE = 'PS02'/*종료*/
+	  	<if test='!@org.springframework.util.StringUtils@isEmpty(exprnRegistNoArr)'>
+		  AND EXPRN_REGIST_NO::TEXT IN
+			<foreach collection="exprnRegistNoArr" item="item" index="index" open="(" separator="," close=")">
+			#{item}
+			</foreach>
+		</if>
+	</update>
+	<!-- 프랜차이즈 운영 일기장 체험신청 승인된 지점 목록 총건수 조회 -->
+	<select id="selectFrnchsExprnReqstConfmListCount" parameterType="egovMap" resultType="int">
+	/* ExprDao.selectFrnchsExprnReqstConfmListCount 프랜차이즈 운영 일기장 체험신청 승인된 지점 목록 총건수 조회 */
+	SELECT
+		COUNT(1)
+	FROM TB_FRNCHS_EXPRN_REQST A, TB_FRNCHS_EXPRN_REGIST B, TB_FRNCHS_INFO C
+	WHERE A.EXPRN_REGIST_NO = B.EXPRN_REGIST_NO
+	  AND B.FRNCHS_NO = C.FRNCHS_NO
+	  AND A.CONFM_STTUS_CODE = 'CS01'
+<!-- 	  AND A.USER_NO::TEXT = #{ssUserNo} -->
+	  <if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+		  <if test='"A".equals(searchType)'>
+		  	AND C.BSN_SGNAL LIKE '%' || #{searchText} || '%'
+		  </if>
+		  <if test='"B".equals(searchType)'>
+		    AND B.PROGRS_STTUS_SE_CODE IN (SELECT CODE_VALUE FROM TB_CMMN_CODE WHERE CODE_ID = 'PROGRS_STTUS_SE_CODE' AND CODE_VALUE_NM LIKE '%' || #{searchText} || '%')
+		  </if>
+		  <if test='"C".equals(searchType)'>
+		  	AND B.BHF_ADRES LIKE '%' || #{searchText} || '%'
+		  </if>
+	  </if> 
+	</select>
+	<!-- 프랜차이즈 운영 일기장 체험신청 승인된 지점 목록 조회 -->
+	<select id="selectFrnchsExprnReqstConfmList" parameterType="egovMap" resultType="egovMap">
+	/* ExprDao.selectFrnchsExprnReqstConfmList 프랜차이즈 운영 일기장 체험신청 승인된 지점 목록 조회 */
+	SELECT TMP.*
+		 , ROW_NUMBER() OVER (ORDER BY REGIST_DT ASC) AS RN
+	  	FROM ( 
+				SELECT
+					A.REGIST_DT,
+					C.BSN_SGNAL,
+					B.BHF_NM,
+					B.BHF_ADRES,
+					B.EXPRN_BEGIN_DE,
+					B.EXPRN_END_DE,
+					B.PROGRS_STTUS_SE_CODE,
+					(SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'PROGRS_STTUS_SE_CODE' AND CODE_VALUE = B.PROGRS_STTUS_SE_CODE) AS PROGRS_STTUS_SE_CODE_NM,
+					B.EDC_FILE_NO,
+					(SELECT ATCHMNFL_NO || '_' || FILE_SN FROM TB_ATCHMNFL_STRE WHERE ATCHMNFL_NO = B.EDC_FILE_NO AND ATCHMNFL_STTUS_CODE = 'FS02') AS EDC_FILE_KEY,
+					A.EXPRN_REGIST_NO
+				FROM TB_FRNCHS_EXPRN_REQST A, TB_FRNCHS_EXPRN_REGIST B, TB_FRNCHS_INFO C
+				WHERE A.EXPRN_REGIST_NO = B.EXPRN_REGIST_NO
+				  AND B.FRNCHS_NO = C.FRNCHS_NO
+				  AND A.CONFM_STTUS_CODE = 'CS01'
+<!-- 				  AND A.USER_NO::TEXT = #{ssUserNo} -->
+				  <if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+					  <if test='"A".equals(searchType)'>
+					  	AND C.BSN_SGNAL LIKE '%' || #{searchText} || '%'
+					  </if>
+					  <if test='"B".equals(searchType)'>
+					    AND B.PROGRS_STTUS_SE_CODE IN (SELECT CODE_VALUE FROM TB_CMMN_CODE WHERE CODE_ID = 'PROGRS_STTUS_SE_CODE' AND CODE_VALUE_NM LIKE '%' || #{searchText} || '%')
+					  </if>
+					  <if test='"C".equals(searchType)'>
+					  	AND B.BHF_ADRES LIKE '%' || #{searchText} || '%'
+					  </if>
+				  </if>  
+	  ) TMP
+	 LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+	<!-- 체험 예비창업자 관리현황 목록 총건수 조회 -->
+	<select id="selectFrnchsExprnRegistManageListCount" parameterType="egovMap" resultType="int">
+	/* ExprDao.selectFrnchsExprnRegistManageListCount 체험 예비창업자 관리현황 목록 총건수 조회 */
+	SELECT
+		COUNT(1)
+	FROM TB_FRNCHS_EXPRN_REGIST B, TB_FRNCHS_INFO C, TB_CHRG_BRAND D
+	WHERE 1=1
+	  AND B.FRNCHS_NO = C.FRNCHS_NO
+	  AND C.FRNCHS_NO = D.FRNCHS_NO
+ 	  AND D.USER_NO::TEXT = #{ssUserNo}
+	  AND B.CONFM_STTUS_CODE IN ('CS01','CS05')
+	  AND B.PROGRS_STTUS_SE_CODE = 'PS01'
+	<if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+					  <if test='"A".equals(searchType)'>
+					  	AND (C.BSN_SGNAL LIKE '%' || #{searchText} || '%'
+					  	OR B.BHF_NM LIKE '%' || #{searchText} || '%')
+					  </if>
+					  <if test='"B".equals(searchType)'>
+					    AND B.RCRIT_NMPR::TEXT LIKE '%' || #{searchText} || '%'
+					  </if>
+					  <if test='"C".equals(searchType)'>
+					  	AND B.EMPLY_CO::TEXT LIKE '%' || #{searchText} || '%'
+					  </if>
+					  <if test='"D".equals(searchType)'>
+					  	AND ( ((SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = B.CONFM_STTUS_CODE) LIKE '%' || #{searchText} || '%')
+					  	      OR ((SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'PROGRS_STTUS_SE_CODE' AND CODE_VALUE = B.PROGRS_STTUS_SE_CODE AND CONFM_STTUS_CODE != 'CS05') LIKE '%' || #{searchText} || '%')
+					  		)
+					  </if>
+				  </if>
+	</select>
+	<!-- 체험 예비창업자 관리현황 목록 조회 -->
+	<select id="selectFrnchsExprnRegistManageList" parameterType="egovMap" resultType="egovMap">
+	/* ExprDao.selectFrnchsExprnRegistManageList 체험 예비창업자 관리현황 목록 조회 */
+	SELECT TMP.*
+		 , ROW_NUMBER() OVER (ORDER BY REGIST_DT ASC) AS RN
+	  	FROM (
+				SELECT
+					B.REGIST_DT,
+					C.BSN_SGNAL,
+					B.BHF_NM,
+					B.EXPRN_BEGIN_DE,
+					B.EXPRN_END_DE,
+					B.RCRIT_NMPR,
+					B.EMPLY_CO,
+					B.PROGRS_STTUS_SE_CODE,
+					(SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'PROGRS_STTUS_SE_CODE' AND CODE_VALUE = B.PROGRS_STTUS_SE_CODE) AS PROGRS_STTUS_SE_CODE_NM,
+					B.CONFM_STTUS_CODE,
+					(SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = B.CONFM_STTUS_CODE) AS CONFM_STTUS_CODE_NM,
+					B.EXPRN_REGIST_NO,
+					(SELECT COUNT(1) FROM TB_FRNCHS_EXPRN_REQST CC WHERE CC.EXPRN_REGIST_NO = B.EXPRN_REGIST_NO AND CC.CONFM_STTUS_CODE = 'CS01' AND CC.PROGRS_STTUS_SE_CODE = 'PS01' AND CC.CANCL_AT = 'N') AS REQST_CONFM_CNT,
+					(SELECT COUNT(1) FROM TB_FRNCHS_EXPRN_REQST RR WHERE RR.EXPRN_REGIST_NO = B.EXPRN_REGIST_NO AND RR.CANCL_AT = 'N') AS REQST_CNT
+				FROM TB_FRNCHS_EXPRN_REGIST B, TB_FRNCHS_INFO C, TB_CHRG_BRAND D
+				WHERE 1=1
+				  AND B.FRNCHS_NO = C.FRNCHS_NO
+				  AND C.FRNCHS_NO = D.FRNCHS_NO
+ 				  AND D.USER_NO::TEXT = #{ssUserNo}
+ 				  AND B.CONFM_STTUS_CODE IN ('CS01','CS05')
+ 				  AND B.PROGRS_STTUS_SE_CODE = 'PS01'
+ 				  <if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+					  <if test='"A".equals(searchType)'>
+					  	AND (C.BSN_SGNAL LIKE '%' || #{searchText} || '%' 
+					  	OR B.BHF_NM LIKE '%' || #{searchText} || '%')
+					  </if>
+					  <if test='"B".equals(searchType)'>
+					    AND B.RCRIT_NMPR::TEXT LIKE '%' || #{searchText} || '%'
+					  </if>
+					  <if test='"C".equals(searchType)'>
+					  	AND B.EMPLY_CO::TEXT LIKE '%' || #{searchText} || '%'
+					  </if>
+					  <if test='"D".equals(searchType)'>
+					  	AND ( ((SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = B.CONFM_STTUS_CODE) LIKE '%' || #{searchText} || '%')
+					  	      OR ((SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'PROGRS_STTUS_SE_CODE' AND CODE_VALUE = B.PROGRS_STTUS_SE_CODE AND CONFM_STTUS_CODE != 'CS05') LIKE '%' || #{searchText} || '%')
+					  		)
+					  </if>
+				  </if>
+	  ) TMP
+	 LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+
+	<!-- 프랜차이즈 운영 일기장 조회 -->
+	<select id="selectFrnchsExprnDiaryList" parameterType="egovMap" resultType="egovMap">
+	/* ExprDao.selectFrnchsExprnDiaryList 프랜차이즈 운영 일기장 조회 */
+	SELECT
+		A.EXPRN_REGIST_NO || '@@' || A.USER_NO || '@@' || A.OPER_DE AS ID,
+		'#ffffff' AS TEXT_COLOR,
+		'false' AS ALL_DAY,
+		'#D25565' AS BACKGROUND_COLOR,
+		A.EXPRN_REGIST_NO,
+		A.USER_NO,
+		(SELECT USER_NM FROM TB_USER WHERE USER_NO = A.USER_NO) AS USER_NM,
+		A.OPER_DE AS START,
+		A.OPER_DE AS END,
+		A.DAIL_SELNG_AM,
+		A.JOB_BEGIN_TIME,
+		A.JOB_END_TIME,
+		A.BSN_DIARY_CN,
+		A.HEDOFC_FDBCK_CN,
+		A.LAST_UPDT_USER_NO,
+		A.REGIST_DT,
+		A.UPDT_DT
+	FROM
+		TB_FRNCHS_EXPRN_DIARY A
+	WHERE 1=1
+	  <if test='"US01".equals(ssUserSeCode)'>
+	  AND A.USER_NO::TEXT = #{ssUserNo}
+	  </if>
+	  AND A.EXPRN_REGIST_NO::TEXT = #{exprnRegistNo}
+	ORDER BY A.USER_NO
+	</select>
+	<!-- 프랜차이즈 운영 일기장 입력 -->
+	<insert id="insertFrnchsExprnDiary" parameterType="egovMap">
+	/* ExprDao.insertFrnchsExprnDiaryList 프랜차이즈 운영 일기장 입력 */
+	INSERT INTO TB_FRNCHS_EXPRN_DIARY (
+		EXPRN_REGIST_NO,
+		USER_NO,
+		OPER_DE,
+		DAIL_SELNG_AM,
+		JOB_BEGIN_TIME,
+		JOB_END_TIME,
+		BSN_DIARY_CN,
+		LAST_UPDT_USER_NO,
+		REGIST_DT,
+		UPDT_DT
+	)VALUES(
+		CAST(#{exprnRegistNo} AS INTEGER),
+		CAST(#{reqUserNo} AS INTEGER),
+		CAST(#{operDe} AS DATE),
+		#{dailSelngAm},
+		#{jobBeginTime},
+		#{jobEndTime},
+		#{bsnDiaryCn},
+		CAST(#{ssUserNo} AS INTEGER),
+		NOW(),
+		NOW()
+	)
+	</insert>
+	<!-- 프랜차이즈 운영 일기장 삭제 -->
+	<delete id="deleteFrnchsExprnDiary" parameterType="egovMap">
+	/* ExprDao.deleteFrnchsExprnDiary 프랜차이즈 운영 일기장 삭제 */
+	DELETE FROM TB_FRNCHS_EXPRN_DIARY
+	WHERE EXPRN_REGIST_NO::TEXT = #{exprnRegistNo}
+	  AND USER_NO = #{reqUserNo}
+	</delete>
+	<!-- 프랜차이즈 운영 일기장 수정 -->
+	<update id="updateFrnchsExprnDiary" parameterType="egovMap">
+	/* ExprDao.updateFrnchsExprnDiaryList 프랜차이즈 운영 일기장 수정 */
+	UPDATE TB_FRNCHS_EXPRN_DIARY SET
+		DAIL_SELNG_AM = CAST(#{dailSelngAm} AS INTEGER),
+		JOB_BEGIN_TIME = #{jobBeginTime},
+		JOB_END_TIME = #{jobEndTime},
+		BSN_DIARY_CN = #{bsnDiaryCn},
+		HEDOFC_FDBCK_CN = #{hedofcFdbckCn},
+		LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER),
+		UPDT_DT = NOW()
+	WHERE EXPRN_REGIST_NO::TEXT = #{exprnRegistNo}
+	<if test='"US01".equals(ssUserSeCode)'>
+	  AND USER_NO::TEXT = #{ssUserNo}
+	</if>
+	<if test='"US03".equals(ssUserSeCode)'>
+	  AND USER_NO::TEXT = #{reqUserNo}
+	</if>
+	  AND OPER_DE::TEXT = #{operDe}
+	</update>
+	
+	<!-- 프랜차이즈 운영 일기장 수정 드래그 -->
+	<update id="updateFrnchsExprnDiaryDrag" parameterType="egovMap">
+	/* ExprDao.updateFrnchsExprnDiaryList 프랜차이즈 운영 일기장 수정 */
+	UPDATE TB_FRNCHS_EXPRN_DIARY SET
+		DAIL_SELNG_AM = CAST(#{dailSelngAm} AS INTEGER),
+		JOB_BEGIN_TIME = #{jobBeginTime},
+		JOB_END_TIME = #{jobEndTime},
+		BSN_DIARY_CN = #{bsnDiaryCn},
+		HEDOFC_FDBCK_CN = #{hedofcFdbckCn},
+		LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER),
+		UPDT_DT = NOW(),
+		OPER_DE = CAST(#{operDeNow} AS DATE)
+	WHERE EXPRN_REGIST_NO::TEXT = #{exprnRegistNo}
+	<if test='"US01".equals(ssUserSeCode)'>
+	  AND USER_NO::TEXT = #{ssUserNo}
+	</if>
+	<if test='"US03".equals(ssUserSeCode)'>
+	  AND USER_NO::TEXT = #{reqUserNo}
+	</if>
+	  AND OPER_DE::TEXT = #{operDe}
+	</update>
+	<!-- 체험신청번호로 체험등록 정보 조회 -->
+	<select id="selectExprnRegistInfo" parameterType="egovMap" resultType="egovMap">
+	/* ExprDao.selectExprnRegistInfo 체험신청번호로 체험등록번호 조회 */
+	SELECT
+		EXPRN_REGIST_NO,
+		USER_NO
+	FROM TB_FRNCHS_EXPRN_REQST
+	WHERE EXPRN_REQST_NO::TEXT = #{exprnReqstNo}
+	GROUP BY EXPRN_REGIST_NO, USER_NO
+	</select>
+	<!-- 모집인원과 승인된 신청자수가 같은지 조회 -->
+	<select id="selectExprnCompleteAt" parameterType="egovMap" resultType="String">
+	/* ExprDao.selectExprnCompleteAt 모집인원과 승인된 신청자수가 같은지 조회 */
+	SELECT
+		CASE WHEN A.RCRIT_NMPR = COUNT(B.*) THEN 'Y' ELSE 'N' END AS COMPLETE_AT
+	FROM TB_FRNCHS_EXPRN_REGIST A, TB_FRNCHS_EXPRN_REQST B
+	WHERE A.EXPRN_REGIST_NO = B.EXPRN_REGIST_NO
+	  AND A.EXPRN_REGIST_NO::TEXT = #{exprnRegistNo}
+	  AND B.CONFM_STTUS_CODE = 'CS01'
+	  AND B.PROGRS_STTUS_SE_CODE = 'PS01'
+	  AND B.CANCL_AT = 'N'
+	GROUP BY A.RCRIT_NMPR
+	</select>
+	<!-- 메인페이지 프랜차이즈체험등록 목록 조회 -->
+	<select id="selectMainFrnchsExprnRegistList" parameterType="egovMap" resultType="egovMap">
+	/* ExprDao.selectMainFrnchsExprnRegistList 메인페이지 프랜차이즈체험등록 목록 조회 */
+	SELECT
+		A.EXPRN_REGIST_NO,
+		A.ADSTRD_CODE,
+		A.FRNCHS_NO,
+		A.BHF_NM,
+		B.BSN_SGNAL,
+		A.BHF_ADRES,
+		A.OPER_BEGIN_TIME,
+		A.OPER_END_TIME,
+		A.EXPRN_BEGIN_DE,
+		A.EXPRN_END_DE,
+		A.RCRIT_NMPR,
+		A.EMPLY_CO,
+		A.EDC_DE,
+		A.IMAGE_FILE_NO,
+		(SELECT ATCHMNFL_NO || '_' || FILE_SN FROM TB_ATCHMNFL_STRE WHERE ATCHMNFL_NO = A.IMAGE_FILE_NO AND ATCHMNFL_STTUS_CODE = 'FS02') AS IMAGE_FILE_KEY,
+		A.EDC_FILE_NO,
+		A.DROPER_STOR_AR,
+		A.CONFM_STTUS_CODE,
+		(SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = A.CONFM_STTUS_CODE) AS CONFM_STTUS_CODE_NM,
+		A.PROGRS_STTUS_SE_CODE,
+		(SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'PROGRS_STTUS_SE_CODE' AND CODE_VALUE = A.PROGRS_STTUS_SE_CODE) AS PROGRS_STTUS_SE_CODE_NM,
+		TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT,
+		(SELECT MLSFC_INDUTY_NM FROM TB_FRNCHS_MLSFC_CODE WHERE MLSFC_INDUTY_CODE = B.MLSFC_INDUTY_CODE) AS MLSFC_INDUTY_NM,
+		B.REPRSNT_NO
+	FROM TB_FRNCHS_EXPRN_REGIST A, TB_FRNCHS_INFO B
+	WHERE A.DELETE_AT = 'N'
+	  AND A.CANCL_AT = 'N'
+	  AND A.FRNCHS_NO = B.FRNCHS_NO
+	  <if test='!@org.springframework.util.StringUtils@isEmpty(confmSttusCode)'>
+	  AND A.CONFM_STTUS_CODE = #{confmSttusCode}
+	  </if>
+	ORDER BY A.CONFM_DT DESC
+	</select>
+</mapper>

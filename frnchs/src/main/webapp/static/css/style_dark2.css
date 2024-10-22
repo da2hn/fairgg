@@ -1,0 +1,347 @@
+@charset "utf-8";
+
+@media (prefers-color-scheme: dark) {
+	
+	.header .uh .search select {}
+	/* .header .mGnb {border-bottom: 1px solid #3c3d3f;} */
+	.mMain5 .swiper-pagination-bullet {}
+	.mMain5 .swiper-pagination-bullet-active {}
+	.mMain6 .swiper-button-prev, .mMain6 .swiper-button-next {}
+	
+	.lCnt .c {}
+	.lCnt .t {}
+	.footer .con1 .iTop {}
+	.footer .con2 .gRt select{}
+	.footer .con1 a {}
+	.footer .con1 a:before {}
+	.footer .con2 .logo a{}
+	.footer .con2 .logo a img{}
+	
+	
+	::-webkit-input-placeholder{} /* Chrome/Opera/Safari */
+	::-moz-placeholder{} /* Firefox 19+ */
+	:-ms-input-placeholder{} /* IE 10+ */
+	:-moz-placeholder{} /* Firefox 18- */
+		
+		
+	/***** sub common ******/
+	.mList3 li:before {}
+	.mTitle2 {}
+	.mTitle4.iLogo span {}
+	.mTitle6 span {}
+	.mTitle6 span:before {}
+	.mTitle7 {}
+		
+	.gTitle5 .con1 .tit {}
+	.gTitle5 .con1 .info {}
+	.gTitle5 .con2 li .tx {}
+	.mRadio input[type="radio"] + label:before {}
+	.mRadio input[type="radio"]:checked + label::before {}
+	.mCheckbox input[type="checkbox"] + label:before{}
+	.mCheckbox input[type="checkbox"]:checked + label::before {}
+	
+	.it {}
+	.select {}
+	/* .mPag .first {margin-right: -4px;} */
+	.mPag .first, .mPag .prev{}
+	.mPag .next, .mPag .last{}
+	
+	.mBtn1 {}
+	.mBtn1.gray {}
+
+	select{}
+	.textarea {}
+	
+	/***** sub title image ******/
+	.gTitle5 .con1 .bg {}
+	#franchiseInfo .gTitle5 .con1 .bg {}
+	#fairTrade .gTitle5.type2 .con1 .bg {}
+	#storeTransfer .gTitle5 .con1 .bg {}
+	#expFranchise .gTitle5 .con1 .bg {}
+
+	
+	/***** left search ******/
+	.content.bgType1:after {}
+	.content.bgType1:before {}
+	.mLnb.type2 .dep2 dt{}
+	
+	
+	/***** popup ******/
+	.mPopup1 .cont h3 {}
+	.mPopup1 .cont .close {}
+	.mPopup1 .cont {}
+	.mBoard1 thead th {}
+	.mSort1 .select {}
+	.mSort1 .it {}
+	.mPopup1 .mSort1 .select {}
+	
+	.layer_common .titleArea button.close {}
+	.layer_common .titleArea {}
+	.layer_common .titleArea h3 {}
+	.layer_common .titleArea h3 span {}
+	
+	/* .layer_qna {border: 1px solid #000;} */
+	.layer_qna .titleArea h3 {}
+	.layer_qna .inner .cont {}
+	.layer_qna .inner dl.comment dd textarea {}
+	.layer_qna .inner ul.list_file {}
+	.layer_qna .inner dl.comment dt {}
+	.layer_qna .inner dl.comment dt:before {}
+	
+	.layer_appoint {}
+	.layer_appoint .titleArea {}
+	.layer_appoint .titleArea h3{}
+
+	.layer_recruit {}
+	
+	
+	/***** 프랜차이즈현황 ******/
+	.mSub1_2 .con .ls .t {background: url(../images/dark/ico_title5.png) 0 8px no-repeat;}
+	.mGrid4 .con h4 {background: url(../images/dark/ico_title7.png) 9px 8px no-repeat;}
+	#franchiseInfo .mSub6 h6 {color: #FFFFFF;}
+	
+	/***** 브랜드비교검색 ******/
+	#brandCompare .hotBrand:before {background: url(../images/dark/bg_tooltip2.png) no-repeat center/100% auto;}
+	.btnRelease {background: url(../images/dark/ico_close4.png) calc(100% - 14px) 50% no-repeat #67686a;}
+	#dataTbody a.download{width: 16px; height:20px; display: inline-block; background: url(../images/dark/i_download_gr.png) no-repeat 100% 100%;}
+	#dataTbody a.download img{display: none;}
+	.mSub5 {border: 1px solid #67686a; border-top: 3px solid #bababa; background-color: #292a2c;}
+	.mSub5 .gRight {border-left: 1px solid #67686a;}
+	.mSub5 .gLeft {border-right: 1px solid #67686a;}
+	.mSub5 .gRight .tit {color: #ffffff;}
+	.mSub5 .gLeft dt { color: #ffffff;}
+	.mSub5 .gLeft {background: url(../images/dark/k_sub5.png) 0 100% no-repeat;}
+	.mSub5 .gLeft .gIt .it {border: 1px solid #67686a;}
+	.mGraph3 {background-color: #292a2c; border: 1px solid #67686a;}
+	.mGraph3 .ti {background-color: #292a2c;  border-bottom: 1px solid #67686a;}
+	.mGraph3 .gr {background-color: #fff;}
+	.mGraph4 {border: 1px solid #67686a;}
+	.mGraph4 .ls {border-top: 1px solid #67686a;}
+	.mGraph4 .ls:before {background-color: #67686a;}
+	
+	.it#datepicker {background: url(../images/dark/ico_calendar.png) calc(100% - 10px) 50% no-repeat;}
+	
+	
+	/***** 정보공개등록 ******/
+	.mShare1 {border: 1px solid #67686a; background: url(../images/dark/k_share1.png) 100% 100% no-repeat #3c3d3f;}
+	.mShare1 .info {background-color: #292a2c;}
+	.mList5 li:before {background-color: #bababa;}
+	.mList5 li .lst .ls .t {border: 1px solid #67686a; background-color: #292a2c;}
+	.mList6 .ls {background-color: #292a2c;}
+	.mList6 .ls .t span{color: #ffffff;}
+	.mList6 .ls .t:before {background-color: #67686a;}
+	
+	#infoEdu .agreeArea .area {border: 1px solid #67686a;}
+	#infoEdu .infoTxt {color: #bababa;}
+	#infoEdu .mShare1 .forPc {color: #bababa;}
+	#infoEdu dl.notify {background: #292a2c;}
+	#infoEdu dl.notify > dt {color: #ffffff;}
+	#infoEdu .tab_type > li > button.active {background: #3c3d3f;}
+	#infoEdu .tab_type > li > button {background: #3c3d3f;}
+	#infoEdu .mCheckbox input[type="checkbox"] + label:before {background-image: url(../images/dark/ico_checkbox2.png);}
+	#infoEdu .mCheckbox input[type="checkbox"]:checked + label:before {background-image: url(../images/dark/ico_checkbox2_on.png);}
+	ul.list_bullet > li {color: #bababa;}
+	ul.tab_common3 {border-bottom: 2px solid #fff;}
+	ul.tab_common3 > li > button.active {border-top: 2px solid #fff; border-left: 2px solid #fff; border-right: 2px solid #fff; background: #3c3d3f; color: #fff;}
+	ul.tab_common3 > li > button {border: 1px solid #9c9da0;}
+	
+	.mBoard1 {border-top: 3px solid #bababa;}
+	.mBoard1 th span{color: #ffffff;}	
+
+
+	/***** 공정거래홍보관 ******/
+	#fairTrade .gTitle5.type2 {background-color: #292a2c; border-bottom: 1px solid #67686a;}
+	#fairTrade .forPc{background: #3c3d3f;}
+	
+	.gTitle5 .con2 h6 {color: #fff; background: url(../images/dark/ico_title8.png) 3px 1px no-repeat;}
+	.gTitle5 .con2 li:before {background: url(../images/dark/ico_arr1.png) 0 0 no-repeat;}
+	.gTitle5 .con2 li .ti {background-color: #3c3d3f; border: 1px solid #67686a;}
+	.mRoll1 .swiper-container {border: 1px solid #67686a; border-bottom-color: #67686a; background-color: #292a2c;}
+	.mRoll1 .swiper-pagination {background-color: #292a2c;}
+	.mRoll1 .txt {background-color: #3c3d3f; border: 1px solid #67686a;}
+	.mRoll1 .txt .ti {color: #ffffff;}
+	.mList1 li .tit {color: #ffffff; background-color: #292a2c; border-bottom: 1px solid #67686a;}
+	.mList1 li .txt {background-color: #3c3d3f;}
+	.mList1 li .txt .ls {color: #bababa;}
+	.mList1 li .txt .ls:before {background-color: #ffffff;}
+	.mList1 li .txt .ls strong{color: #ffffff;}
+	.mList1 li a {border: 1px solid #67686a;}
+	
+	
+	/***** 실시간조사게시판 ******/
+	.mSurvey {background: url(../images/dark/k_survey1_bg.png) 0 30px repeat-y;}
+	.mSurvey:after {background: url(../images/dark/k_survey1_btm.png) 0 100% no-repeat;}
+	.mSurvey:before {background: url(../images/dark/k_survey1.png) 0 30px no-repeat;}
+	.mSurvey .info {background: url(../images/dark/img_survey1.png) 20px 0 no-repeat; color: #bababa;}
+	.mSurvey li .a {background-color: #292a2c;}
+	.mSurvey li .q {color: #ffffff;}
+	.mSurvey li .q .n {background-color: #292a2c; border: 1px solid #67686a;}
+	
+
+	
+	/***** 정보지원게시판 ******/
+	.boardList .warning {color: #9c9da0;}
+	.boardList .warning:before {background: #9c9da0;}
+	.boardView .warning {color: #9c9da0;}
+	.boardView .warning:before {background: #9c9da0;}
+
+	.mSort1 .cnt {background: #3c3d3f; color: #bababa;}
+	.mBoard1 td a.ul {color: #ffffff;}
+	.mView1 h4 {color: #fff;}
+	.mView1 h4 .dt { color: #bababa;}
+	.mView1 .row.article {color: #292a2c;}
+	.mView1 .row {background-color: #292a2c; border: 1px solid #67686a;}	
+	.mView1.mPn1 .row .tit {background: url(../images/dark/ico_up1.png) 17px 50% no-repeat #3c3d3f;}
+	.mView1 .row .tit {background-color: #3c3d3f; color: #bababa;}
+	.boardView dl.commentArea {border: 1px solid #67686a; background: #292a2c;}
+	.boardView dl.commentArea .list ul li + li {border-top: 1px solid #67686a;}	
+	.boardView dl.commentArea > dt {color: #ffffff;}
+	.boardView dl.commentArea .write textarea {border: 1px solid #67686a; background: #3c3d3f; color: #bababa;}
+	.boardView dl.commentArea .list li .box .info .date {color: #9c9da0;}
+	.boardView dl.commentArea .list li .box .del {background: #67686a;}
+	.boardView dl.commentArea .list li .box .del:before {background: url(../images/dark/close.svg) no-repeat center/100% auto;}
+
+	.box_btn.lgray2 > * { border-color: #67686a; background-color: #67686a; color: #fff;}
+	.box_btn.white3 > * {border-color: #bababa; background-color: #67686a; color: #fff;}
+	
+	.mSub13 .ti {color: #fff;}
+	.mSub13 .tx {color: #bababa;}
+	#deepenAnalysis .mSub13 .gLeft .im{width: 164px; height:38px; padding: 6px 0px 5px; display: inline-block; background: url(../images/dark/img_sub3_1_1.png) no-repeat 100% 100%;}
+	#deepenAnalysis .mSub13 .gLeft .im img{display: none;}
+	#deepenAnalysis .mSub13 .gRight:before {background: #67686a;}
+	#deepenAnalysis .mSub13 .gRight .im{width: 133px; height:49px; display: inline-block; background: url(../images/dark/img_sub3_1_3.svg) no-repeat 100% 100%;}
+	#deepenAnalysis .mSub13 .gRight .im img{display: none;}	
+	
+
+	
+	/***** 시민참여마당 ******/
+	#storeTransfer .gTitle5 {background-color: #292a2c; border-bottom: 1px solid #67686a;}
+	#storeTransfer .gTitle5 .con2 li .tx {background-color: #292a2c; border: 1px solid #67686a;}
+	#storeTransfer .body{background-color: #3c3d3f;}
+	.mList2 li {background-color: #292a2c; border: 1px solid #67686a;}
+	.mList2 li .txt .ti {color: #ffffff;}
+	.mList2 li .txt .tx {color: #bababa;}
+	.mList2 li .txt .mBoard1 th{color: #ffffff;}
+	.mList2 li .txt .mBoard1 td {color: #bababa;}
+	.mList2 li .img {border: 1px solid #67686a;}
+	.mSort2 {border: 1px solid #67686a;}
+	.mSort2 .col .ti {background-color: #3c3d3f; border-left: 1px solid #67686a; border-right: 1px solid #67686a;}
+	.mSort2 .col .ti {background-color: #3c3d3f;}
+	.mSort3 .count span {background-color: #3c3d3f; border: 1px solid #67686a;}
+	
+	.mDetail1 {background-color: #3c3d3f; border: 1px solid #67686a;}
+	.mDetail1 .gLeft .tit {color: #ffffff;}
+	.mDetail1 .gLeft .img {background-color: #292a2c; border: 1px solid #67686a;}
+	.mBoard1 .bgBlue {background-color: #3c3d3f;}
+	
+	.mBtn1.lGray {background-color: transparent; border-color: #67686a; color: #fff;}
+	.box_btn.charcoal2 > * {border-color: #67686a; background-color: #67686a;}
+	.mBox1 { border: 1px solid #67686a; background-color: #3c3d3f;}
+	.mBox1 .mCheckbox input[type="checkbox"] + label:before {background-image: url(../images/dark/ico_checkbox2.png);}
+	.mTitle3{color: #ffffff;}
+	.mTitle3:before {background-color: #ffffff;}
+	.mInfo4 {border: 1px solid #67686a; background-color: #3c3d3f; color: #9c9da0;}	
+	
+	#expFranchise .body{background-color: #3c3d3f;}
+	#expFranchise .gTitle5{background-color: #292a2c; border-bottom: 1px solid #67686a;}
+	
+	.mView2 {border: 1px solid #67686a; background-color: #3c3d3f; color: #fff;}
+	.mView2 .tit{color: #fff;}
+	.mView2 .tit span{color: #fbb807;}
+	
+	.mBoard1 td .it.date {color: #fff;}
+	.it.date {background: url(../images/dark/ico_calendar.png) calc(100% - 10px) 50% no-repeat transparent;}
+	.mInfo1 {color: #9c9da0;}
+
+	
+	/***** 마이페이지 *****/
+	.mLnb h4 {color: #fff;}
+	.mLnb ul {border-top: 3px solid #bababa;}
+	.mLnb li {border-top: 1px solid #67686a;}
+	.mLnb li.i .dep2:before {background-color: transparent;}
+	.mLnb li.i .dep2 a:first-child {border-top-color: #67686a;  border-left-color: #67686a; border-right-color: #67686a;}
+	.mLnb li.i .dep2 a:last-child {border-bottom-color: #67686a;  border-left-color: #67686a; border-right-color: #67686a;}
+	.mLnb li.i .dep2 a { background-color: #3c3d3f; border: 1px solid #67686a; border-left-color: #67686a; border-right-color: #67686a; color: #bababa;}
+	.mLnb li.i .dep2 a.selected, .mLnb li.i .dep2 a:hover {background-color: #3c3d3f; border: 1px solid #fbb807; color: #fbb807;}
+	.box_btn.white > * { border-color: #67686a; background-color: transparent; color: #fff;}
+	.box_btn.img.add > *:before {background-image: url(../images/dark/i_plus.svg);}
+	.box_btn.white2 > * {border-color: #fbb807; background-color: transparent; color: #fbb807;}
+	.box_btn.white2 > *:before {background-image: url(../images/dark/close_yl.svg);}
+	.iAttach {background: url(../images/dark/ico_attach1.png) 0 0 no-repeat;}
+			
+	.mReply1 {background-color: #3c3d3f; border: 1px solid #67686a;}
+	.mReply1 h5 {background: url(../images/dark/ico_title1.png) 11px 50% no-repeat; color: #fff;}
+
+	.list_file li a.txtPrimary {color: #fba207;}
+	
+	.boardSort > a span {background: url(../images/dark/i_check_lg.png) no-repeat left center; color: #bababa;}
+	.boardSort > a.active span {color: #fff;}
+	.mBoard1 td .type, .mBoard1 td .date {color: #9c9da0;}
+
+	#mypageExpDiaryView .mTitle2 {border-bottom: 3px solid #67686a;}
+
+	.fc-view {border: 1px solid #67686a;}
+	.fc-unthemed .fc-content, .fc-unthemed .fc-divider, .fc-unthemed .fc-list-heading td, .fc-unthemed .fc-list-view, .fc-unthemed .fc-popover, .fc-unthemed .fc-row, .fc-unthemed tbody, .fc-unthemed td, .fc-unthemed th, .fc-unthemed thead {border-color: #67686a !important;}
+	.fc-ltr .fc-basic-view .fc-day-top .fc-day-number {color: #bababa;}
+	.fc-unthemed td.fc-today {background: #3c3d3f !important;}
+	
+	.layer_diary {background: #3c3d3f;}
+	.mBoard1 td.tit a {color: #fff;}
+	
+	
+	
+	/***** 로그인 *****/
+	.mLogin h3 {color: #fff;}
+	.mLogin h2:before {background-color: #67686a;}
+	.mLogin h2 span {background-image: url(../images/dark/ico_login1.png);}
+	.mLogin h4 {border-top: 1px solid #67686a;}
+	.member .mLogin .joinFind a {color: #bababa;}
+	.member .mLogin .joinFind a:before {background: #bababa;}
+	.member .mLogin .joinFind a + a:after {background: #67686a;}
+	.mTab1 a {border: 1px solid #67686a; color: #bababa;}
+	.mTab1 a.selected {background-color: #292a2c; border-color: #fff; color: #fff;}
+	.lFind1 .ti{color: #fff;}
+	.mLogin .done .ti {color: #fff;}
+	.mLogin .mCheckbox input[type="checkbox"] + label:before {background-image: url(../images/dark/ico_checkbox2.png);}
+	.mLogin .list2 .con1 .scroll {background-color: #3c3d3f; border: 1px solid #67686a;}
+	.mLogin .list3 dt {color: #fff;}
+	.mLogin .list3 .gRt a {background-color: #292a2c;}
+	
+	
+	
+	/***** 관리자시스템 
+	#header {background-color: #3c3d3f; border-bottom: 1px solid #67686a;}
+	#header .gRt .na {color: #fff;}
+	.mLnb dd a.selected {color: #fff;}
+	
+	.mTitle1 {border-bottom: 1px solid #bababa; color: #fff;}
+	.mSort1 {background-color: #292a2c; border: 1px solid #67686a; border-top-color: #bababa;}
+	.mSort1 .ti {color: #fff;}
+	.mSort1 .ti:before { background-color: #fff;}
+	.mBoard1 {border-left: 1px solid #67686a; border-right: 1px solid #67686a; border-bottom: 1px solid #67686a;}
+	.mBoard1 .bgType1 th {background-color: #3c3d3f;}
+	.mBtn1.blue {border: 1px solid #2689f8;}
+	.mPag1 a {border: 1px solid #67686a; background-color: #3c3d3f; color: #bababa;}
+	#footer { background-color: #3c3d3f; border-top: 1px solid #67686a;  color: #bababa;}  
+	
+	*****/
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+	
+	
+}

@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="gov.ggdo.frnchs.ui.user.dao.UserDao">
+	<!-- 회원가입 -->
+	<insert id="joinUser" parameterType="java.util.Map">
+	INSERT INTO TB_USER(
+		USER_NO
+		,USER_SE_CODE
+		,DEPT_NM
+		,USER_NM
+		,TELNO
+		,EMAIL_ADRES
+		,PASSWORD
+		,CONFM_STTUS_CODE
+		,USE_STPLAT_AGRE_AT
+		,MARKT_RECPTN_AGRE_AT
+		,CRTFC_AT
+		,REGIST_DT
+		,UPDT_DT
+	)VALUES(
+		NEXTVAL('TB_USER_USER_NO_SEQ')
+		,#{userSeCode}
+		,#{deptNm}
+		,#{userNm}
+		,#{telno} <!-- 이전 개발자 오타 수정(telNo -> telno) - 21.04.09 -->
+		,#{emailAdres}
+		,#{userPw}
+		,#{confmSttusCode}
+		,#{useStplatAgreAt}
+		,#{marktRecptnAgreAt}
+		,'N'
+		,now()
+		,now()
+	)
+
+	</insert>
+	<!-- 브랜드관리자 회원가입 -->
+	<insert id="joinBrandUser" parameterType="java.util.Map">
+	INSERT INTO TB_BRAND_HEDOFC_MNGR (
+		USER_NO,
+		USER_SE_CODE,
+		BIZRNO,
+		ATCHMNFL_NO,
+		CHARGER_NM,
+		TELNO,
+		EMAIL_ADRES,
+		PASSWORD,
+		CONFM_STTUS_CODE,
+		CRTFC_AT,
+		REGIST_DT,
+		UPDT_DT
+	)VALUES(
+		CAST(#{userNo} AS INTEGER),
+		#{userSeCode},
+		#{bizrno},
+		CAST(#{atchmnflNo} AS INTEGER),
+		#{chargerNm},
+		#{telno},
+		#{emailAdres},
+		#{userPw},
+		#{confmSttusCode},
+		'N',
+		now(),
+		now()
+	)
+	</insert>
+	<!-- 유저번호 생성 -->
+	<select id="selectNextUserNo" parameterType="egovMap" resultType="egovMap">
+	SELECT NEXTVAL('TB_USER_USER_NO_SEQ') AS NEXT_USER_NO
+	</select>
+	<!-- 담당브랜드 관리 -->
+	<insert id="insertChrgBrand" parameterType="egovMap">
+	INSERT INTO TB_CHRG_BRAND (
+		USER_NO,
+		FRNCHS_NO,
+		REGIST_DT,
+		UPDT_DT
+	)VALUES(
+		CAST(#{userNo} AS INTEGER),
+		#{frnchsNo},
+		now(),
+		now()
+	)
+	</insert>
+
+	<select id="selectUserDetail" parameterType="egovMap" resultType="egovMap">
+		SELECT
+			* <!-- 칼럼명 전체 결정 후 수정 -->
+		FROM
+			TB_USER
+		WHERE
+			1=1
+<!-- 			AND CONFM_STTUS_CODE = 'CS01' 코드 승인상태만 -> 로그인에서 판단 - HJP 20.12.14  -->
+			AND EMAIL_ADRES = #{emailAdres}
+			<if test='!@org.springframework.util.StringUtils@isEmpty(password)'>
+				AND PASSWORD = #{password}
+			</if>
+	</select>
+	<!-- 인증키 업데이트 -->
+	<update id="updateCrtfcKey" parameterType="egovMap">
+		UPDATE TB_USER SET
+			CRTFC_KEY = #{crtfcKey}
+		WHERE EMAIL_ADRES = #{emailAdres}
+	</update>
+	<!-- 인증키여부 업데이트 -->
+	<update id="updateCrtfcAt" parameterType="egovMap">
+		UPDATE TB_USER SET
+			CRTFC_AT = 'Y'
+		WHERE EMAIL_ADRES = #{emailAdres}
+		  AND CRTFC_KEY = #{crtfcKey}
+	</update>
+	<!-- 인증키 업데이트 -->
+	<update id="updateBrandCrtfcKey" parameterType="egovMap">
+		UPDATE TB_BRAND_HEDOFC_MNGR SET
+			CRTFC_KEY = #{crtfcKey}
+		WHERE EMAIL_ADRES = #{emailAdres}
+	</update>
+	<!-- 인증키여부 업데이트 -->
+	<update id="updateBrandCrtfcAt" parameterType="egovMap">
+		UPDATE TB_BRAND_HEDOFC_MNGR SET
+			CRTFC_AT = 'Y'
+		WHERE EMAIL_ADRES = #{emailAdres}
+		  AND CRTFC_KEY = #{crtfcKey}
+	</update>
+	<!-- 이메일 확인 -->
+	<select id="chkEmailAdres" parameterType="egovMap" resultType="egovMap">
+	SELECT COUNT(A.*) AS MAIL_CNT
+	FROM (
+		SELECT EMAIL_ADRES
+		FROM TB_USER
+		WHERE EMAIL_ADRES = #{emailAdres}
+		UNION ALL
+		SELECT EMAIL_ADRES
+		FROM TB_BRAND_HEDOFC_MNGR
+		WHERE EMAIL_ADRES = #{emailAdres}
+	) A
+	</select>
+	<!-- 비밀번호 찾기 사용자 정보 유무 확인 -->
+	<select id="chkFindPwInfo" parameterType="egovMap" resultType="egovMap">
+	SELECT
+		A.USER_SE_CODE,
+		A.USER_NO
+	FROM (
+		SELECT
+			USER_SE_CODE,
+			USER_NO
+		FROM TB_USER
+		WHERE EMAIL_ADRES = #{emailAdres}
+		  AND USER_NM = #{userNm}
+		  AND TELNO = #{telno}
+		UNION ALL
+		SELECT
+			USER_SE_CODE,
+			USER_NO
+		FROM TB_BRAND_HEDOFC_MNGR
+		WHERE EMAIL_ADRES = #{emailAdres}
+		  AND CHARGER_NM = #{userNm}
+		  AND TELNO = #{telno}
+	) A
+	</select>
+	<!-- 사용자 패스워드 변경 -->
+	<update id="updateUserPw" parameterType="egovMap">
+		UPDATE TB_USER
+		SET
+			PASSWORD = #{userPw},
+			UPDT_DT = NOW()
+		WHERE USER_NO = #{userNo}
+	</update>
+
+	<!-- 브랜드관리자 패스워드 변경 -->
+	<update id="updateBrandUserPw" parameterType="egovMap">
+		UPDATE
+			TB_BRAND_HEDOFC_MNGR
+		SET
+			PASSWORD = #{userPw},
+			UPDT_DT = NOW()
+		WHERE USER_NO = #{userNo}
+	</update>
+	<!-- 가입정보 수정 -->
+	<update id="updateMyInfo" parameterType="java.util.Map">
+		/* updateMyInfo */
+		UPDATE TB_USER
+		SET
+			USER_NM = #{userNm}
+			, TELNO = #{telno}
+			<!-- , email_adres = #{emailAdres} -->
+			<if test='!@org.springframework.util.StringUtils@isEmpty(deptNm)'>
+			, DEPT_NM = (CASE WHEN USER_SE_CODE = 'US04' THEN #{deptNm} ELSE DEPT_NM END)
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(userPw)'>
+			, password = #{userPw}
+			</if>
+			, LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+			, UPDT_DT = NOW()
+		WHERE
+			USER_NO::TEXT = #{userNo}
+	</update>
+	
+	<!-- 가입정보 탈퇴 -->
+	<update id="deleteMyInfo" parameterType="java.util.Map">
+		UPDATE TB_USER
+		SET
+			  SECSN_AT = 'Y'
+			, LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+			, UPDT_DT = NOW()
+			, CONFM_STTUS_CODE = 'CS09'
+		WHERE
+			USER_NO::TEXT = #{userNo}
+	</update>
+	<!--
+		유저별 담당 프렌차이즈 목록 조회
+		로그인유저아닌 조회조건도 추가 - 21.01.15
+	-->
+	<select id="selectUserChrgBrandList" parameterType="java.util.Map" resultType="egovMap">
+	SELECT
+		A.USER_NO ,
+		C.HEDOFC_NO ,
+		B.FRNCHS_NO ,
+		B.BSN_SGNAL,
+		E.LCLAS_INDUTY_CODE ,
+		E.LCLAS_INDUTY_NM ,
+		D.MLSFC_INDUTY_CODE ,
+		D.MLSFC_INDUTY_NM ,
+		C.RPRSNTV_NM ,
+		F.EXCTV_CO + F.EMP_CO AS EXCTV_EMP_SUM
+	FROM
+		TB_CHRG_BRAND A,
+		TB_FRNCHS_INFO B,
+		TB_FRNCHS_HEDOFC C,
+		TB_FRNCHS_MLSFC_CODE D,
+		TB_FRNCHS_LCLAS_CODE E,
+		TB_FRNCHS_EXCTV_EMP F
+	WHERE A.FRNCHS_NO = B.FRNCHS_NO
+	  AND B.HEDOFC_NO = C.HEDOFC_NO
+	  AND B.MLSFC_INDUTY_CODE = D.MLSFC_INDUTY_CODE
+	  AND D.LCLAS_INDUTY_CODE = E.LCLAS_INDUTY_CODE
+	  AND B.FRNCHS_NO = F.FRNCHS_NO
+	  AND F.YEAR = (SELECT MAX(YEAR) FROM TB_FRNCHS_EXCTV_EMP WHERE FRNCHS_NO = F.FRNCHS_NO )
+	  AND USER_NO = CAST(COALESCE(#{changeUserNo}, #{ssUserNo}) AS INTEGER)
+	</select>
+	<!--
+		유저 담당 프렌차이즈 본사번호 조회 - 22.01.03
+	-->
+	<select id="selectUserChrgHedofcNo" parameterType="java.util.Map" resultType="egovMap">
+	SELECT /* selectUserChrgHedofcNo */
+		   b.hedofc_no
+	  FROM tb_brand_hedofc_mngr a
+	     , tb_frnchs_hedofc b
+	 WHERE a.bizrno = b.bizrno
+	   AND a.user_no = CAST(COALESCE(#{changeUserNo}, #{ssUserNo}) AS INTEGER)
+	</select>
+	<!-- 브랜드관리자 정보수정 -->
+	<update id="updateBrandMngrMyInfo" parameterType="java.util.Map">
+		UPDATE TB_BRAND_HEDOFC_MNGR
+		SET
+			ATCHMNFL_NO = CAST(#{atchmnflNo} AS INTEGER)
+			,CHARGER_NM = #{chargerNm}
+			, TELNO = #{telno}
+			<!-- , EMAIL_ADRES = #{emailAdres} -->
+			<if test='!@org.springframework.util.StringUtils@isEmpty(userPw)'>
+			, password = #{userPw}
+			</if>
+			, LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+			, UPDT_DT = NOW()
+		WHERE
+			USER_NO::TEXT = #{userNo}
+	</update>
+	<!-- 브랜드관리자 탈퇴 -->
+	<update id="deleteBrandMngrMyInfo" parameterType="java.util.Map">
+		UPDATE TB_BRAND_HEDOFC_MNGR
+		SET
+			  SECSN_AT = 'Y'
+			, LAST_UPDT_USER_NO = CAST(#{ssUserNo} AS INTEGER)
+			, UPDT_DT = NOW()
+			, CONFM_STTUS_CODE = 'CS09'
+		WHERE
+			USER_NO::TEXT = #{userNo}
+	</update>
+	<!-- 담당프랜차이즈정보 삭제 -->
+	<delete id="deleteUserChrgBrand" parameterType="java.util.Map">
+	DELETE FROM TB_CHRG_BRAND WHERE USER_NO::TEXT = #{userNo}
+	</delete>
+
+	<!-- 유저 권한 조회 -->
+	<select id="selectUserAuthorList"  parameterType="gov.ggdo.frnchs.common.security.UserVO" resultType="egovMap">
+	SELECT
+		A.MENU_CODE
+		,A.AUTHOR_CODE
+		,(SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'AUTHOR_CODE' AND CODE_VALUE = A.AUTHOR_CODE) AS AUTHOR_CODE_NM
+		,B.MENU_NM
+		,A.AUTHOR_AT
+	FROM TB_AUTHOR_MANAGE A, TB_MENU_MANAGE B
+	WHERE A.USER_SE_CODE = #{userSeCode}
+	  AND A.MENU_CODE = B.MENU_CODE
+	AND B.USE_AT = 'Y'
+	AND B.MENU_GROUP_CODE LIKE 'U%'
+	ORDER BY A.MENU_CODE
+	</select>
+</mapper>

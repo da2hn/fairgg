@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="gov.ggdo.frnchs.common.menu.dao.MenuDao">
+	<select id="selectMenuList" parameterType="string" resultType="egovMap">
+<!-- 		SELECT /* MenuDao.selectMenuList */
+			A.MENU_GROUP_CODE
+			,A.MENU_GROUP_NM
+			,B.MENU_ORDR
+			,B.MENU_CODE
+			,B.MENU_NM
+			,B.MENU_URL
+			,(SELECT COUNT(1)
+			FROM TB_MENU_MANAGE AA
+			WHERE AA.MENU_GROUP_CODE = A.MENU_GROUP_CODE) AS SUB_MENU_CNT
+		FROM TB_MENU_GROUP_MANAGE A
+		    ,TB_MENU_MANAGE B
+		WHERE A.MENU_GROUP_CODE = B.MENU_GROUP_CODE
+		  AND A.MENU_SE_CODE = #{menuSeCode} A : 관리자 메뉴 / U : 사용자 메뉴
+		  AND A.USE_AT = 'Y'
+		  AND B.USE_AT = 'Y'
+		ORDER BY A.MENU_GROUP_ORDR, B.MENU_ORDR -->
+	SELECT * /* MenuDao.selectMenuList */
+		 , MAX(A.MENU_ORDR) OVER(PARTITION BY A.MENU_GROUP_CODE) AS SUB_MENU_CNT
+	  FROM (
+			 SELECT A.MENU_GROUP_CODE
+				  , A.MENU_GROUP_NM
+				  , B.MENU_ORDR
+				  , B.MENU_CODE
+				  , B.MENU_NM
+				  , B.MENU_URL
+				  , A.MENU_GROUP_ORDR
+			   FROM TB_MENU_GROUP_MANAGE A
+				  , TB_MENU_MANAGE B
+			  WHERE A.MENU_GROUP_CODE = B.MENU_GROUP_CODE
+				AND A.MENU_SE_CODE = #{menuSeCode}
+				AND A.USE_AT = 'Y'
+				AND B.USE_AT = 'Y'		
+			  UNION ALL
+			 SELECT A.MENU_GROUP_CODE 
+			 	  , B.MENU_GROUP_NM 
+			 	  , B.MENU_ORDR + ROW_NUMBER() OVER (ORDER BY A.menu_group_code ASC) AS MENU_ORDR
+			 	  , A.BBS_CODE || '_' || A.MASTER_SN AS MENU_CODE
+			 	  , A.BBS_NM AS MENU_NM
+			 	  , A.BBS_LC || A.master_sn AS MENU_URL 
+			 	  , B.MENU_GROUP_ORDR
+		  	   FROM TB_BBS_MASTER A
+		      INNER JOIN (
+				  		  SELECT A.MENU_GROUP_CODE
+							   , A.MENU_GROUP_NM
+							   , (SELECT MAX(BB.MENU_ORDR) FROM TB_MENU_MANAGE BB WHERE BB.MENU_GROUP_CODE = A.MENU_GROUP_CODE) AS MENU_ORDR
+							   , B.MENU_NM
+							   , A.MENU_GROUP_ORDR
+						    FROM TB_MENU_GROUP_MANAGE A
+						   	   , TB_MENU_MANAGE B
+					   	   WHERE A.MENU_GROUP_CODE = B.MENU_GROUP_CODE
+						 	 AND A.MENU_SE_CODE = #{menuSeCode}
+						 	 AND A.USE_AT = 'Y'
+						 	 AND B.USE_AT = 'Y'
+						 	 AND B.MENU_ORDR = 1
+					   	   ORDER BY A.MENU_GROUP_ORDR, B.MENU_ORDR
+				  		 ) B ON A.MENU_GROUP_CODE = b.MENU_GROUP_CODE
+		 	WHERE A.USE_AT = 'Y'
+		   	  AND A.DELETE_AT ='N'
+	  	   ) A
+	 ORDER BY A.MENU_GROUP_ORDR, A.MENU_ORDR
+	</select>
+	<select id="selectQustnrList" parameterType="string" resultType="egovMap">
+		SELECT /* MenuDao.selectQustnrList */
+			  qustnr_sn
+			, qustnr_sj
+			, (SELECT menu_url
+				 FROM tb_menu_manage aa
+				WHERE aa.menu_group_code = 'U10')  || '?val=' || qustnr_sn AS menu_url
+		 FROM tb_qustnr 
+		WHERE delete_at = 'N'
+		  AND begin_de::DATE <![CDATA[<=]]> CURRENT_DATE
+		  AND end_de::DATE >= CURRENT_DATE
+		ORDER BY regist_dt ASC
+		LIMIT 3
+	</select>
+	<select id="selectMyPageMenuList" parameterType="string" resultType="egovMap">
+	SELECT /* MenuDao.selectMyPageMenuList */
+		A.MENU_GROUP_CODE
+		,A.MENU_GROUP_NM
+		,B.MENU_ORDR
+		,B.MENU_CODE
+		,B.MENU_NM
+		,B.MENU_URL
+		,(SELECT COUNT(1)
+			FROM TB_MENU_MANAGE AA
+				LEFT OUTER JOIN TB_AUTHOR_MANAGE BB ON AA.MENU_CODE = BB.MENU_CODE AND AA.USE_AT = 'Y'
+			WHERE MENU_GROUP_CODE = A.MENU_GROUP_CODE
+			  AND BB.USER_SE_CODE = C.USER_SE_CODE) AS SUB_MENU_CNT
+	FROM TB_MENU_GROUP_MANAGE A
+		,TB_MENU_MANAGE B
+		LEFT OUTER JOIN TB_AUTHOR_MANAGE C
+		ON B.MENU_CODE = C.MENU_CODE
+	WHERE A.MENU_GROUP_CODE = B.MENU_GROUP_CODE
+	  AND A.MENU_SE_CODE = #{menuSeCode} --A : 관리자 메뉴 / U : 사용자 메뉴
+	  AND C.USER_SE_CODE = #{ssUserSeCode}
+	  AND A.USE_AT = 'Y'
+	  AND B.USE_AT = 'Y'
+	ORDER BY A.MENU_GROUP_ORDR, B.MENU_ORDR
+	</select>
+	
+	<select id="selectMobMenuList" parameterType="string" resultType="egovMap">
+	SELECT * /* MenuDao.selectMobMenuList */
+		 , MAX(A.MENU_ORDR) OVER(PARTITION BY A.MENU_GROUP_CODE) AS SUB_MENU_CNT
+	  FROM (
+			 SELECT A.MENU_GROUP_CODE
+				  , A.MENU_GROUP_NM
+				  , B.MENU_ORDR
+				  , B.MENU_CODE
+				  , B.MENU_NM
+				  , B.MENU_URL
+				  , A.MENU_GROUP_ORDR
+			   FROM TB_MENU_GROUP_MANAGE A
+				  , TB_MENU_MANAGE B
+			  WHERE A.MENU_GROUP_CODE = B.MENU_GROUP_CODE
+				AND A.MENU_SE_CODE = 'U'
+				AND A.MENU_GROUP_CODE = #{menuGroupCode}
+				AND A.USE_AT = 'Y'
+				AND B.USE_AT = 'Y'		
+			  UNION ALL
+			 SELECT A.MENU_GROUP_CODE 
+			 	  , B.MENU_GROUP_NM 
+			 	  , B.MENU_ORDR + ROW_NUMBER() OVER (ORDER BY A.menu_group_code ASC) AS MENU_ORDR
+			 	  , A.BBS_CODE || '_' || A.MASTER_SN AS MENU_CODE
+			 	  , A.BBS_NM AS MENU_NM
+			 	  , A.BBS_LC || A.master_sn AS MENU_URL 
+			 	  , B.MENU_GROUP_ORDR
+		  	   FROM TB_BBS_MASTER A
+		      INNER JOIN (
+				  		  SELECT A.MENU_GROUP_CODE
+							   , A.MENU_GROUP_NM
+							   , (SELECT MAX(BB.MENU_ORDR) FROM TB_MENU_MANAGE BB WHERE BB.MENU_GROUP_CODE = A.MENU_GROUP_CODE) AS MENU_ORDR
+							   , B.MENU_NM
+							   , A.MENU_GROUP_ORDR
+						    FROM TB_MENU_GROUP_MANAGE A
+						   	   , TB_MENU_MANAGE B
+					   	   WHERE A.MENU_GROUP_CODE = B.MENU_GROUP_CODE
+						 	 AND A.MENU_SE_CODE = 'U'
+						 	 AND A.MENU_GROUP_CODE = #{menuGroupCode}
+						 	 AND A.USE_AT = 'Y'
+						 	 AND B.USE_AT = 'Y'
+						 	 AND B.MENU_ORDR = 1
+					   	   ORDER BY A.MENU_GROUP_ORDR, B.MENU_ORDR
+				  		 ) B ON A.MENU_GROUP_CODE = b.MENU_GROUP_CODE
+		 	WHERE A.USE_AT = 'Y'
+		   	  AND A.DELETE_AT ='N'
+	  	   ) A
+	 ORDER BY A.MENU_GROUP_ORDR, A.MENU_ORDR
+	</select>
+</mapper>

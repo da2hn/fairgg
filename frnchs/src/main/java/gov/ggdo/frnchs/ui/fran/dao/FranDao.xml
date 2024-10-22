@@ -1,0 +1,1982 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="gov.ggdo.frnchs.ui.fran.dao.FranDao">
+	<!-- 관심 프랜차이즈 관련 칼럼 묶어서 처리 - 21.01.20 -->
+	<sql id="intrstFrnchsColumn">
+		A.HEDOFC_NO /* 본사번호 */
+		, A.FRNCHS_NO /* 프랜차이즈번호 */
+		, A.BSN_SGNAL /* 프랜차이즈명 */
+		, A.MLSFC_INDUTY_CODE
+		, C.LCLAS_INDUTY_CODE
+		, C.LCLAS_INDUTY_NM /* 대분류업종 */
+		, D.MLSFC_INDUTY_NM /* 중분류업종 */
+		, A.SM /* 부담금? */
+		, A.INTRR_CT /* 인테리어비용? */
+		, DATE_PART('YEAR', NOW()) - SUBSTRING(B.BSNM_RGSDE,0,5)::INT AS HIST_YEAR
+		, ROUND(F.DEBT / F.CAPL, 2) AS DEPT_RATIO /* 본사 부채비율 */
+		, G.UNIT_AR_AVRG_SELNG_AM /* 단위면적(3.3㎡)당평균매출액  */
+		<!-- 창업 희망 지역 제거 - 21.02.15 -->
+		<!-- 창업 희망 지역 추가 - 21.12.08 -->
+		, I.CTPRVN_CODE /* 창업 희망 지역코드*/
+		, I.CTPRVN_NM /* 창업 희망 지역명*/
+		
+		<!-- , ROUND( (J.CNTRCT_END_CO + J.CNTRCT_TRMNAT_CO) /  K.ALL_CO, 2) CLOSE_RATE /* 홍석훈과장님 쿼리 적용 - 21.02.10 */ -->
+		, L.CLOSE_RATE /* 폐점율 */
+		<if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+			, COALESCE (E.DELETE_AT, 'Y') AS DELETE_AT
+		</if>
+		, L.ALL_CO <!-- 전체수 추가 - 21.02.16 -->
+		, N.ATCHMNFL_NO 
+		, N.YEAR
+	</sql>
+	<!-- 본사 조회 -->
+	<select id="selectFrnchsHedofc" parameterType="java.util.Map" resultType="egovMap">
+	/* FranDao.selectFrnchsHedofc - 본사 조회 */
+		SELECT
+			A.HEDOFC_NO,
+			A.MTLTY_NM,
+			A.RPRSNTV_NM,
+			A.CPR_FOND_RGIST_DE,
+			A.BSNM_RGSDE,
+			A.ADRES,
+			A.BSNM_TY,
+			A.JURIRNO,
+			A.BIZRNO,
+			A.USER_DATA_MANAGE_NO,
+			(
+			SELECT
+				CC.ATCHMNFL_NO
+			FROM
+				TB_FRNCHS_INFO AA,
+				TB_CHRG_BRAND BB,
+				TB_BRAND_HEDOFC_MNGR CC
+			WHERE
+				AA.FRNCHS_NO = BB.FRNCHS_NO
+				AND BB.USER_NO = CC.USER_NO
+				AND AA.HEDOFC_NO  = A.HEDOFC_NO
+			GROUP BY CC.ATCHMNFL_NO
+			) AS ATCHMNFL_NO
+		FROM
+			TB_FRNCHS_HEDOFC A
+		WHERE A.MTLTY_NM LIKE '%' || #{mtltyNm} || '%'
+		  AND A.RPRSNTV_NM LIKE '%' || #{rprsntvNm} || '%'
+		LIMIT 10 OFFSET #{firstRecordIndex}
+	</select>
+	
+	<!-- 본사 조회 모바일-->
+	<select id="selectFrnchsHedofcM" parameterType="java.util.Map" resultType="egovMap">
+	/* FranDao.selectFrnchsHedofcM - 본사 조회 */
+		SELECT
+			A.HEDOFC_NO,
+			A.MTLTY_NM,
+			A.RPRSNTV_NM,
+			A.CPR_FOND_RGIST_DE,
+			A.BSNM_RGSDE,
+			A.ADRES,
+			A.BSNM_TY,
+			A.JURIRNO,
+			A.BIZRNO,
+			A.USER_DATA_MANAGE_NO,
+			(
+			SELECT
+				CC.ATCHMNFL_NO
+			FROM
+				TB_FRNCHS_INFO AA,
+				TB_CHRG_BRAND BB,
+				TB_BRAND_HEDOFC_MNGR CC
+			WHERE
+				AA.FRNCHS_NO = BB.FRNCHS_NO
+				AND BB.USER_NO = CC.USER_NO
+				AND AA.HEDOFC_NO  = A.HEDOFC_NO
+			GROUP BY CC.ATCHMNFL_NO
+			) AS ATCHMNFL_NO
+		FROM
+			TB_FRNCHS_HEDOFC A
+		WHERE A.MTLTY_NM LIKE '%' || #{mtltyNm} || '%'
+		  AND A.RPRSNTV_NM LIKE '%' || #{rprsntvNm} || '%'
+	</select>
+
+	<!-- 프랜차이즈 조회 -->
+	<select id="selectFrnchsInfo" parameterType="java.util.Map" resultType="egovMap">
+	/* FranDao.selectFrnchsInfo - 프랜차이즈 조회 */
+		select
+			HEDOFC_NO,
+			FRNCHS_NO,
+			BSN_SGNAL,
+			MLSFC_INDUTY_CODE,
+			REPRSNT_NO,
+			REPRSNT_FAX_NO,
+			REGIST_NO,
+			FRST_RGSDE,
+			LAST_RGSDE,
+			BRAND_CO,
+			FRNCHS_AFFLTS_CO,
+			FRNCHS_BGNDE,
+			JGTRS_CO,
+			ADVRTS_CT,
+			PROMTN_CT,
+			DPST_STLE,
+			DPST_JNNT,
+			FTC_COREC_MANAGT_CO,
+			CFRS_CO,
+			PETY_CO,
+			SRBCT,
+			EDCCT,
+			GTN,
+			ETC_CT,
+			SM,
+			UNIT_AR_INTRR_CT,
+			STDR_STOR_AR,
+			INTRR_CT,
+			CNTRCT_FRST,
+			CNTRCT_EXTN,
+			URL,
+			PDF,
+			USER_DATA_MANAGE_NO
+		FROM
+			TB_FRNCHS_INFO
+		WHERE HEDOFC_NO = #{hedofcNo}
+		  AND INDUTY_CODE = #{indutyCode}
+	</select>
+
+	<!-- 본사, 업종별 상호명 목록 조회 -->
+	<select id="selectBsnSgnalList" parameterType="java.util.Map" resultType="egovMap">
+	/* FranDao."selectBsnSgnalList" - 본사, 업종별 상호명 조회 */
+	SELECT
+		A.HEDOFC_NO,
+		B.FRNCHS_NO,
+		B.BSN_SGNAL,
+		A.BIZRNO,
+		C.USER_NO,
+		CASE WHEN C.USER_NO IS NOT NULL THEN 'Y' ELSE 'N' END AS USED_YN
+	FROM TB_FRNCHS_HEDOFC A,
+		 TB_FRNCHS_INFO B
+		 LEFT OUTER JOIN TB_CHRG_BRAND C ON B.FRNCHS_NO = C.FRNCHS_NO
+	WHERE A.HEDOFC_NO = B.HEDOFC_NO
+	  AND A.HEDOFC_NO = CAST(#{hedofcNo} AS INTEGER)
+	  AND B.MLSFC_INDUTY_CODE = #{mlsfcIndutyCode}
+	ORDER BY C.USER_NO DESC, B.BSN_SGNAL
+	</select>
+
+	<!-- 본사에 존재하는 프랜차이즈 대분류 업종 -->
+	<select id="selectHedofcNoFranchLclasList" parameterType="egovMap" resultType="egovMap">
+	/* selectHedofcNoFranchLclasList - 본사에 존재하는 프랜차이즈 대분류 업종 */
+	SELECT
+		LCLAS_INDUTY_CODE,
+		LCLAS_INDUTY_NM
+	FROM
+		TB_FRNCHS_LCLAS_CODE
+	WHERE 1=1
+	<if test='!@org.springframework.util.StringUtils@isEmpty(hedofcNo)'>
+		AND LCLAS_INDUTY_CODE IN (
+	  	SELECT
+			C.LCLAS_INDUTY_CODE
+		FROM TB_FRNCHS_HEDOFC A, TB_FRNCHS_INFO B, TB_FRNCHS_MLSFC_CODE C
+		WHERE A.HEDOFC_NO  = CAST(#{hedofcNo} AS INTEGER)
+		  AND A.HEDOFC_NO = B.HEDOFC_NO
+		  AND B.MLSFC_INDUTY_CODE = C.MLSFC_INDUTY_CODE
+		GROUP BY C.LCLAS_INDUTY_CODE
+	  )
+	</if>
+	ORDER BY LCLAS_INDUTY_CODE
+	</select>
+	<!-- 본사에 존재하는 프랜차이즈 중분류 업종 -->
+	<select id="selectHedofcNoFrnchsMlsfcList" parameterType="egovMap" resultType="egovMap">
+	/* selectHedofcNoFrnchsMlsfcList - 본사에 존재하는 프랜차이즈 중분류 업종 */
+	SELECT
+		MLSFC_INDUTY_CODE,
+		MLSFC_INDUTY_NM,
+		LCLAS_INDUTY_CODE
+	FROM TB_FRNCHS_MLSFC_CODE
+	WHERE LCLAS_INDUTY_CODE = #{lclasIndutyCode}
+	<if test='!@org.springframework.util.StringUtils@isEmpty(hedofcNo)'>
+		AND MLSFC_INDUTY_CODE IN (
+	  	SELECT
+			B.MLSFC_INDUTY_CODE
+		FROM TB_FRNCHS_HEDOFC A, TB_FRNCHS_INFO B
+		WHERE A.HEDOFC_NO  = CAST(#{hedofcNo} AS INTEGER)
+		  AND A.HEDOFC_NO = B.HEDOFC_NO
+		GROUP BY B.MLSFC_INDUTY_CODE
+	  )
+	</if>
+	ORDER BY MLSFC_INDUTY_CODE
+	</select>
+	
+	<!-- 프랜차이즈 인기키워드 TOP10 -->
+	<select id="selectPopularityKeyword" parameterType="egovMap" resultType="egovMap">
+			/* selectPopularityKeyword - 프랜차이즈 인기키워드 TOP10 */
+		  SELECT TMP.bsn_sgnal_cnt	
+			   , TMP.mlsfc_induty_nm
+			   , B.bsn_sgnal
+			   , B.max_count
+			FROM (
+				  SELECT COUNT(a.*) as bsn_sgnal_cnt
+		  	   		   , a.*
+			  	   FROM (
+				  		  SELECT c.mlsfc_induty_nm
+						    FROM tb_sch_brd_hist a
+						   INNER JOIN tb_frnchs_info b ON a.frnchs_no = b.frnchs_no
+						   INNER JOIN tb_frnchs_mlsfc_code c ON b.mlsfc_induty_code  = c.mlsfc_induty_code
+						   INNER JOIN tb_frnchs_lclas_code d ON c.lclas_induty_code  = d.lclas_induty_code
+						   WHERE 1=1
+							 AND TO_CHAR(a.regist_dt, 'YYYY-MM-DD') BETWEEN TO_CHAR(NOW() + '-1 month', 'YYYY-MM-DD') AND TO_CHAR(NOW(), 'YYYY-MM-DD') 
+				  		) a
+				  GROUP BY mlsfc_induty_nm
+			) TMP
+			INNER JOIN (
+						  SELECT a.bsn_sgnal_cnt AS max_count
+						  	   , MAX(a.bsn_sgnal) AS bsn_sgnal 
+						  	   , MAX(a.mlsfc_induty_nm) AS mlsfc_induty_nm
+						    FROM (
+						  		 SELECT COUNT(*) AS bsn_sgnal_cnt
+								 	  , b.bsn_sgnal
+									  , c.mlsfc_induty_nm
+								   FROM tb_sch_brd_hist a
+								  INNER JOIN tb_frnchs_info b ON a.frnchs_no = b.frnchs_no
+								  INNER JOIN tb_frnchs_mlsfc_code c ON b.mlsfc_induty_code  = c.mlsfc_induty_code
+								  INNER JOIN tb_frnchs_lclas_code d ON c.lclas_induty_code  = d.lclas_induty_code
+								  WHERE 1=1
+									AND TO_CHAR(a.regist_dt, 'YYYY-MM-DD') BETWEEN TO_CHAR(NOW() + '-1 month', 'YYYY-MM-DD') AND TO_CHAR(NOW(), 'YYYY-MM-DD') 
+								  GROUP BY b.bsn_sgnal, c.mlsfc_induty_nm
+						    ) AS a
+							INNER JOIN (
+										SELECT MAX(bsn_sgnal_cnt) AS max_count
+									  	   	 , mlsfc_induty_nm
+									  	  FROM (
+										  		 SELECT COUNT(*) AS bsn_sgnal_cnt
+												 	  , b.bsn_sgnal
+													  , c.mlsfc_induty_nm
+												   FROM tb_sch_brd_hist a
+												  INNER JOIN tb_frnchs_info b ON a.frnchs_no = b.frnchs_no
+												  INNER JOIN tb_frnchs_mlsfc_code c ON b.mlsfc_induty_code  = c.mlsfc_induty_code
+												  INNER JOIN tb_frnchs_lclas_code d ON c.lclas_induty_code  = d.lclas_induty_code
+												  WHERE 1=1
+												  	AND TO_CHAR(a.regist_dt, 'YYYY-MM-DD') BETWEEN TO_CHAR(NOW() + '-1 month', 'YYYY-MM-DD') AND TO_CHAR(NOW(), 'YYYY-MM-DD') 
+												  GROUP BY b.bsn_sgnal, c.mlsfc_induty_nm
+										  	) a
+										  GROUP BY mlsfc_induty_nm
+										 ) b ON a.bsn_sgnal_cnt = b.max_count AND a.mlsfc_induty_nm = b.mlsfc_induty_nm
+						 GROUP BY a.bsn_sgnal_cnt, a.mlsfc_induty_nm  
+			) b ON TMP.mlsfc_induty_nm = b.mlsfc_induty_nm
+			ORDER BY bsn_sgnal_cnt DESC
+			LIMIT 10
+	</select>
+
+	<!-- 프랜차이즈 부가정보 조회 -->
+	<select id="selectFrnchsAdiInfo" parameterType="egovMap" resultType="egovMap">
+	SELECT
+		A.FRNCHS_NO
+		,A.FRNCHS_INFO
+		,A.FRNCHS_IMAGE_FILE_NO
+		,(SELECT ATCHMNFL_NO || '_' || FILE_SN FROM TB_ATCHMNFL_STRE WHERE ATCHMNFL_NO = A.FRNCHS_IMAGE_FILE_NO AND ATCHMNFL_STTUS_CODE = 'FS02') AS FRNCHS_IMAGE_FILE_KEY
+		,A.YOUTUBE_MVP_LINK
+<!-- 사용안함(주석풀면 하나이상의 행 오류날수있음) -->
+<!-- 		,A.ENTRPRS_INTRCN_FILE_NO -->
+<!-- 		,(SELECT ATCHMNFL_NO || '_' || FILE_SN FROM TB_ATCHMNFL_STRE WHERE ATCHMNFL_NO = A.ENTRPRS_INTRCN_FILE_NO AND ATCHMNFL_STTUS_CODE = 'FS02') AS ENTRPRS_INTRCN_FILE_KEY -->
+		,A.GOOD_FRNCHS_AT
+		,A.REGIST_USER_NO
+		,A.LAST_UPDT_USER_NO
+		,A.GOOD_FRNCHS_SLCTN_DT
+		,A.REGIST_DT
+		,A.UPDT_DT
+		,B.BSN_SGNAL
+	FROM TB_FRNCHS_ADI_INFO A, TB_FRNCHS_INFO B
+	WHERE A.FRNCHS_NO = B.FRNCHS_NO
+	  AND A.FRNCHS_NO = #{frnchsNo}
+	</select>
+	
+	
+	<!-- 프랜차이즈(브랜드) 통합검색_메인 헤더 -->
+	<select id="selectFrnchsInfoByUnifiedSearchBrand" parameterType="egovMap" resultType="egovMap">
+	SELECT /* selectFrnchsInfoByUnifiedSearchBrand */
+		A.FRNCHS_NO,
+		A.BSN_SGNAL, --프랜차이즈명
+		B.RPRSNTV_NM, --대표자명
+		C.LCLAS_INDUTY_CODE, --대분류 업종코드		
+		C.MLSFC_INDUTY_CODE, --중분류 업종코드
+		C.MLSFC_INDUTY_NM, --중분류 업종명
+		B.CPR_FOND_RGIST_DE, --법인설립등기일
+		A.REPRSNT_NO, --대표번호
+		B.ADRES, --주소
+		B.BIZRNO, --사업자등록번호
+		A.ADVRTS_CT, --광고비
+		A.PROMTN_CT, --판촉비
+		A.FTC_COREC_MANAGT_CO, --공정위시정 건수
+		A.CFRS_CO, --민사 패소,화해 건수
+		A.PETY_CO, --형벌 건수
+		A.SRBCT, --가입비
+		A.EDCCT, --교육비
+		A.GTN, --보증금
+		A.ETC_CT, --기타비용
+		A.SM, --가맹사업자 부담금 합계
+		A.UNIT_AR_INTRR_CT, --단위면적당 인테리어비용
+		A.CNTRCT_FRST, --계약최초
+		A.CNTRCT_EXTN --계약연장
+		
+	FROM TB_FRNCHS_INFO A
+
+	INNER JOIN TB_FRNCHS_HEDOFC B ON A.HEDOFC_NO = B.HEDOFC_NO
+	INNER JOIN TB_FRNCHS_MLSFC_CODE C ON C.MLSFC_INDUTY_CODE = A.MLSFC_INDUTY_CODE
+
+	WHERE A.BSN_SGNAL LIKE LIKE '%' || #{bsnSgnal} || '%'
+	   AND C.LCLAS_INDUTY_CODE = #{lclasIndutyCode}
+
+	ORDER BY A.FRNCHS_NO
+	</select>
+	<!-- 통합검색시 프랜차이즈 번호 조회 22.01.06 -->
+	<select id="selectSearchFrnchsNo" parameterType="egovMap" resultType="egovMap">
+	/*selectSearchFrnchsNo 통합검색명으로 프랜차이즈 번호 조회*/
+	SELECT 
+		A.FRNCHS_NO, BSN_SGNAL, D.YEAR
+	FROM TB_FRNCHS_INFO A
+	LEFT JOIN TB_INFO_DCS_BBS D ON A.FRNCHS_NO = D.FRNCHS_NO  AND D.DELETE_AT = 'N'
+	WHERE A.BSN_SGNAL LIKE '%'||#{bsnSgnal}||'%'
+	LIMIT 1
+	</select>
+
+	<!-- 관심프랜차이즈  정보(프랜차이즈 코드)-->
+	<select id="selectFrnchsInfoByFrchsNo" parameterType="egovMap" resultType="egovMap">
+	SELECT /* selectFrnchsInfoByFrchsNo */
+			TMP.*
+<!-- 			, A.CLOSE_RATE -->
+	 FROM (
+			SELECT
+				A.FRNCHS_NO,
+				coalesce(A.BSN_SGNAL, '-') AS BSN_SGNAL, --프랜차이즈명
+				coalesce(B.RPRSNTV_NM, '-') AS RPRSNTV_NM, --대표자명
+				coalesce(C.MLSFC_INDUTY_NM, '-') AS MLSFC_INDUTY_NM, --중분류 업종명
+				coalesce(C.MLSFC_INDUTY_CODE, '-') AS MLSFC_INDUTY_CODE, --중분류 업종 코드
+				coalesce((CASE WHEN B.CPR_FOND_RGIST_DE = '' THEN '-' ELSE B.CPR_FOND_RGIST_DE END), '-') AS CPR_FOND_RGIST_DE, --법인설립등기일
+				coalesce(B.JURIRNO, '-') AS JURIRNO, --법인코드
+				
+				/*	A.REPRSNT_NO, --대표번호  */	
+				/* 대표번호 정규식 */
+
+				(CASE WHEN LENGTH(A.REPRSNT_NO) = 8 THEN REGEXP_REPLACE(A.REPRSNT_NO, '(.{4})(.{4})', '\1-\2') 
+					 WHEN LENGTH(A.REPRSNT_NO) = 9 THEN REGEXP_REPLACE(A.REPRSNT_NO, '(.{2})(.+)(.{4})', '\1-\2-\3') 
+					 WHEN LENGTH(A.REPRSNT_NO) = 10 AND substring(A.REPRSNT_NO, 1, 2) = '02' THEN REGEXP_REPLACE(A.REPRSNT_NO, '(.{2})(.+)(.{4})', '\1-\2-\3')
+					 WHEN LENGTH(A.REPRSNT_NO) = 10 AND substring(A.REPRSNT_NO, 1, 2) != '02' THEN REGEXP_REPLACE(A.REPRSNT_NO, '(.{3})(.+)(.{4})', '\1-\2-\3')
+					 WHEN LENGTH(A.REPRSNT_NO) = 11 THEN REGEXP_REPLACE(A.REPRSNT_NO, '(.{3})(.+)(.{4})', '\1-\2-\3') 
+					 ELSE coalesce(A.REPRSNT_NO, '-')
+			     END) AS REPRSNT_NO,
+				
+				coalesce(B.ADRES, '-') AS ADRES, --주소
+				
+				/* B.BIZRNO, --사업자등록번호 */
+				REGEXP_REPLACE(B.BIZRNO, '(.{3})(.+)(.{5})', '\1-\2-\3') AS BIZRNO,
+				
+				A.ADVRTS_CT, --광고비
+				A.PROMTN_CT, --판촉비
+				A.FTC_COREC_MANAGT_CO, --공정위시정 건수
+				A.CFRS_CO, --민사 패소,화해 건수
+				A.PETY_CO, --형벌 건수
+				A.SRBCT, --가입비
+				A.EDCCT, --교육비
+				A.GTN, --보증금
+				A.ETC_CT, --기타비용
+				A.SM, --가맹사업자 부담금 합계
+				A.UNIT_AR_INTRR_CT, --단위면적당 인테리어비용
+				A.CNTRCT_FRST, --계약최초
+				A.CNTRCT_EXTN, --계약연장
+				COALESCE(B.REWARD_CN, '-') AS REWARD_CN --브랜드코멘트
+				<if test='!@org.springframework.util.StringUtils@isEmpty(brandYear)'>
+				, D.ATCHMNFL_NO --정보공개서
+				</if>
+				,M.PRFTBL_GRAD
+				,M.FAIR_GRAD
+				,M.GROWTH_GRAD
+				,M.SAFE_GRAD
+				,G.CTPRVN_CODE
+				,coalesce(O.atchmnfl_no, 0) as atchmnfl_no
+				,coalesce(O.file_size, 0) as file_size
+				,coalesce(O.file_sn, 0) as file_sn
+				,coalesce(O.input_file_nm, '') as input_file_nm
+				,coalesce(O.atchmnfl_sttus_code, '') as atchmnfl_sttus_code
+				<if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+					, COALESCE (E.DELETE_AT, 'Y') AS DELETE_AT
+				</if>
+				, J.YEAR
+				, ROUND( (J.CNTRCT_END_CO + J.CNTRCT_TRMNAT_CO) / K.ALL_CO * 100 , 2) CLOSE_RATE
+				, K.ALL_CO
+			FROM TB_FRNCHS_INFO A
+			INNER JOIN TB_FRNCHS_HEDOFC B ON A.HEDOFC_NO = B.HEDOFC_NO
+			INNER JOIN TB_FRNCHS_MLSFC_CODE C ON C.MLSFC_INDUTY_CODE = A.MLSFC_INDUTY_CODE
+			LEFT JOIN TB_FRNCHS_SELNG G ON
+					G.FRNCHS_NO = A.FRNCHS_NO AND G.CTPRVN_CODE = '00'
+			<if test='!@org.springframework.util.StringUtils@isEmpty(brandYear)'>
+			LEFT JOIN TB_INFO_DCS_BBS D ON A.FRNCHS_NO = D.FRNCHS_NO  AND D.DELETE_AT = 'N' AND D.YEAR = #{brandYear}
+			LEFT JOIN TB_FRNCHS_IDEX M ON A.FRNCHS_NO = M.FRNCHS_NO AND STDR_YEAR = #{brandYear}
+			LEFT JOIN TB_INFO_DCS_BBS N ON N.FRNCHS_NO = A.FRNCHS_NO 
+			LEFT JOIN TB_ATCHMNFL_STRE O ON O.ATCHMNFL_NO = N.ATCHMNFL_NO
+			</if>
+			<if test='@org.springframework.util.StringUtils@isEmpty(brandYear)'>
+			LEFT JOIN TB_INFO_DCS_BBS N ON N.FRNCHS_NO = A.FRNCHS_NO AND N.YEAR = (SELECT MAX(YEAR) FROM TB_INFO_DCS_BBS  WHERE 1=1  AND YEAR != '2021' <!-- 2022.01.21 -->
+			 																				AND FRNCHS_NO
+																		                <choose>
+																							<when test='frnchsNo == null or frnchsNo == ""'>
+																					 	  IN (#{frnchsNo1}, #{frnchsNo2})
+																							</when>
+																					   		<when test='frnchsNo1 == null or frnchsNo1 == ""'>
+																					  	  = #{frnchsNo}
+																					   		</when>
+																					   </choose>
+																					   )
+			LEFT JOIN TB_ATCHMNFL_STRE O ON O.ATCHMNFL_NO = N.ATCHMNFL_NO AND O.ATCHMNFL_STTUS_CODE = 'FS02'
+			LEFT JOIN TB_FRNCHS_IDEX M ON A.FRNCHS_NO = M.FRNCHS_NO AND STDR_YEAR IN ( SELECT MAX(stdr_year)
+															                             FROM tb_frnchs_idex
+															                            WHERE 1=1 
+															                            	AND stdr_year != '2021' <!-- 2022.01.21 -->
+															                            <choose>
+																							<when test='frnchsNo == null or frnchsNo == ""'>
+																					 	  AND frnchs_no IN (#{frnchsNo1}, #{frnchsNo2})
+																							</when>
+																					   		<when test='frnchsNo1 == null or frnchsNo1 == ""'>
+																					  	  AND frnchs_no = #{frnchsNo}
+																					   		</when>
+																					   </choose>
+															                         ) 
+			</if>
+			LEFT join TB_FRNCHS_MRHST_CHANGE_STTUS J on J.frnchs_no  = A.frnchs_no and J.year = M.stdr_year
+			LEFT join TB_FRNCHS_MRHST_STTUS K  ON K.FRNCHS_NO = J.FRNCHS_NO AND K.YEAR = J.YEAR AND K.ALL_CO != 0 AND K.CTPRVN_CODE = '00'
+			<if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+			LEFT JOIN TB_INTRST_FRNCHS E ON
+				E.FRNCHS_NO = A.FRNCHS_NO AND E.USER_NO = #{ssUserNo}::int
+			</if>
+			WHERE 1 = 1
+			   <choose>
+					<when test='frnchsNo == null or frnchsNo == ""'>
+			   AND A.FRNCHS_NO IN (#{frnchsNo1}, #{frnchsNo2})
+					</when>
+			   		<when test='frnchsNo1 == null or frnchsNo1 == ""'>
+			    AND A.FRNCHS_NO = #{frnchsNo}
+			   		</when>
+			   </choose>
+			) TMP
+<!-- 	LEFT JOIN (
+			SELECT
+				J.FRNCHS_NO
+				, J.YEAR
+				, ROUND( (J.CNTRCT_END_CO + J.CNTRCT_TRMNAT_CO) / K.ALL_CO * 100 , 2) CLOSE_RATE
+				, K.ALL_CO
+			FROM
+				TB_FRNCHS_MRHST_CHANGE_STTUS J
+				INNER JOIN TB_FRNCHS_MRHST_STTUS K ON K.FRNCHS_NO = J.FRNCHS_NO AND K.YEAR = J.YEAR AND K.ALL_CO != 0 AND K.CTPRVN_CODE = '00'
+			) A ON A.FRNCHS_NO = TMP.FRNCHS_NO 
+	ORDER BY A.FRNCHS_NO -->
+	ORDER BY TMP.FRNCHS_NO
+	</select>
+
+	<!-- 관심프랜차이즈 정보(프랜차이즈 코드+시작,종료년도) -->
+	<select id="selectFrnchsInfoByYear" parameterType="egovMap" resultType="egovMap">
+	WITH TMP_YEAR AS /* selectFrnchsInfoByYear */
+		(SELECT MAX(TFF.YEAR) AS MAX_YEAR FROM (
+			SELECT YEAR 
+			 FROM TB_FRNCHS_FNNR
+			  
+			WHERE 1 = 1
+			   <choose>
+					<when test='frnchsNo == null or frnchsNo == ""'>
+			   AND FRNCHS_NO IN (#{frnchsNo1}, #{frnchsNo2})
+					</when>
+			   		<when test='frnchsNo1 == null or frnchsNo1 == ""'>
+			    AND FRNCHS_NO = #{frnchsNo}
+			   		</when>
+			   </choose>
+			   <if test='!@org.springframework.util.StringUtils@isEmpty(brandYear)'>
+				AND YEAR <![CDATA[<=]]>  #{brandYear}
+				</if>
+		    AND YEAR != '2021'
+			GROUP BY YEAR 
+			<if test='frnchsNo == null or frnchsNo == ""'>
+			HAVING COUNT(YEAR) > 1
+			</if>
+			 
+		) TFF
+	)
+	SELECT /* selectFrnchsInfoByYear */
+		A.YEAR ,
+		A.FRNCHS_NO,
+		D.BSN_SGNAL,
+		A.ASSETS, --자산
+		A.DEBT, --부채
+		A.CAPL, --자본
+		A.SELNG_AM, --매출
+		A.BSN_PROFIT, --영업이익
+		A.THSTRM_NTPF, --당기순이익
+		COALESCE(B.EXCTV_CO, 0) EXCTV_CO, --임원 수
+		COALESCE(B.EMP_CO, 0) EMP_CO, --직원 수
+		E.MRHST_CO, --가맹점
+		E.DROPER_CO --직영점
+
+	FROM TB_FRNCHS_FNNR A
+
+	LEFT JOIN TB_FRNCHS_EXCTV_EMP B ON B.FRNCHS_NO = A.FRNCHS_NO AND B.YEAR = A.YEAR
+	INNER JOIN TB_FRNCHS_INFO D ON D.FRNCHS_NO = A.FRNCHS_NO
+	LEFT JOIN TB_FRNCHS_MRHST_STTUS E ON E.FRNCHS_NO = A.FRNCHS_NO AND E.YEAR = A.YEAR AND E.CTPRVN_CODE = '00'
+	,TMP_YEAR
+	
+	WHERE 1 = 1
+
+	   <choose>
+			<when test='frnchsNo == null or frnchsNo == ""'>
+	   AND A.FRNCHS_NO IN (#{frnchsNo1}, #{frnchsNo2})
+			</when>
+	   		<when test='frnchsNo1 == null or frnchsNo1 == ""'>
+	    AND A.FRNCHS_NO = #{frnchsNo}
+	   		</when>
+	   </choose>
+	
+<!-- 	AND A.YEAR BETWEEN '2017' AND '2019' -->
+	AND A.YEAR BETWEEN CAST(CAST(TMP_YEAR.MAX_YEAR AS INTEGER) - 4 AS VARCHAR) AND '2024'
+
+	ORDER BY A.YEAR, A.FRNCHS_NO
+	</select>
+
+	<!-- 관심프랜차이즈 정보(프랜차이즈 코드+시작,종료년도+지역코드arr) -->
+	<select id="selectFrnchsInfoBySido" parameterType="egovMap" resultType="egovMap">
+	WITH TMP_YEAR AS /* selectFrnchsInfoBySido */
+		(SELECT MAX(TFF.YEAR) AS MAX_YEAR FROM (
+			SELECT YEAR 
+			 FROM TB_FRNCHS_FNNR 
+			
+			WHERE 1 = 1
+			   <choose>
+					<when test='frnchsNo == null or frnchsNo == ""'>
+			   AND FRNCHS_NO IN (#{frnchsNo1}, #{frnchsNo2})
+					</when>
+			   		<when test='frnchsNo1 == null or frnchsNo1 == ""'>
+			    AND FRNCHS_NO = #{frnchsNo}
+			   		</when>
+			   </choose>
+			    AND YEAR != '2021' <!-- 2022.01.21 -->
+			GROUP BY YEAR 
+			<if test='frnchsNo == null or frnchsNo == ""'>
+			HAVING COUNT(YEAR) > 1
+			</if>
+		   	
+		   
+		) TFF
+	)
+	SELECT /* selectFrnchsInfoBySido */
+		A.YEAR,
+		A.FRNCHS_NO,
+		A.CTPRVN_CODE,
+		A.AVRG_SELNG_AM, --평균매출
+		A.UNIT_AR_AVRG_SELNG_AM, --면적당평균매출
+		C.MRHST_CO, --가맹점
+		C.DROPER_CO --직영점
+
+	FROM TB_FRNCHS_SELNG A
+	LEFT JOIN TB_FRNCHS_MRHST_STTUS C ON C.FRNCHS_NO = A.FRNCHS_NO AND C.YEAR = A.YEAR AND C.CTPRVN_CODE = A.CTPRVN_CODE
+	,TMP_YEAR
+	
+	WHERE 1 = 1
+
+	   <choose>
+			<when test='frnchsNo == null or frnchsNo == ""'>
+	   AND A.FRNCHS_NO IN (#{frnchsNo1}, #{frnchsNo2})
+			</when>
+	   		<when test='frnchsNo1 == null or frnchsNo1 == ""'>
+	    AND A.FRNCHS_NO = #{frnchsNo}
+	   		</when>
+	   </choose>
+	
+<!-- 	AND A.YEAR BETWEEN '2017' AND '2019' -->
+	AND A.YEAR BETWEEN CAST(CAST(TMP_YEAR.MAX_YEAR AS INTEGER) - 4 AS VARCHAR) AND TMP_YEAR.MAX_YEAR
+
+	ORDER BY A.YEAR, A.CTPRVN_CODE, A.FRNCHS_NO
+	</select>
+
+
+	<select id="selectAttnFrnchsListCount" parameterType="egovMap" resultType="int">
+	SELECT /* selectAttnFrnchsListCount */
+		COUNT(TMP.*)
+		FROM (
+		SELECT COUNT(*) OVER() AS TOT_CNT
+			, A.HEDOFC_NO /* 본사번호 */
+			, A.FRNCHS_NO /* 프랜차이즈번호 */
+			, A.BSN_SGNAL /* 프랜차이즈명 */
+			, A.MLSFC_INDUTY_CODE
+			, C.LCLAS_INDUTY_CODE
+			, C.LCLAS_INDUTY_NM /* 대분류업종 */
+			, D.MLSFC_INDUTY_NM /* 중분류업종 */
+			, A.SM /* 부담금? */
+			, A.INTRR_CT /* 인테리어비용? */
+			, B.BSNM_RGSDE
+			, F.DEBT 
+			, F.CAPL
+			, G.UNIT_AR_AVRG_SELNG_AM
+			, DATE_PART('YEAR', NOW()) - SUBSTRING(B.BSNM_RGSDE,0,5)::INT AS HIST_YEAR
+			, ROUND(F.DEBT / F.CAPL, 2) AS DEPT_RATIO
+			, F.YEAR 
+			
+			/* 주요지표 추가 21.11.26 주한별  */
+			,M.PRFTBL_GRAD
+			,M.FAIR_GRAD
+			,M.GROWTH_GRAD
+			,M.SAFE_GRAD ,'(' || F.YEAR || '년 기준)' AS YEAR_TXT 
+			/* 주요지표  */
+			
+			/*정보공개서(파일조회) 21.11.26 주한별*/
+			,coalesce(O.atchmnfl_no, 0) as atchmnfl_no
+			,coalesce(O.file_size, 0) as file_size
+			,coalesce(O.file_sn, 0) as file_sn
+			,coalesce(O.input_file_nm, '') as input_file_nm
+			,coalesce(O.atchmnfl_sttus_code, '') as atchmnfl_sttus_code
+			/*/정보공개서(파일조회)*/
+			
+			<!-- 창업 희망 지역 제거 - 21.02.15 -->
+			<!-- 창업 희망 지역 제거 - 21.12.08 -->
+			, I.CTPRVN_CODE
+			, I.CTPRVN_NM
+						
+			<!-- , ROUND( (J.CNTRCT_END_CO + J.CNTRCT_TRMNAT_CO) /  K.ALL_CO, 2) CLOSE_RATE /* 홍석훈과장님 쿼리 적용 - 21.02.10 */ -->
+			<if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+				, COALESCE (E.DELETE_AT, 'Y') AS DELETE_AT
+			</if>
+		FROM TB_FRNCHS_INFO A
+		INNER JOIN TB_FRNCHS_HEDOFC B ON
+			B.HEDOFC_NO = A.HEDOFC_NO AND B.BSNM_RGSDE!= ''
+		INNER JOIN TB_FRNCHS_MLSFC_CODE D ON
+			D.MLSFC_INDUTY_CODE = A.MLSFC_INDUTY_CODE
+		INNER JOIN TB_FRNCHS_LCLAS_CODE C ON
+			C.LCLAS_INDUTY_CODE = D.LCLAS_INDUTY_CODE
+		INNER JOIN TB_FRNCHS_FNNR F ON
+			F.FRNCHS_NO = A.FRNCHS_NO AND F.CAPL != 0 AND F.DEBT != 0 AND F.YEAR = (SELECT MAX(YEAR) FROM TB_FRNCHS_FNNR WHERE FRNCHS_NO = A.FRNCHS_NO  AND YEAR != '2021')
+		INNER JOIN TB_FRNCHS_SELNG G ON
+			G.FRNCHS_NO = A.FRNCHS_NO AND G.CTPRVN_CODE = '00' AND F.YEAR = G.YEAR
+		INNER JOIN (
+			SELECT
+				J.FRNCHS_NO
+				, J.YEAR
+				, ROUND( (J.CNTRCT_END_CO + J.CNTRCT_TRMNAT_CO) / K.ALL_CO * 100 , 2) CLOSE_RATE
+				, K.ALL_CO <!-- 전체수 추가 - 21.02.16 -->
+			FROM
+				TB_FRNCHS_MRHST_CHANGE_STTUS J
+				INNER JOIN TB_FRNCHS_MRHST_STTUS K ON K.FRNCHS_NO = J.FRNCHS_NO AND K.YEAR = J.YEAR AND K.ALL_CO != 0 AND K.CTPRVN_CODE = '00'
+			) L ON L.FRNCHS_NO = A.FRNCHS_NO  AND L.YEAR = F.YEAR
+			
+		/* 주요지표 추가 21.11.26 주한별 */
+		INNER JOIN TB_FRNCHS_IDEX M ON M.FRNCHS_NO = A.FRNCHS_NO AND M.STDR_YEAR = F.YEAR 
+		/* /주요지표*/
+		
+		/*정보공개서(파일조회) 21.11.26 주한별*/
+		LEFT JOIN TB_INFO_DCS_BBS N ON N.FRNCHS_NO = A.FRNCHS_NO AND N.DELETE_AT = 'N' AND N.YEAR = (SELECT MAX(YEAR) FROM TB_INFO_DCS_BBS  WHERE FRNCHS_NO = A.FRNCHS_NO) 
+		LEFT JOIN TB_ATCHMNFL_STRE O ON O.ATCHMNFL_NO = N.ATCHMNFL_NO AND O.ATCHMNFL_STTUS_CODE = 'FS02'
+		/*/정보공개서(파일조회)*/
+		<!-- 창업 희망 지역 제거 - 21.02.15 -->
+		<!-- 창업 희망 지역 추가 - 21.12.08 -->
+		/*
+		INNER JOIN TB_STOR_MXM_CTPRVN H ON
+			H.FRNCHS_NO = A.FRNCHS_NO
+			AND H.STDR_YEAR = G.YEAR
+		INNER JOIN TB_CTPRVN_RELM I ON
+				I.CTPRVN_CODE = H.CTPRVN_CODE
+		*/ 			
+		INNER JOIN TB_CTPRVN_RELM I ON
+				I.CTPRVN_CODE = G.CTPRVN_CODE 			
+		<!-- /* 홍석훈과장님 쿼리 적용 - 21.02.10 */
+		INNER JOIN TB_FRNCHS_MRHST_CHANGE_STTUS J ON
+			J.FRNCHS_NO = A.FRNCHS_NO
+			AND J.YEAR = F.YEAR
+		INNER JOIN TB_FRNCHS_MRHST_STTUS K ON
+			K.FRNCHS_NO = J.FRNCHS_NO
+			AND K.YEAR = J.YEAR
+			AND K.ALL_CO != 0
+			AND K.CTPRVN_CODE = H.CTPRVN_CODE
+		-->
+	<!-- 		<if test='(closeRate eq "under10p") or (closeRate eq "betwen10to20p") or (closeRate eq "over20p")'> -->
+	<!-- 		INNER JOIN ( -->
+	<!-- 			SELECT -->
+	<!-- 				J.FRNCHS_NO -->
+	<!-- 				, J.YEAR -->
+	<!-- 				, ROUND( (J.CNTRCT_END_CO + J.CNTRCT_TRMNAT_CO) / K.ALL_CO * 100 , 2) CLOSE_RATE -->
+	<!-- 				, K.ALL_CO 전체수 추가 - 21.02.16 -->
+	<!-- 			FROM -->
+	<!-- 				TB_FRNCHS_MRHST_CHANGE_STTUS J -->
+	<!-- 				INNER JOIN TB_FRNCHS_MRHST_STTUS K ON K.FRNCHS_NO = J.FRNCHS_NO AND K.YEAR = J.YEAR AND K.ALL_CO != 0 AND K.CTPRVN_CODE = '00' -->
+	<!-- 			) L ON L.FRNCHS_NO = A.FRNCHS_NO  AND L.YEAR = F.YEAR -->
+	<!-- 		</if> -->
+		<if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+		LEFT JOIN TB_INTRST_FRNCHS E ON
+			E.FRNCHS_NO = A.FRNCHS_NO AND E.USER_NO = #{ssUserNo}::int
+		</if>
+		
+	
+		WHERE
+			1 = 1
+			<if test='!@org.springframework.util.StringUtils@isEmpty(ldClass)'>
+				AND D.LCLAS_INDUTY_CODE = #{ldClass}
+			</if>
+	
+			<if test='!@org.springframework.util.StringUtils@isEmpty(mdClass)'>
+				AND A.MLSFC_INDUTY_CODE = #{mdClass}
+			</if>
+			
+			
+			
+			<if test='!@org.springframework.util.StringUtils@isEmpty(bsnSgnal)'>
+				 AND A.BSN_SGNAL LIKE #{bsnSgnal} || '%'			 
+			</if>
+			
+			
+	
+			<if test='!@org.springframework.util.StringUtils@isEmpty(levy1)'>
+				AND A.SM BETWEEN #{levy1}::INT AND #{levy2}::INT
+			</if>
+	
+			<if test='!@org.springframework.util.StringUtils@isEmpty(inte1)'>
+			AND A.INTRR_CT BETWEEN #{inte1}::INT AND #{inte2}::INT
+			</if>
+	
+			<!-- 조회조건 변경 - 21.02.10
+			<if test='!@org.springframework.util.StringUtils@isEmpty(ctprvnCodeArr)'>
+			AND H.CTPRVN_CODE IN
+				<foreach collection="ctprvnCodeArr" item="item" index="index" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+			-->
+	<!-- 			<if test='closeRate eq "under10p"'> <![CDATA[AND L.CLOSE_RATE <= 10]]> /* 폐업률 10% 이하*/</if> -->
+	<!-- 			<if test='closeRate eq "betwen10to20p"'> <![CDATA[AND L.CLOSE_RATE > 10 AND L.CLOSE_RATE <= 20]]> /* 폐업률 10% 초과 20% 이하 */</if> -->
+	<!-- 			<if test='closeRate eq "over20p"'> <![CDATA[AND L.CLOSE_RATE > 20]]> /* 폐업률 20% 초과 */</if> -->
+			<if test='unitArAvrgSelngAm eq "under5000"'> <![CDATA[AND G.UNIT_AR_AVRG_SELNG_AM <= 50000	]]> /* 5,000만원 이하 */</if>
+			<if test='unitArAvrgSelngAm eq "between5000to10000"'> <![CDATA[AND G.UNIT_AR_AVRG_SELNG_AM > 50000 AND G.UNIT_AR_AVRG_SELNG_AM <= 100000]]> /* 5,000만원 초과 1억원 이하 */</if>
+			<if test='unitArAvrgSelngAm eq "over10000"'> <![CDATA[AND G.UNIT_AR_AVRG_SELNG_AM > 100000]]> /* 1억원 초과 */</if>
+	<!-- 		<if test='closeRate eq "under10p"'> <![CDATA[AND TMP.CLOSE_RATE <= 10]]> /* 폐업률 10% 이하*/</if> -->
+	<!-- 		<if test='closeRate eq "betwen10to20p"'> <![CDATA[ TMP.CLOSE_RATE > 10 AND TMP.CLOSE_RATE <= 20]]> /* 폐업률 10% 초과 20% 이하 */</if> -->
+	<!-- 		<if test='closeRate eq "over20p"'> <![CDATA[AND TMP.CLOSE_RATE > 20]]> /* 폐업률 20% 초과 */</if> -->
+	<!-- 		<if test='histYear eq "under1y"'> <![CDATA[AND TMP.HIST_YEAR <= 1]]> /* 본사업력 1년 이하*/</if> -->
+	<!-- 		<if test='histYear eq "between1to3y"'> <![CDATA[AND TMP.HIST_YEAR > 1 AND TMP.HIST_YEAR <= 3]]> /* 본사업력 1년 초과 3년 이하 */</if> -->
+	<!-- 		<if test='histYear eq "over3y"'> <![CDATA[AND TMP.HIST_YEAR > 3]]> /* 본사업력 3년 초과*/</if> -->
+	<!-- 		<if test='deptRatio eq "under50p"'> <![CDATA[AND TMP.DEPT_RATIO <= 0.5]]> /* 50% 미만 */</if> -->
+	<!-- 		<if test='deptRatio eq "between50to100p"'> <![CDATA[AND TMP.DEPT_RATIO > 0.5 AND TMP.DEPT_RATIO <= 1]]> /* 50% 초과 100% 미만 */</if> -->
+	<!-- 		<if test='deptRatio eq "over100p"'> <![CDATA[AND TMP.DEPT_RATIO > 1]]> /* 100% 초과 */</if> -->
+	<!-- 		<if test='unitArAvrgSelngAm eq "under5000"'> <![CDATA[AND UNIT_AR_AVRG_SELNG_AM <= 50000	]]> /* 5,000만원 이하 */</if> -->
+	<!-- 		<if test='unitArAvrgSelngAm eq "between5000to10000"'> <![CDATA[AND UNIT_AR_AVRG_SELNG_AM > 50000 AND UNIT_AR_AVRG_SELNG_AM <= 100000]]> /* 5,000만원 초과 1억원 이하 */</if> -->
+	<!-- 		<if test='unitArAvrgSelngAm eq "over10000"'> <![CDATA[AND UNIT_AR_AVRG_SELNG_AM > 100000]]> /* 1억원 초과 */</if> -->
+	) TMP
+	LEFT JOIN (
+			SELECT
+				J.FRNCHS_NO
+				, J.YEAR
+				, ROUND( (J.CNTRCT_END_CO + J.CNTRCT_TRMNAT_CO) / K.ALL_CO * 100 , 2) CLOSE_RATE
+				, K.ALL_CO <!-- 전체수 추가 - 21.02.16 -->
+			FROM
+				TB_FRNCHS_MRHST_CHANGE_STTUS J
+				INNER JOIN TB_FRNCHS_MRHST_STTUS K ON K.FRNCHS_NO = J.FRNCHS_NO AND K.YEAR = J.YEAR AND K.ALL_CO != 0 AND K.CTPRVN_CODE = '00'
+			) A ON A.FRNCHS_NO = TMP.FRNCHS_NO  AND A.YEAR = TMP.YEAR
+	WHERE
+		1 = 1
+		<if test='histYear eq "under1y"'> <![CDATA[AND TMP.HIST_YEAR <= 1]]> /* 본사업력 1년 이하*/</if>
+		<if test='histYear eq "between1to3y"'> <![CDATA[AND TMP.HIST_YEAR > 1 AND TMP.HIST_YEAR <= 3]]> /* 본사업력 1년 초과 3년 이하 */</if>
+		<if test='histYear eq "over3y"'> <![CDATA[AND TMP.HIST_YEAR > 3]]> /* 본사업력 3년 초과*/</if>
+		<if test='deptRatio eq "under50p"'> <![CDATA[AND TMP.DEPT_RATIO <= 0.5]]> /* 50% 미만 */</if>
+		<if test='deptRatio eq "between50to100p"'> <![CDATA[AND DEPT_RATIO > 0.5 AND DEPT_RATIO <= 1]]> /* 50% 초과 100% 미만 */</if>
+		<if test='deptRatio eq "over100p"'> <![CDATA[AND TMP.DEPT_RATIO > 1]]> /* 100% 초과 */</if>
+	</select>
+
+
+
+
+	<!-- 관심프랜차이즈 검색 목록 -->
+	<select id="selectAttnFrnchsList" parameterType="egovMap" resultType="egovMap">
+
+	SELECT /* selectAttnFrnchsList */
+		TMP.*
+		, DATE_PART('YEAR', NOW()) - SUBSTRING(TMP.BSNM_RGSDE,0,5)::INT AS HIST_YEAR
+		, ROUND(TMP.DEBT / TMP.CAPL, 2) AS DEPT_RATIO
+		, A.CLOSE_RATE
+		, A.ALL_CO 
+		, ROW_NUMBER() OVER (ORDER BY TMP.FRNCHS_NO  DESC) AS RN
+	FROM (
+		SELECT COUNT(*) OVER() AS TOT_CNT
+			, A.HEDOFC_NO /* 본사번호 */
+			, A.FRNCHS_NO /* 프랜차이즈번호 */
+			, A.BSN_SGNAL /* 프랜차이즈명 */
+			, A.MLSFC_INDUTY_CODE
+			, C.LCLAS_INDUTY_CODE
+			, C.LCLAS_INDUTY_NM /* 대분류업종 */
+			, D.MLSFC_INDUTY_NM /* 중분류업종 */
+			, A.SM /* 부담금? */
+			, A.INTRR_CT /* 인테리어비용? */
+			, B.BSNM_RGSDE
+			, F.DEBT 
+			, F.CAPL
+			, G.UNIT_AR_AVRG_SELNG_AM
+			, DATE_PART('YEAR', NOW()) - SUBSTRING(B.BSNM_RGSDE,0,5)::INT AS HIST_YEAR
+			, ROUND(F.DEBT / F.CAPL, 2) AS DEPT_RATIO
+			, F.YEAR 
+			
+			/* 주요지표 추가 21.11.26 주한별  */
+			,M.PRFTBL_GRAD
+			,M.FAIR_GRAD
+			,M.GROWTH_GRAD
+			,M.SAFE_GRAD ,'(' || F.YEAR || '년 기준)' AS YEAR_TXT 
+			/* 주요지표  */
+			
+			/*정보공개서(파일조회) 21.11.26 주한별*/
+			,coalesce(O.atchmnfl_no, 0) as atchmnfl_no
+			,coalesce(O.file_size, 0) as file_size
+			,coalesce(O.file_sn, 0) as file_sn
+			,coalesce(O.input_file_nm, '') as input_file_nm
+			,coalesce(O.atchmnfl_sttus_code, '') as atchmnfl_sttus_code
+			/*/정보공개서(파일조회)*/
+			
+			<!-- 창업 희망 지역 제거 - 21.02.15 -->
+			<!-- 창업 희망 지역 제거 - 21.12.08 -->
+			, I.CTPRVN_CODE
+			, I.CTPRVN_NM
+						
+			<!-- , ROUND( (J.CNTRCT_END_CO + J.CNTRCT_TRMNAT_CO) /  K.ALL_CO, 2) CLOSE_RATE /* 홍석훈과장님 쿼리 적용 - 21.02.10 */ -->
+			<if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+				, COALESCE (E.DELETE_AT, 'Y') AS DELETE_AT
+			</if>
+		FROM TB_FRNCHS_INFO A
+		INNER JOIN TB_FRNCHS_HEDOFC B ON
+			B.HEDOFC_NO = A.HEDOFC_NO AND B.BSNM_RGSDE!= ''
+		INNER JOIN TB_FRNCHS_MLSFC_CODE D ON
+			D.MLSFC_INDUTY_CODE = A.MLSFC_INDUTY_CODE
+		INNER JOIN TB_FRNCHS_LCLAS_CODE C ON
+			C.LCLAS_INDUTY_CODE = D.LCLAS_INDUTY_CODE
+		INNER JOIN TB_FRNCHS_FNNR F ON
+			F.FRNCHS_NO = A.FRNCHS_NO AND F.CAPL != 0 AND F.DEBT != 0 AND F.YEAR = (SELECT MAX(YEAR) FROM TB_FRNCHS_FNNR WHERE FRNCHS_NO = A.FRNCHS_NO  AND YEAR != '2021')
+		INNER JOIN TB_FRNCHS_SELNG G ON
+			G.FRNCHS_NO = A.FRNCHS_NO AND G.CTPRVN_CODE = '00' AND F.YEAR = G.YEAR
+		INNER JOIN (
+			SELECT
+				J.FRNCHS_NO
+				, J.YEAR
+				, ROUND( (J.CNTRCT_END_CO + J.CNTRCT_TRMNAT_CO) / K.ALL_CO * 100 , 2) CLOSE_RATE
+				, K.ALL_CO <!-- 전체수 추가 - 21.02.16 -->
+			FROM
+				TB_FRNCHS_MRHST_CHANGE_STTUS J
+				INNER JOIN TB_FRNCHS_MRHST_STTUS K ON K.FRNCHS_NO = J.FRNCHS_NO AND K.YEAR = J.YEAR AND K.ALL_CO != 0 AND K.CTPRVN_CODE = '00'
+			) L ON L.FRNCHS_NO = A.FRNCHS_NO  AND L.YEAR = F.YEAR
+			
+		/* 주요지표 추가 21.11.26 주한별 */
+		INNER JOIN TB_FRNCHS_IDEX M ON M.FRNCHS_NO = A.FRNCHS_NO AND M.STDR_YEAR = F.YEAR 
+		/* /주요지표*/
+		
+		/*정보공개서(파일조회) 21.11.26 주한별*/
+		LEFT JOIN TB_INFO_DCS_BBS N ON N.FRNCHS_NO = A.FRNCHS_NO AND N.DELETE_AT = 'N' AND N.YEAR = (SELECT MAX(YEAR) FROM TB_INFO_DCS_BBS  WHERE FRNCHS_NO = A.FRNCHS_NO) 
+		LEFT JOIN TB_ATCHMNFL_STRE O ON O.ATCHMNFL_NO = N.ATCHMNFL_NO AND O.ATCHMNFL_STTUS_CODE = 'FS02'
+		/*/정보공개서(파일조회)*/
+		<!-- 창업 희망 지역 제거 - 21.02.15 -->
+		<!-- 창업 희망 지역 추가 - 21.12.08 -->
+		/*
+		INNER JOIN TB_STOR_MXM_CTPRVN H ON
+			H.FRNCHS_NO = A.FRNCHS_NO
+			AND H.STDR_YEAR = G.YEAR
+		INNER JOIN TB_CTPRVN_RELM I ON
+ 			I.CTPRVN_CODE = H.CTPRVN_CODE
+		*/ 			
+		INNER JOIN TB_CTPRVN_RELM I ON
+ 			I.CTPRVN_CODE = G.CTPRVN_CODE 			
+		<!-- /* 홍석훈과장님 쿼리 적용 - 21.02.10 */
+		INNER JOIN TB_FRNCHS_MRHST_CHANGE_STTUS J ON
+			J.FRNCHS_NO = A.FRNCHS_NO
+			AND J.YEAR = F.YEAR
+		INNER JOIN TB_FRNCHS_MRHST_STTUS K ON
+			K.FRNCHS_NO = J.FRNCHS_NO
+			AND K.YEAR = J.YEAR
+			AND K.ALL_CO != 0
+			AND K.CTPRVN_CODE = H.CTPRVN_CODE
+		-->
+<!-- 		<if test='(closeRate eq "under10p") or (closeRate eq "betwen10to20p") or (closeRate eq "over20p")'> -->
+<!-- 		INNER JOIN ( -->
+<!-- 			SELECT -->
+<!-- 				J.FRNCHS_NO -->
+<!-- 				, J.YEAR -->
+<!-- 				, ROUND( (J.CNTRCT_END_CO + J.CNTRCT_TRMNAT_CO) / K.ALL_CO * 100 , 2) CLOSE_RATE -->
+<!-- 				, K.ALL_CO 전체수 추가 - 21.02.16 -->
+<!-- 			FROM -->
+<!-- 				TB_FRNCHS_MRHST_CHANGE_STTUS J -->
+<!-- 				INNER JOIN TB_FRNCHS_MRHST_STTUS K ON K.FRNCHS_NO = J.FRNCHS_NO AND K.YEAR = J.YEAR AND K.ALL_CO != 0 AND K.CTPRVN_CODE = '00' -->
+<!-- 			) L ON L.FRNCHS_NO = A.FRNCHS_NO  AND L.YEAR = F.YEAR -->
+<!-- 		</if> -->
+		<if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+		LEFT JOIN TB_INTRST_FRNCHS E ON
+			E.FRNCHS_NO = A.FRNCHS_NO AND E.USER_NO = #{ssUserNo}::int
+		</if>
+		
+
+		WHERE
+			1 = 1
+			<if test='!@org.springframework.util.StringUtils@isEmpty(ldClass)'>
+				AND D.LCLAS_INDUTY_CODE = #{ldClass}
+			</if>
+
+			<if test='!@org.springframework.util.StringUtils@isEmpty(mdClass)'>
+				AND A.MLSFC_INDUTY_CODE = #{mdClass}
+			</if>
+			
+			
+			
+			<if test='!@org.springframework.util.StringUtils@isEmpty(bsnSgnal)'>
+				 AND A.BSN_SGNAL LIKE #{bsnSgnal} || '%'			 
+			</if>
+			
+			
+
+			<if test='!@org.springframework.util.StringUtils@isEmpty(levy1)'>
+				AND A.SM BETWEEN #{levy1}::INT AND #{levy2}::INT
+			</if>
+
+			<if test='!@org.springframework.util.StringUtils@isEmpty(inte1)'>
+			AND A.INTRR_CT BETWEEN #{inte1}::INT AND #{inte2}::INT
+			</if>
+
+			<!-- 조회조건 변경 - 21.02.10
+			<if test='!@org.springframework.util.StringUtils@isEmpty(ctprvnCodeArr)'>
+			AND H.CTPRVN_CODE IN
+				<foreach collection="ctprvnCodeArr" item="item" index="index" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+			-->
+<!-- 			<if test='closeRate eq "under10p"'> <![CDATA[AND L.CLOSE_RATE <= 10]]> /* 폐업률 10% 이하*/</if> -->
+<!-- 			<if test='closeRate eq "betwen10to20p"'> <![CDATA[AND L.CLOSE_RATE > 10 AND L.CLOSE_RATE <= 20]]> /* 폐업률 10% 초과 20% 이하 */</if> -->
+<!-- 			<if test='closeRate eq "over20p"'> <![CDATA[AND L.CLOSE_RATE > 20]]> /* 폐업률 20% 초과 */</if> -->
+			<if test='unitArAvrgSelngAm eq "under5000"'> <![CDATA[AND G.UNIT_AR_AVRG_SELNG_AM <= 50000	]]> /* 5,000만원 이하 */</if>
+			<if test='unitArAvrgSelngAm eq "between5000to10000"'> <![CDATA[AND G.UNIT_AR_AVRG_SELNG_AM > 50000 AND G.UNIT_AR_AVRG_SELNG_AM <= 100000]]> /* 5,000만원 초과 1억원 이하 */</if>
+			<if test='unitArAvrgSelngAm eq "over10000"'> <![CDATA[AND G.UNIT_AR_AVRG_SELNG_AM > 100000]]> /* 1억원 초과 */</if>
+<!-- 		<if test='closeRate eq "under10p"'> <![CDATA[AND TMP.CLOSE_RATE <= 10]]> /* 폐업률 10% 이하*/</if> -->
+<!-- 		<if test='closeRate eq "betwen10to20p"'> <![CDATA[ TMP.CLOSE_RATE > 10 AND TMP.CLOSE_RATE <= 20]]> /* 폐업률 10% 초과 20% 이하 */</if> -->
+<!-- 		<if test='closeRate eq "over20p"'> <![CDATA[AND TMP.CLOSE_RATE > 20]]> /* 폐업률 20% 초과 */</if> -->
+<!-- 		<if test='histYear eq "under1y"'> <![CDATA[AND TMP.HIST_YEAR <= 1]]> /* 본사업력 1년 이하*/</if> -->
+<!-- 		<if test='histYear eq "between1to3y"'> <![CDATA[AND TMP.HIST_YEAR > 1 AND TMP.HIST_YEAR <= 3]]> /* 본사업력 1년 초과 3년 이하 */</if> -->
+<!-- 		<if test='histYear eq "over3y"'> <![CDATA[AND TMP.HIST_YEAR > 3]]> /* 본사업력 3년 초과*/</if> -->
+<!-- 		<if test='deptRatio eq "under50p"'> <![CDATA[AND TMP.DEPT_RATIO <= 0.5]]> /* 50% 미만 */</if> -->
+<!-- 		<if test='deptRatio eq "between50to100p"'> <![CDATA[AND TMP.DEPT_RATIO > 0.5 AND TMP.DEPT_RATIO <= 1]]> /* 50% 초과 100% 미만 */</if> -->
+<!-- 		<if test='deptRatio eq "over100p"'> <![CDATA[AND TMP.DEPT_RATIO > 1]]> /* 100% 초과 */</if> -->
+<!-- 		<if test='unitArAvrgSelngAm eq "under5000"'> <![CDATA[AND UNIT_AR_AVRG_SELNG_AM <= 50000	]]> /* 5,000만원 이하 */</if> -->
+<!-- 		<if test='unitArAvrgSelngAm eq "between5000to10000"'> <![CDATA[AND UNIT_AR_AVRG_SELNG_AM > 50000 AND UNIT_AR_AVRG_SELNG_AM <= 100000]]> /* 5,000만원 초과 1억원 이하 */</if> -->
+<!-- 		<if test='unitArAvrgSelngAm eq "over10000"'> <![CDATA[AND UNIT_AR_AVRG_SELNG_AM > 100000]]> /* 1억원 초과 */</if> -->
+	) TMP
+	LEFT JOIN (
+			SELECT
+				J.FRNCHS_NO
+				, J.YEAR
+				, ROUND( (J.CNTRCT_END_CO + J.CNTRCT_TRMNAT_CO) / K.ALL_CO * 100 , 2) CLOSE_RATE
+				, K.ALL_CO <!-- 전체수 추가 - 21.02.16 -->
+			FROM
+				TB_FRNCHS_MRHST_CHANGE_STTUS J
+				INNER JOIN TB_FRNCHS_MRHST_STTUS K ON K.FRNCHS_NO = J.FRNCHS_NO AND K.YEAR = J.YEAR AND K.ALL_CO != 0 AND K.CTPRVN_CODE = '00'
+			) A ON A.FRNCHS_NO = TMP.FRNCHS_NO  AND A.YEAR = TMP.YEAR
+	WHERE
+		1 = 1
+		<if test='histYear eq "under1y"'> <![CDATA[AND TMP.HIST_YEAR <= 1]]> /* 본사업력 1년 이하*/</if>
+		<if test='histYear eq "between1to3y"'> <![CDATA[AND TMP.HIST_YEAR > 1 AND TMP.HIST_YEAR <= 3]]> /* 본사업력 1년 초과 3년 이하 */</if>
+		<if test='histYear eq "over3y"'> <![CDATA[AND TMP.HIST_YEAR > 3]]> /* 본사업력 3년 초과*/</if>
+		<if test='deptRatio eq "under50p"'> <![CDATA[AND TMP.DEPT_RATIO <= 0.5]]> /* 50% 미만 */</if>
+		<if test='deptRatio eq "between50to100p"'> <![CDATA[AND DEPT_RATIO > 0.5 AND DEPT_RATIO <= 1]]> /* 50% 초과 100% 미만 */</if>
+		<if test='deptRatio eq "over100p"'> <![CDATA[AND TMP.DEPT_RATIO > 1]]> /* 100% 초과 */</if>
+	ORDER BY
+		<if test='!@org.springframework.util.StringUtils@isEmpty(sortSidoArr)'>
+			ARRAY_POSITION(#{sortSidoArr},TMP.CTPRVN_CODE) ASC,
+		</if>
+		<!-- 이름에서 가맹점 전체수로 조회조건 변경 - 21.02.16 -->
+		A.ALL_CO DESC
+	LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+
+	</select>
+
+
+	<select id="selectDensityInfo" parameterType="egovMap" resultType="egovMap">
+
+		SELECT
+		A.FRNCHS_NO,
+		A.BSN_SGNAL,
+		B.RPRSNTV_NM, --브랜드명
+		C.MLSFC_INDUTY_CODE, --중분류 업종코드
+		C.MLSFC_INDUTY_NM, --중분류 업종명
+
+		A.FTC_COREC_MANAGT_CO::int + A.CFRS_CO::int + A.PETY_CO::int AS OUTLAW_CNT,
+
+		A.SM, --가맹사업자 부담금 합계
+		E.MRHST_CO,
+		E.AVRG_SELNG_AM,
+		E.UNIT_AR_AVRG_SELNG_AM,
+
+		F.PRFTBL_GRAD,
+		F.FAIR_GRAD,
+		F.GROWTH_GRAD,
+		F.SAFE_GRAD
+
+		<if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+			, COALESCE (G.DELETE_AT, 'Y') AS DELETE_AT
+		</if>
+		,'(' || D.YEAR || '년 기준)' AS YEAR_TXT
+		FROM TB_FRNCHS_INFO A
+		INNER JOIN TB_FRNCHS_HEDOFC B ON A.HEDOFC_NO = B.HEDOFC_NO
+		INNER JOIN TB_FRNCHS_MLSFC_CODE C ON C.MLSFC_INDUTY_CODE = A.MLSFC_INDUTY_CODE
+		INNER JOIN TB_FRNCHS_FNNR D ON D.FRNCHS_NO = A.FRNCHS_NO
+		INNER JOIN TB_FRNCHS_SELNG E ON E.FRNCHS_NO = A.FRNCHS_NO AND E.YEAR = D.YEAR AND E.CTPRVN_CODE = '00' --임시로 전체
+		INNER JOIN TB_FRNCHS_IDEX F ON F.FRNCHS_NO = A.FRNCHS_NO AND F.STDR_YEAR = D.YEAR
+
+		<if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+		LEFT JOIN TB_INTRST_FRNCHS G ON
+			G.FRNCHS_NO = A.FRNCHS_NO AND G.USER_NO = #{ssUserNo}::int
+		</if>
+		WHERE A.FRNCHS_NO = #{frnchsNo}
+		AND D.YEAR = (SELECT MAX(YEAR) FROM TB_FRNCHS_FNNR WHERE FRNCHS_NO = #{frnchsNo} AND YEAR != '2021')
+	</select>
+
+	<select id="selectDensityTrend" parameterType="egovMap" resultType="egovMap">
+		<!-- 상위3개로 쿼리 변경 - 21.03.16 
+		SELECT
+			YEAR,
+			MRHST_CO,
+			AVRG_SELNG_AM
+		FROM
+			TB_FRNCHS_SELNG
+		WHERE
+			FRNCHS_NO = #{frnchsNo}
+			AND YEAR BETWEEN #{b_year} AND #{year}
+			AND CTPRVN_CODE = '00'
+		-->
+		select 
+			TMP.YEAR
+			, TMP.MRHST_CO
+			, TMP.AVRG_SELNG_AM
+		FROM
+		(
+			SELECT
+				YEAR,
+				MRHST_CO,
+				AVRG_SELNG_AM
+			FROM
+				TB_FRNCHS_SELNG
+			WHERE
+				FRNCHS_NO = #{frnchsNo}
+				AND CTPRVN_CODE = '00'
+				<![CDATA[
+				/* 임시 처리 - '21년 데이터 부족(20220128) 박성민 */
+				AND YEAR < '2021'
+				]]>
+			ORDER BY 
+				YEAR DESC
+			LIMIT 5 <!-- 3개년에서 5개년으로 변경 - 21.03.17 -->
+		) TMP
+		ORDER BY 
+			TMP.YEAR ASC
+	</select>
+
+	<!-- 개인 관심 프랜차이즈 목록 카운트 - 21.01.20 -->
+	<select id="selectIntrstFrnchsListCount" parameterType="egovMap" resultType="int">
+		SELECT /* selectIntrstFrnchsListCount */
+			COUNT(TMP.*)
+		 FROM (
+			SELECT
+				<include refid="intrstFrnchsColumn" />
+			FROM
+				TB_INTRST_FRNCHS E
+				INNER JOIN TB_FRNCHS_INFO A ON A.FRNCHS_NO = E.FRNCHS_NO AND E.USER_NO = #{ssUserNo}::INTEGER
+				INNER JOIN TB_FRNCHS_HEDOFC B ON B.HEDOFC_NO = A.HEDOFC_NO
+				INNER JOIN TB_FRNCHS_MLSFC_CODE D ON D.MLSFC_INDUTY_CODE = A.MLSFC_INDUTY_CODE
+				INNER JOIN TB_FRNCHS_LCLAS_CODE C ON C.LCLAS_INDUTY_CODE = D.LCLAS_INDUTY_CODE
+				INNER JOIN TB_FRNCHS_FNNR F ON F.FRNCHS_NO = A.FRNCHS_NO AND F.CAPL != 0 AND F.DEBT != 0 AND F.YEAR = (SELECT MAX(YEAR) FROM TB_FRNCHS_FNNR WHERE FRNCHS_NO = A.FRNCHS_NO )
+				INNER JOIN TB_FRNCHS_SELNG G ON G.FRNCHS_NO = A.FRNCHS_NO AND G.CTPRVN_CODE = '00' AND G.YEAR = (SELECT MAX(YEAR) FROM TB_FRNCHS_SELNG WHERE FRNCHS_NO = A.FRNCHS_NO ) AND F.YEAR = G.YEAR
+				<!-- 창업 희망 지역 제거 - 21.02.15 -->
+				<!-- 창업 희망 지역 추가 - 21.12.08 -->
+				INNER JOIN TB_STOR_MXM_CTPRVN H ON H.FRNCHS_NO = A.FRNCHS_NO AND H.STDR_YEAR = G.YEAR
+				INNER JOIN TB_CTPRVN_RELM I ON I.CTPRVN_CODE = H.CTPRVN_CODE
+				
+				<!-- /* 홍석훈과장님 쿼리 적용 - 21.02.10 */
+				INNER JOIN TB_FRNCHS_MRHST_CHANGE_STTUS J ON J.FRNCHS_NO = A.FRNCHS_NO AND J.YEAR = F.YEAR
+				INNER JOIN TB_FRNCHS_MRHST_STTUS K ON K.FRNCHS_NO = J.FRNCHS_NO AND K.YEAR = J.YEAR AND K.ALL_CO != 0 AND K.CTPRVN_CODE = H.CTPRVN_CODE
+				-->
+				INNER JOIN (
+					SELECT
+						J.FRNCHS_NO
+						, J.YEAR
+						, ROUND( (J.CNTRCT_END_CO + J.CNTRCT_TRMNAT_CO) / K.ALL_CO * 100 , 2) CLOSE_RATE
+						, K.ALL_CO <!-- 전체수 추가 - 21.02.16 -->
+					FROM
+						TB_FRNCHS_MRHST_CHANGE_STTUS J
+						INNER JOIN TB_FRNCHS_MRHST_STTUS K ON K.FRNCHS_NO = J.FRNCHS_NO AND K.YEAR = J.YEAR AND K.ALL_CO != 0 AND K.CTPRVN_CODE = '00'
+					) L ON L.FRNCHS_NO = A.FRNCHS_NO  AND L.YEAR = F.YEAR
+			LEFT JOIN TB_INFO_DCS_BBS N ON N.FRNCHS_NO = A.FRNCHS_NO AND N.DELETE_AT = 'N' AND N.YEAR = (SELECT MAX(YEAR) FROM TB_INFO_DCS_BBS WHERE FRNCHS_NO = A.FRNCHS_NO) 
+			WHERE
+				E.DELETE_AT = 'N'
+		) TMP
+	</select>
+
+	<!-- 개인 관심 프랜차이즈 목록 - 21.01.20 -->
+	<select id="selectIntrstFrnchsList" parameterType="egovMap" resultType="egovMap">
+		SELECT /* selectIntrstFrnchsList */
+			TMP.*,
+			ROW_NUMBER() OVER (ORDER BY FRNCHS_NO  DESC) AS RN
+		FROM (
+			SELECT
+				<include refid="intrstFrnchsColumn" />
+			FROM
+				TB_INTRST_FRNCHS E
+				INNER JOIN TB_FRNCHS_INFO A ON A.FRNCHS_NO = E.FRNCHS_NO AND E.USER_NO = #{ssUserNo}::INTEGER
+				INNER JOIN TB_FRNCHS_HEDOFC B ON B.HEDOFC_NO = A.HEDOFC_NO
+				INNER JOIN TB_FRNCHS_MLSFC_CODE D ON D.MLSFC_INDUTY_CODE = A.MLSFC_INDUTY_CODE
+				INNER JOIN TB_FRNCHS_LCLAS_CODE C ON C.LCLAS_INDUTY_CODE = D.LCLAS_INDUTY_CODE
+				<!-- INNER JOIN TB_FRNCHS_FNNR F ON F.FRNCHS_NO = A.FRNCHS_NO AND F.CAPL != 0 AND F.DEBT != 0 AND F.YEAR = (SELECT MAX(YEAR) FROM TB_FRNCHS_FNNR WHERE FRNCHS_NO = A.FRNCHS_NO )
+				INNER JOIN TB_FRNCHS_SELNG G ON G.FRNCHS_NO = A.FRNCHS_NO AND G.CTPRVN_CODE = '00' AND G.YEAR = (SELECT MAX(YEAR) FROM TB_FRNCHS_SELNG WHERE FRNCHS_NO = A.FRNCHS_NO ) AND F.YEAR = G.YEAR -->
+				INNER JOIN TB_FRNCHS_FNNR F ON F.FRNCHS_NO = A.FRNCHS_NO AND F.CAPL != 0 AND F.DEBT != 0 AND F.YEAR = (SELECT MAX(YEAR) FROM TB_FRNCHS_FNNR WHERE FRNCHS_NO = A.FRNCHS_NO AND YEAR != '2021') 
+				INNER JOIN TB_FRNCHS_SELNG G ON G.FRNCHS_NO = A.FRNCHS_NO AND G.CTPRVN_CODE = '00' AND G.YEAR = (SELECT MAX(YEAR) FROM TB_FRNCHS_SELNG WHERE FRNCHS_NO = A.FRNCHS_NO AND YEAR != '2021')
+
+				<!-- 창업 희망 지역 제거 - 21.02.15 -->
+				<!-- 창업 희망 지역 추가 - 21.12.08 -->
+			<!-- 	INNER JOIN TB_STOR_MXM_CTPRVN H ON H.FRNCHS_NO = A.FRNCHS_NO AND H.STDR_YEAR = G.YEAR -->
+				INNER JOIN TB_STOR_MXM_CTPRVN H ON H.FRNCHS_NO = A.FRNCHS_NO AND H.STDR_YEAR = (SELECT MAX(YEAR) FROM TB_FRNCHS_FNNR WHERE FRNCHS_NO = A.FRNCHS_NO AND YEAR != '2021') 
+				INNER JOIN TB_CTPRVN_RELM I ON I.CTPRVN_CODE = H.CTPRVN_CODE
+				
+				<!-- /* 홍석훈과장님 쿼리 적용 - 21.02.10 */
+				INNER JOIN TB_FRNCHS_MRHST_CHANGE_STTUS J ON J.FRNCHS_NO = A.FRNCHS_NO AND J.YEAR = F.YEAR
+				INNER JOIN TB_FRNCHS_MRHST_STTUS K ON K.FRNCHS_NO = J.FRNCHS_NO AND K.YEAR = J.YEAR AND K.ALL_CO != 0 AND K.CTPRVN_CODE = H.CTPRVN_CODE
+				-->
+				INNER JOIN (
+					SELECT
+						J.FRNCHS_NO
+						, J.YEAR
+						, ROUND( (J.CNTRCT_END_CO + J.CNTRCT_TRMNAT_CO) / K.ALL_CO * 100 , 2) CLOSE_RATE
+						, K.ALL_CO <!-- 전체수 추가 - 21.02.16 -->
+					FROM
+						TB_FRNCHS_MRHST_CHANGE_STTUS J
+						INNER JOIN TB_FRNCHS_MRHST_STTUS K ON K.FRNCHS_NO = J.FRNCHS_NO AND K.YEAR = J.YEAR AND K.ALL_CO != 0 AND K.CTPRVN_CODE = '00'
+					) L ON L.FRNCHS_NO = A.FRNCHS_NO  AND L.YEAR = F.YEAR
+				LEFT JOIN TB_INFO_DCS_BBS N ON N.FRNCHS_NO = A.FRNCHS_NO AND N.DELETE_AT = 'N' AND N.YEAR = (SELECT MAX(YEAR) FROM TB_INFO_DCS_BBS WHERE FRNCHS_NO = A.FRNCHS_NO) 
+				WHERE
+					E.DELETE_AT = 'N'
+		) TMP
+		LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+
+	<!-- 착한 프랜차이즈 본사 목록 총건수 조회 -->
+	<select id="selectGoodFrnchsExprnRegistListCount"  parameterType="egovMap" resultType="int">
+	SELECT COUNT(AA.*) FROM (
+		SELECT
+			(SELECT MLSFC_INDUTY_NM FROM TB_FRNCHS_MLSFC_CODE WHERE MLSFC_INDUTY_CODE = B.MLSFC_INDUTY_CODE) AS MLSFC_INDUTY_NM,
+			B.BSN_SGNAL,
+			C.ADRES ,
+			D.EXCTV_CO,
+			COUNT(1) AS FRANCHS_CONFM_CNT,
+			B.FRNCHS_NO
+		FROM TB_FRNCHS_EXPRN_REGIST A,
+			TB_FRNCHS_INFO B,
+			TB_FRNCHS_HEDOFC C,
+			TB_FRNCHS_EXCTV_EMP D
+		WHERE A.CONFM_USER_NO IS NOT NULL
+		  AND A.FRNCHS_NO = B.FRNCHS_NO
+		  AND B.HEDOFC_NO = C.HEDOFC_NO
+		  AND B.FRNCHS_NO = D.FRNCHS_NO
+		  AND D.YEAR = (SELECT MAX(YEAR) FROM TB_FRNCHS_EXCTV_EMP WHERE FRNCHS_NO = B.FRNCHS_NO )
+		GROUP BY B.BSN_SGNAL ,B.MLSFC_INDUTY_CODE, C.ADRES, D.EXCTV_CO, B.FRNCHS_NO
+	) AA
+	</select>
+
+	<!-- 착한 프랜차이즈 본사 목록 조회 -->
+	<select id="selectGoodFrnchsExprnRegistList" parameterType="egovMap" resultType="egovMap">
+	SELECT TMP.*
+		 , ROW_NUMBER() OVER (ORDER BY FRANCHS_CONFM_CNT DESC) AS RN
+	  	FROM (
+				SELECT AA.*, FLOOR((BB.DEBT / BB.ASSETS) * 100) AS DEBT_PER FROM (
+					SELECT
+						MLSFC_INDUTY_CODE,
+						(SELECT MLSFC_INDUTY_NM FROM TB_FRNCHS_MLSFC_CODE WHERE MLSFC_INDUTY_CODE = B.MLSFC_INDUTY_CODE) AS MLSFC_INDUTY_NM,
+						B.BSN_SGNAL,
+						C.ADRES ,
+						D.EXCTV_CO,
+						COUNT(1) AS FRANCHS_CONFM_CNT,
+						B.FRNCHS_NO,
+						COALESCE(E.GOOD_FRNCHS_AT, 'N') AS GOOD_FRNCHS_AT
+					FROM TB_FRNCHS_EXPRN_REGIST A
+						LEFT OUTER JOIN TB_FRNCHS_ADI_INFO E ON A.FRNCHS_NO = E.FRNCHS_NO,
+						TB_FRNCHS_INFO B,
+						TB_FRNCHS_HEDOFC C,
+						TB_FRNCHS_EXCTV_EMP D
+					WHERE A.CONFM_USER_NO IS NOT NULL
+					  AND A.FRNCHS_NO = B.FRNCHS_NO
+					  AND B.HEDOFC_NO = C.HEDOFC_NO
+					  AND B.FRNCHS_NO = D.FRNCHS_NO
+					  AND D.YEAR = (SELECT MAX(YEAR) FROM TB_FRNCHS_EXCTV_EMP WHERE FRNCHS_NO = B.FRNCHS_NO )
+					GROUP BY B.BSN_SGNAL ,B.MLSFC_INDUTY_CODE, C.ADRES, D.EXCTV_CO, B.FRNCHS_NO, E.GOOD_FRNCHS_AT
+				) AA, TB_FRNCHS_FNNR BB
+				WHERE AA.FRNCHS_NO = BB.FRNCHS_NO
+				  AND BB.YEAR = (SELECT MAX(YEAR) FROM TB_FRNCHS_FNNR WHERE FRNCHS_NO = AA.FRNCHS_NO )
+				  <if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+					  <if test='"A".equals(searchType)'>
+					  	AND AA.BSN_SGNAL LIKE '%' || #{searchText} || '%'
+					  </if>
+					  <if test='"B".equals(searchType)'>
+					    AND AA.MLSFC_INDUTY_CODE = (SELECT MLSFC_INDUTY_CODE FROM TB_FRNCHS_MLSFC_CODE WHERE MLSFC_INDUTY_NM LIKE '%' || #{searchText} || '%')
+					  </if>
+				  </if>
+		) TMP
+	 LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+
+	<!-- 착한 프랜차이즈 본사 조회 -->
+	<select id="selectGoodFrnchsAdiInfo" parameterType="egovMap" resultType="egovMap">
+	SELECT
+		FRNCHS_NO,
+		FRNCHS_INFO,
+		FRNCHS_IMAGE_FILE_NO,
+		YOUTUBE_MVP_LINK,
+		ENTRPRS_INTRCN_FILE_NO,
+		GOOD_FRNCHS_AT,
+		REGIST_USER_NO,
+		LAST_UPDT_USER_NO,
+		GOOD_FRNCHS_SLCTN_DT,
+		REGIST_DT,
+		UPDT_DT
+	FROM
+		TB_FRNCHS_ADI_INFO
+	WHERE FRNCHS_NO::TEXT = #{frnchsNo}
+	</select>
+
+	<!-- 착한 프랜차이즈 본사 지정 입력 -->
+	<insert id="insertGoodFrnchsAdiInfo" parameterType="egovMap">
+	INSERT INTO TB_FRNCHS_ADI_INFO(
+		FRNCHS_NO,
+		FRNCHS_INFO,
+		FRNCHS_IMAGE_FILE_NO,
+		YOUTUBE_MVP_LINK,
+		ENTRPRS_INTRCN_FILE_NO,
+		GOOD_FRNCHS_AT,
+		REGIST_USER_NO,
+		LAST_UPDT_USER_NO,
+		GOOD_FRNCHS_SLCTN_DT,
+		REGIST_DT,
+		UPDT_DT
+	)VALUES(
+		CAST(#{frnchsNo} AS INTEGER),
+		'',
+		'',
+		'',
+		'',
+		'Y',
+		CAST(#{ssUserNo} AS INTEGER),
+		CAST(#{ssUserNo} AS INTEGER),
+		NOW(),
+		NOW(),
+		NOW()
+	)
+	</insert>
+	<!-- 착한 프랜차이즈 본사 지정 수정 -->
+	<update id="updateGoodFrnchsAdiInfo" parameterType="egovMap">
+	UPDATE TB_FRNCHS_ADI_INFO SET
+		GOOD_FRNCHS_AT = 'Y',
+		LAST_UPDT_USER_NO = cast('2' as INTEGER),
+		GOOD_FRNCHS_SLCTN_DT = NOW(),
+		UPDT_DT = NOW()
+	WHERE FRNCHS_NO::TEXT = #{frnchsNo}
+	</update>
+
+	<!-- 착한 프랜차이즈 본사 지정 목록 조회 -->
+	<select id="selectGoodFrnchsAdiList" parameterType="egovMap" resultType="egovMap">
+	SELECT
+		A.FRNCHS_NO,
+		A.FRNCHS_INFO,
+		A.FRNCHS_IMAGE_FILE_NO,
+		(SELECT ATCHMNFL_NO || '_' || FILE_SN FROM TB_ATCHMNFL_STRE WHERE ATCHMNFL_NO = A.FRNCHS_IMAGE_FILE_NO AND ATCHMNFL_STTUS_CODE = 'FS02') AS FRNCHS_IMAGE_FILE_KEY,
+		A.YOUTUBE_MVP_LINK,
+<!-- 		A.ENTRPRS_INTRCN_FILE_NO, -->
+<!-- 		(SELECT ATCHMNFL_NO || '_' || FILE_SN FROM TB_ATCHMNFL_STRE WHERE ATCHMNFL_NO = A.ENTRPRS_INTRCN_FILE_NO AND ATCHMNFL_STTUS_CODE = 'FS02') AS ENTRPRS_INTRCN_FILE_KEY, -->
+		A.GOOD_FRNCHS_AT,
+		A.REGIST_USER_NO,
+		A.LAST_UPDT_USER_NO,
+		TO_CHAR(A.GOOD_FRNCHS_SLCTN_DT,'YYYY-MM-DD') AS GOOD_FRNCHS_SLCTN_DT,
+		A.REGIST_DT,
+		A.UPDT_DT,
+		B.MLSFC_INDUTY_CODE,
+		(SELECT MLSFC_INDUTY_NM FROM TB_FRNCHS_MLSFC_CODE WHERE MLSFC_INDUTY_CODE = B.MLSFC_INDUTY_CODE) AS MLSFC_INDUTY_NM,
+		B.BSN_SGNAL
+	FROM
+		TB_FRNCHS_ADI_INFO A,
+		TB_FRNCHS_INFO B
+	WHERE 1=1
+ 	  AND A.FRNCHS_NO = B.FRNCHS_NO
+	  AND A.GOOD_FRNCHS_AT = 'Y'
+	ORDER BY A.GOOD_FRNCHS_SLCTN_DT DESC
+	</select>
+
+	<select id="selectFrnchsInfoListCount" parameterType="java.util.Map" resultType="int">
+		SELECT
+			COUNT(*)
+		FROM
+			TB_CHRG_BRAND A
+			INNER JOIN TB_FRNCHS_INFO B ON A.FRNCHS_NO = B.FRNCHS_NO AND A.USER_NO = #{ssUserNo}::INTEGER
+			INNER JOIN TB_FRNCHS_HEDOFC C ON B.HEDOFC_NO = C.HEDOFC_NO
+			INNER JOIN TB_FRNCHS_MLSFC_CODE D ON B.MLSFC_INDUTY_CODE = D.MLSFC_INDUTY_CODE
+			INNER JOIN TB_FRNCHS_LCLAS_CODE E ON D.LCLAS_INDUTY_CODE = E.LCLAS_INDUTY_CODE
+			LEFT OUTER JOIN TB_FRNCHS_ADI_INFO F ON B.FRNCHS_NO = F.FRNCHS_NO
+	</select>
+
+	<select id="selectFrnchsInfoList" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			TMP.*,
+			ROW_NUMBER() OVER (ORDER BY FRNCHS_NO  ASC) AS RN
+		FROM (
+			SELECT
+				A.FRNCHS_NO
+				, F.FRNCHS_INFO
+				, F.FRNCHS_IMAGE_FILE_NO
+				, F.YOUTUBE_MVP_LINK
+				, F.ENTRPRS_INTRCN_FILE_NO
+				, F.GOOD_FRNCHS_AT
+				, F.REGIST_USER_NO
+				, F.LAST_UPDT_USER_NO
+				, TO_CHAR(F.GOOD_FRNCHS_SLCTN_DT , 'YYYY-MM-DD') AS GOOD_FRNCHS_SLCTN_DT
+				, TO_CHAR(F.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+				, TO_CHAR(F.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+				, C.RPRSNTV_NM --대표자명
+				, C.MTLTY_NM -- 본사명
+				, C.CPR_FOND_RGIST_DE --법인설립등기일
+				, B.BSN_SGNAL --프랜차이즈명
+				, D.MLSFC_INDUTY_CODE --중분류 업종코드
+				, D.MLSFC_INDUTY_NM --중분류 업종명
+				, B.REPRSNT_NO --대표번호
+				, C.ADRES --주소
+			FROM
+				TB_CHRG_BRAND A
+				INNER JOIN TB_FRNCHS_INFO B ON A.FRNCHS_NO = B.FRNCHS_NO AND A.USER_NO = #{ssUserNo}::INTEGER
+				INNER JOIN TB_FRNCHS_HEDOFC C ON B.HEDOFC_NO = C.HEDOFC_NO
+				INNER JOIN TB_FRNCHS_MLSFC_CODE D ON B.MLSFC_INDUTY_CODE = D.MLSFC_INDUTY_CODE
+				INNER JOIN TB_FRNCHS_LCLAS_CODE E ON D.LCLAS_INDUTY_CODE = E.LCLAS_INDUTY_CODE
+				LEFT OUTER JOIN TB_FRNCHS_ADI_INFO F ON B.FRNCHS_NO = F.FRNCHS_NO
+		) TMP
+		ORDER BY
+			RN ASC <!-- 정렬방법 협의전 -->
+		LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+
+	<select id="selectFrnchsInfoForAdi" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			A.FRNCHS_NO
+			, F.FRNCHS_INFO
+			, F.FRNCHS_IMAGE_FILE_NO
+			, F.YOUTUBE_MVP_LINK
+			, F.ENTRPRS_INTRCN_FILE_NO
+			, F.GOOD_FRNCHS_AT
+			, F.REGIST_USER_NO
+			, F.LAST_UPDT_USER_NO
+			, TO_CHAR(F.GOOD_FRNCHS_SLCTN_DT , 'YYYY-MM-DD') AS GOOD_FRNCHS_SLCTN_DT
+			, TO_CHAR(F.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+			, TO_CHAR(F.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+			, C.RPRSNTV_NM --대표자명
+			, C.MTLTY_NM -- 본사명
+			, C.CPR_FOND_RGIST_DE --법인설립등기일
+			, B.BSN_SGNAL --프랜차이즈명
+			, D.MLSFC_INDUTY_CODE --중분류 업종코드
+			, D.MLSFC_INDUTY_NM --중분류 업종명
+			, B.REPRSNT_NO --대표번호
+			, C.ADRES --주소
+			, TAS.HASHCD
+			, TAS.FILE_SN
+			, TAS.INPUT_FILE_NM
+			, TAS.ATCHMNFL_STTUS_CODE
+		FROM
+			TB_CHRG_BRAND A
+			INNER JOIN TB_FRNCHS_INFO B ON A.FRNCHS_NO = B.FRNCHS_NO AND A.USER_NO = #{ssUserNo}::INTEGER
+			INNER JOIN TB_FRNCHS_HEDOFC C ON B.HEDOFC_NO = C.HEDOFC_NO
+			INNER JOIN TB_FRNCHS_MLSFC_CODE D ON B.MLSFC_INDUTY_CODE = D.MLSFC_INDUTY_CODE
+			INNER JOIN TB_FRNCHS_LCLAS_CODE E ON D.LCLAS_INDUTY_CODE = E.LCLAS_INDUTY_CODE
+			LEFT OUTER JOIN TB_FRNCHS_ADI_INFO F ON B.FRNCHS_NO = F.FRNCHS_NO
+			LEFT OUTER JOIN TB_ATCHMNFL_STRE TAS ON F.FRNCHS_IMAGE_FILE_NO = TAS.ATCHMNFL_NO AND TAS.ATCHMNFL_STTUS_CODE = 'FS02'
+		WHERE
+			B.FRNCHS_NO = #{frnchsNo}
+	</select>
+
+	<update id="modifyFrnchsInfoForAdi" parameterType="java.util.Map">
+		WITH UPSERT AS (
+			UPDATE TB_FRNCHS_ADI_INFO set
+			   	FRNCHS_INFO = #{frnchsInfo}
+			   	<if test='!@org.springframework.util.StringUtils@isEmpty(frnchsImageFileNo)'>
+				, FRNCHS_IMAGE_FILE_NO = CAST(#{frnchsImageFileNo} AS INTEGER)
+				</if>
+				, YOUTUBE_MVP_LINK = #{youtubeMvpLink}
+			   	<if test='!@org.springframework.util.StringUtils@isEmpty(entrprsIntrcnFileNo)'>
+				, ENTRPRS_INTRCN_FILE_NO = CAST(#{entrprsIntrcnFileNo} AS INTEGER)
+				</if>
+				, LAST_UPDT_USER_NO = #{ssUserNo}::INTEGER
+				, UPDT_DT = NOW()
+				, DELETE_AT = 'N'
+			WHERE frnchs_no = #{frnchsNo}
+			RETURNING *
+		)
+		INSERT INTO TB_FRNCHS_ADI_INFO(
+			FRNCHS_NO
+			, FRNCHS_INFO
+			<if test='!@org.springframework.util.StringUtils@isEmpty(frnchsImageFileNo)'>
+			, FRNCHS_IMAGE_FILE_NO
+			</if>
+			, YOUTUBE_MVP_LINK
+			<if test='!@org.springframework.util.StringUtils@isEmpty(entrprsIntrcnFileNo)'>
+			, ENTRPRS_INTRCN_FILE_NO
+			</if>
+			, GOOD_FRNCHS_AT
+			, REGIST_USER_NO
+			, REGIST_DT
+		)
+		SELECT
+			#{frnchsNo}
+			, #{frnchsInfo}
+			<if test='!@org.springframework.util.StringUtils@isEmpty(frnchsImageFileNo)'>
+			, CAST(#{frnchsImageFileNo} AS INTEGER)
+			</if>
+			, #{youtubeMvpLink}
+			<if test='!@org.springframework.util.StringUtils@isEmpty(entrprsIntrcnFileNo)'>
+			, CAST(#{entrprsIntrcnFileNo} AS INTEGER)
+			</if>
+			, 'N'
+			, #{ssUserNo}::INTEGER
+			, NOW()
+		WHERE NOT EXISTS (SELECT frnchs_no FROM UPSERT)
+	</update>
+
+	<select id="selectPopulLegendInfo" parameterType="java.util.Map" resultType="egovMap">
+	SELECT
+		A.DYNMC_POPLTN_CO_GRAD,
+		MIN(A.DYNMC_POPLTN_CO),
+		MAX(A.DYNMC_POPLTN_CO)
+	FROM
+		TB_DYNMC_POPLTN_BLCK A
+	INNER JOIN TB_BLCK_RELM B ON
+		B.BLCK_CODE = A.BLCK_CODE
+	WHERE
+		1 = 1
+		AND A.STDR_YM = #{year}
+		AND ADSTRD_CODE = #{dong}
+	GROUP BY
+		DYNMC_POPLTN_CO_GRAD
+
+	</select>
+
+	<select id="selectCardLegendInfo" parameterType="java.util.Map" resultType="egovMap">
+	SELECT
+		A.SELNG_AM_GRAD,
+		MIN(A.SELNG_AM),
+		MAX(A.SELNG_AM)
+	FROM
+		TB_CARD_SELNG_BLCK A
+	INNER JOIN TB_BLCK_RELM B ON
+		B.BLCK_CODE = A.BLCK_CODE
+	WHERE
+		1 = 1
+		AND A.STDR_YM = #{year}
+		AND A.MLSFC_INDUTY_CODE = #{job}
+		AND ADSTRD_CODE = #{dong}
+	GROUP BY
+		SELNG_AM_GRAD
+
+	</select>
+
+	<select id="selectOvpopLegendInfo" parameterType="java.util.Map" resultType="egovMap">
+	SELECT /* selectOvpopLegendInfo (점포수) */
+		A.OVPOP_GRAD,
+		MIN(A.OVPOP_VALUE),
+		MAX(A.OVPOP_VALUE)
+	FROM
+		TB_STOR_OVPOP A
+	INNER JOIN TB_BLCK_RELM B ON
+		B.BLCK_CODE = A.BLCK_CODE
+	WHERE
+		1 = 1
+		AND A.STDR_YEAR = #{year}
+		AND ADSTRD_CODE = #{dong}
+		AND A.MLSFC_INDUTY_CODE = #{job}
+	GROUP BY
+		OVPOP_GRAD
+
+	</select>
+
+
+	<select id="selectPopulLegendInfo2" parameterType="java.util.Map" resultType="egovMap">
+	SELECT
+		A.DYNMC_POPLTN_CO_GRAD,
+		MIN(A.DYNMC_POPLTN_CO),
+		MAX(A.DYNMC_POPLTN_CO)
+	FROM
+		TB_DYNMC_POPLTN_SIGNGU A
+	INNER JOIN TB_SIGNGU_RELM B ON
+		B.SIGNGU_CODE = A.SIGNGU_CODE
+	WHERE
+		1 = 1
+		AND A.STDR_YEAR = #{year}
+		AND RIGHT(A.SIGNGU_CODE, 1) = '0'
+
+	group by DYNMC_POPLTN_CO_GRAD
+	</select>
+	<select id="selectWorkerInfo" parameterType="java.util.Map" resultType="egovMap">
+	SELECT /* selectWorkerInfo */
+		A.worker_co_grad,
+		MIN(A.worker_co),
+		MAX(A.worker_co)
+	FROM
+		tb_kostat_worker_co A
+	INNER JOIN tb_ctprvn_relm B ON
+		B.ctprvn_code = A.ctprvn_code
+	WHERE
+		1 = 1
+	  AND A.stdr_year = (SELECT MAX(stdr_year) 
+	                       FROM tb_kostat_worker_co)
+	GROUP BY worker_co_grad
+	</select>
+
+	<select id="selectCardLegendInfo2" parameterType="java.util.Map" resultType="egovMap">
+	SELECT
+		A.SELNG_AM_GRAD,
+		MIN(A.SELNG_AM),
+		MAX(A.SELNG_AM)
+	FROM
+		TB_CARD_SELNG_SIGNGU A
+	INNER JOIN TB_SIGNGU_RELM B ON
+		B.SIGNGU_CODE = A.SIGNGU_CODE
+	WHERE
+		1 = 1
+		AND A.STDR_YEAR = #{year}
+		AND A.MLSFC_INDUTY_CODE = #{job}
+		AND RIGHT(A.SIGNGU_CODE, 1) = '0'
+	group by SELNG_AM_GRAD
+	</select>
+	<select id="selectRevenueInfo" parameterType="java.util.Map" resultType="egovMap">
+	SELECT /* selectRevenueInfo */
+		A.selng_revn_grad,
+		MIN(A.selng_revn),
+		MAX(A.selng_revn)
+	FROM
+		tb_kostat_selng_revn A
+	INNER JOIN tb_ctprvn_relm B ON
+		B.ctprvn_code = A.ctprvn_code
+	WHERE
+		1 = 1
+	  AND A.stdr_year = (SELECT MAX(stdr_year) 
+	                       FROM tb_kostat_selng_revn)
+	GROUP BY selng_revn_grad
+	</select>
+
+	<select id="selectBsnSgnal" parameterType="java.util.Map" resultType="egovMap">
+	 SELECT
+		HEDOFC_NO,
+		FRNCHS_NO,
+		BSN_SGNAL,
+		MLSFC_INDUTY_CODE,
+		REPRSNT_NO,
+		REPRSNT_FAX_NO,
+		REGIST_NO,
+		FRST_RGSDE,
+		LAST_RGSDE,
+		BRAND_CO,
+		FRNCHS_AFFLTS_CO,
+		FRNCHS_BGNDE,
+		JGTRS_CO,
+		ADVRTS_CT,
+		PROMTN_CT,
+		DPST_STLE,
+		DPST_JNNT,
+		FTC_COREC_MANAGT_CO,
+		CFRS_CO,
+		PETY_CO,
+		SRBCT,
+		EDCCT,
+		GTN,
+		ETC_CT,
+		SM,
+		UNIT_AR_INTRR_CT,
+		STDR_STOR_AR,
+		INTRR_CT,
+		CNTRCT_FRST,
+		CNTRCT_EXTN,
+		USER_DATA_MANAGE_NO,
+		REGIST_DT
+	FROM
+		GGFOWR.TB_FRNCHS_INFO
+	WHERE
+		FRNCHS_NO = #{frnchsNo}
+	</select>
+	
+	<select id="selectBrandInfoListCnt" parameterType="java.util.Map" resultType="int">
+		  SELECT /* selectBrandInfoListCnt */ COUNT(*)
+			FROM
+				TB_CHRG_BRAND A
+				INNER JOIN TB_FRNCHS_INFO B ON A.FRNCHS_NO = B.FRNCHS_NO AND A.USER_NO = #{ssUserNo}::INTEGER
+				INNER JOIN TB_FRNCHS_MLSFC_CODE D ON B.MLSFC_INDUTY_CODE = D.MLSFC_INDUTY_CODE
+				INNER JOIN TB_FRNCHS_LCLAS_CODE E ON D.LCLAS_INDUTY_CODE = E.LCLAS_INDUTY_CODE
+				LEFT OUTER JOIN TB_FRNCHS_ADI_INFO F ON B.FRNCHS_NO = F.FRNCHS_NO AND F.DELETE_AT = 'N'
+	</select>
+	
+	<select id="selectBrandInfoList" parameterType="java.util.Map" resultType="egovMap">
+		SELECT /* selectBrandInfoList */
+			TMP.*,
+			CASE WHEN TMP.ADI_NO IS NULL THEN 'N' ELSE 'Y' END AS ADI_AT,
+			ROW_NUMBER() OVER (ORDER BY FRNCHS_NO  ASC) AS RN
+		FROM (
+			SELECT
+				  A.FRNCHS_NO
+				, B.BSN_SGNAL --프랜차이즈명
+				, D.MLSFC_INDUTY_CODE --중분류 업종코드
+				, D.MLSFC_INDUTY_NM --중분류 업종명
+				, E.LCLAS_INDUTY_CODE --대분류 업종코드
+				, E.LCLAS_INDUTY_NM --대분류 업종명
+				, F.FRNCHS_NO AS ADI_NO
+				, F.FRNCHS_INFO
+				, F.FRNCHS_IMAGE_FILE_NO
+				, F.YOUTUBE_MVP_LINK
+				, F.ENTRPRS_INTRCN_FILE_NO
+				, F.GOOD_FRNCHS_AT
+				, F.REGIST_USER_NO
+				, F.LAST_UPDT_USER_NO
+				, TO_CHAR(F.GOOD_FRNCHS_SLCTN_DT , 'YYYY-MM-DD') AS GOOD_FRNCHS_SLCTN_DT
+				, COALESCE(TO_CHAR(F.REGIST_DT , 'YYYY-MM-DD'),'-') AS REGIST_DT
+				, TO_CHAR(F.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+				, TAS.HASHCD
+				, TAS.FILE_SN
+				, TAS.INPUT_FILE_NM
+				, TAS.ATCHMNFL_STTUS_CODE
+				, (
+					SELECT MAX(B.ATCHMNFL_STTUS_CODE) 
+					FROM TB_FRNCHS_ADI_INFO A 
+					LEFT JOIN TB_ATCHMNFL_STRE B ON A.ENTRPRS_INTRCN_FILE_NO = B.ATCHMNFL_NO AND B.ATCHMNFL_STTUS_CODE = 'FS02'
+					WHERE A.ENTRPRS_INTRCN_FILE_NO = F.ENTRPRS_INTRCN_FILE_NO
+				) AS ENTRPRS_FILE_STTUS_CODE
+			 FROM
+				TB_CHRG_BRAND A
+				INNER JOIN TB_FRNCHS_INFO B ON A.FRNCHS_NO = B.FRNCHS_NO AND A.USER_NO = #{ssUserNo}::INTEGER
+				INNER JOIN TB_FRNCHS_MLSFC_CODE D ON B.MLSFC_INDUTY_CODE = D.MLSFC_INDUTY_CODE
+				INNER JOIN TB_FRNCHS_LCLAS_CODE E ON D.LCLAS_INDUTY_CODE = E.LCLAS_INDUTY_CODE
+				LEFT OUTER JOIN TB_FRNCHS_ADI_INFO F ON B.FRNCHS_NO = F.FRNCHS_NO AND F.DELETE_AT = 'N'
+				LEFT OUTER JOIN TB_ATCHMNFL_STRE TAS ON F.FRNCHS_IMAGE_FILE_NO = TAS.ATCHMNFL_NO AND TAS.ATCHMNFL_STTUS_CODE = 'FS02'
+			WHERE 1 = 1	
+			<if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+			  <if test='"A".equals(searchType)'>
+			  	AND B.BSN_SGNAL LIKE '%' || #{searchText} || '%'
+			  </if>
+			  <if test='"B".equals(searchType)'>
+			    AND (E.LCLAS_INDUTY_NM LIKE '%' || #{searchText} || '%'
+			    	 OR D.MLSFC_INDUTY_NM LIKE '%' || #{searchText} || '%'
+			    	)
+			  </if>
+		  	</if>
+		) TMP
+		ORDER BY
+			RN ASC <!-- 정렬방법 협의전 -->
+		LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+	
+	<select id="selectBrandInfoForAdi" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			A.FRNCHS_NO
+			, F.FRNCHS_INFO
+			, F.FRNCHS_IMAGE_FILE_NO
+			, F.YOUTUBE_MVP_LINK
+			, F.ENTRPRS_INTRCN_FILE_NO
+			, F.GOOD_FRNCHS_AT
+			, F.REGIST_USER_NO
+			, F.LAST_UPDT_USER_NO
+			, TO_CHAR(F.GOOD_FRNCHS_SLCTN_DT , 'YYYY-MM-DD') AS GOOD_FRNCHS_SLCTN_DT
+			, TO_CHAR(F.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+			, TO_CHAR(F.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+			, C.RPRSNTV_NM --대표자명
+			, C.MTLTY_NM -- 본사명
+			, C.CPR_FOND_RGIST_DE --법인설립등기일
+			, B.BSN_SGNAL --프랜차이즈명
+			, D.MLSFC_INDUTY_CODE --중분류 업종코드
+			, D.MLSFC_INDUTY_NM --중분류 업종명
+			, B.REPRSNT_NO --대표번호
+			, C.ADRES --주소
+			, TAS.HASHCD
+			, TAS.FILE_SN
+			, TAS.INPUT_FILE_NM
+			, TAS.ATCHMNFL_STTUS_CODE
+		FROM
+			TB_CHRG_BRAND A
+			INNER JOIN TB_FRNCHS_INFO B ON A.FRNCHS_NO = B.FRNCHS_NO AND A.USER_NO = #{ssUserNo}::INTEGER
+			INNER JOIN TB_FRNCHS_HEDOFC C ON B.HEDOFC_NO = C.HEDOFC_NO
+			INNER JOIN TB_FRNCHS_MLSFC_CODE D ON B.MLSFC_INDUTY_CODE = D.MLSFC_INDUTY_CODE
+			INNER JOIN TB_FRNCHS_LCLAS_CODE E ON D.LCLAS_INDUTY_CODE = E.LCLAS_INDUTY_CODE
+			LEFT OUTER JOIN TB_FRNCHS_ADI_INFO F ON B.FRNCHS_NO = F.FRNCHS_NO AND F.DELETE_AT = 'N'
+			LEFT OUTER JOIN TB_ATCHMNFL_STRE TAS ON F.FRNCHS_IMAGE_FILE_NO = TAS.ATCHMNFL_NO AND TAS.ATCHMNFL_STTUS_CODE = 'FS02'
+		WHERE
+			B.FRNCHS_NO = #{frnchsNo}
+	</select>
+	
+	<update id="deleteBrandAdiInfo" parameterType="java.util.Map">
+	   UPDATE /* deleteBrandAdiInfo */
+	 	      TB_FRNCHS_ADI_INFO
+	 	  SET delete_at = 'Y'
+			, last_updt_user_no = #{ssUserNo}::INTEGER
+			, updt_dt = NOW()
+		WHERE frnchs_no = #{frnchsNo}
+	</update>
+	
+	<!-- 브랜드 통합검색 - 자동완성 -->
+	<select id="selectSchBrandAutoCmptList" parameterType="egovMap" resultType="egovMap">
+
+		SELECT /* selectSchBrandAutoCmptList */
+			    A.HEDOFC_NO /* 본사번호 */
+			   , A.FRNCHS_NO /* 프랜차이즈번호 */
+			   , A.BSN_SGNAL /* 프랜차이즈명 */
+			   , C.LCLAS_INDUTY_CODE /* 대분류업종코드 */
+			   , A.MLSFC_INDUTY_CODE /* 중분류업종코드 */
+			   , C.LCLAS_INDUTY_NM /* 대분류업종 */
+			   , D.MLSFC_INDUTY_NM /* 중분류업종 */		
+			   , E.YEAR /* 정보공개서 등록년도 */			
+			   , (SELECT count(*) FROM TB_SCH_BRD_HIST TSBH WHERE FRNCHS_NO = A.FRNCHS_NO) AS SCHLANK /*검색내역*/		
+		FROM TB_FRNCHS_INFO A
+		INNER JOIN TB_FRNCHS_HEDOFC B ON
+			B.HEDOFC_NO = A.HEDOFC_NO AND B.BSNM_RGSDE!= ''
+		INNER JOIN TB_FRNCHS_MLSFC_CODE D ON
+			D.MLSFC_INDUTY_CODE = A.MLSFC_INDUTY_CODE
+		INNER JOIN TB_FRNCHS_LCLAS_CODE C ON
+			C.LCLAS_INDUTY_CODE = D.LCLAS_INDUTY_CODE
+		LEFT JOIN TB_INFO_DCS_BBS E ON <!-- 정보공개서 최신년도로 조인 -->
+			E.FRNCHS_NO = A.FRNCHS_NO AND E.DELETE_AT = 'N' AND E.YEAR = (SELECT MAX(YEAR) FROM TB_INFO_DCS_BBS WHERE FRNCHS_NO = A.FRNCHS_NO) 
+<!-- 		<if test='!@org.springframework.util.StringUtils@isEmpty(ssUserNo)'>
+		LEFT JOIN TB_INTRST_FRNCHS E ON
+			E.FRNCHS_NO = A.FRNCHS_NO AND E.USER_NO = #{ssUserNo}::int
+		</if> -->
+		
+	WHERE 1 = 1
+		<if test='!@org.springframework.util.StringUtils@isEmpty(ldClass)'>
+			 AND C.LCLAS_INDUTY_CODE = #{ldClass}
+		</if>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(bsnSgnal)'>
+			 <!-- AND A.BSN_SGNAL LIKE '%'||#{bsnSgnal}||'%'	 -->
+	 		 AND A.BSN_SGNAL ILIKE '%'||#{bsnSgnal}||'%'
+		</if>
+	<!-- ORDER BY A.BSN_SGNAL ASC  -->
+	ORDER BY SCHLANK DESC
+	LIMIT 10
+
+	</select>
+	
+	<!-- 통합검색어 내역 저장 - 21.11.25 주한별  -->
+	<insert id="insertSchBrandHistory" parameterType="egovMap">
+	INSERT INTO TB_SCH_BRD_HIST(
+		SCH_BRD_WORD,
+		FRNCHS_NO,
+		USER_NO,
+		DELETE_AT,
+		UPDT_DT,
+		REGIST_DT
+	)VALUES(
+		#{schBrdWord},
+		#{frnchsNo},
+		#{userNo}::integer,
+		'N',
+		NOW(),
+		NOW()
+	)
+	</insert>
+	
+	<!-- 통합검색어 내역 목록 조회 - 21.11.25 주한별 -->
+	<select id="selectSchBrandHistoryList" parameterType="egovMap" resultType="egovMap">
+	/*selectSchBrandHistoryList 통합검색어 내역 목록 조회*/
+<!-- 		SELECT 
+			A.SCH_BRD_NO,
+			A.SCH_BRD_WORD,
+			A.FRNCHS_NO,
+			A.USER_NO,
+			A.REGIST_DT,
+			B.YEAR 
+		FROM TB_SCH_BRD_HIST A
+			LEFT JOIN TB_INFO_DCS_BBS B ON B.FRNCHS_NO = A.FRNCHS_NO 
+				AND B.DELETE_AT = 'N' AND B.YEAR = (SELECT MAX(YEAR) FROM TB_INFO_DCS_BBS WHERE FRNCHS_NO = A.FRNCHS_NO )
+		WHERE 1=1
+		AND USER_NO = #{userNo}::INTEGER
+		AND A.DELETE_AT = 'N'
+		ORDER BY A.REGIST_DT DESC
+		LIMIT 10 -->
+		SELECT 
+			A.SCH_BRD_WORD,
+			A.FRNCHS_NO,
+			A.USER_NO,
+			B.YEAR
+		FROM (
+			SELECT 
+				SCH_BRD_WORD,
+				FRNCHS_NO,
+				USER_NO
+			FROM TB_SCH_BRD_HIST
+			WHERE 1=1
+			AND USER_NO = #{userNo}::INTEGER
+			AND DELETE_AT = 'N'
+			GROUP BY SCH_BRD_WORD, FRNCHS_NO, USER_NO
+		) A
+			LEFT JOIN TB_INFO_DCS_BBS B ON B.FRNCHS_NO = A.FRNCHS_NO 
+				AND B.DELETE_AT = 'N' AND B.YEAR = (SELECT MAX(YEAR) FROM TB_INFO_DCS_BBS WHERE FRNCHS_NO = A.FRNCHS_NO )
+		WHERE 1=1
+		ORDER BY A.SCH_BRD_WORD ASC
+		LIMIT 10
+	</select>
+	
+	<update id="updateSchBrandHistoryInfo" parameterType="java.util.Map">
+	UPDATE TB_SCH_BRD_HIST SET
+		DELETE_AT = 'Y',
+		UPDT_DT = NOW()
+	WHERE 
+		USER_NO = #{userNo}::INTEGER
+	<if test='!frnchsNo.equals("0")'>
+	AND 
+		FRNCHS_NO = #{frnchsNo}
+	</if>
+	</update>
+	
+	<!--프랜차이즈 본사 상벌 관리 목록 조회 - 21.12.08 주한별  -->
+	<select id="selectRewardList" parameterType="egovMap" resultType="egovMap">
+	/* selectRewardList */
+		SELECT
+			ROW_NUMBER() OVER (ORDER BY A.HEDOFC_NO ASC) AS RN --번호
+			,B.HEDOFC_NO -- 본사번호
+			,D.MLSFC_INDUTY_CODE --중분류 업종코드
+			,D.MLSFC_INDUTY_NM --중분류 업종명
+			,C.LCLAS_INDUTY_CODE --대분류 업종코드
+			,C.LCLAS_INDUTY_NM --대분류 업종명
+			,B.MTLTY_NM -- 브랜드명(상호명)
+			,B.ADRES --본사주소
+			,B.REWARD_COUNT --수상 횟수
+			,TO_CHAR(B.REWARD_DT,'YYYY-MM-DD') AS REWARD_DT --수상일자
+			-- ,'2021.12.08' AS REWARD_DT --수상일자
+		FROM TB_FRNCHS_INFO A
+			INNER JOIN TB_FRNCHS_HEDOFC B ON
+				B.HEDOFC_NO = A.HEDOFC_NO AND B.BSNM_RGSDE!= ''
+			INNER JOIN TB_FRNCHS_MLSFC_CODE D ON
+				D.MLSFC_INDUTY_CODE = A.MLSFC_INDUTY_CODE
+			INNER JOIN TB_FRNCHS_LCLAS_CODE C ON
+				C.LCLAS_INDUTY_CODE = D.LCLAS_INDUTY_CODE
+		WHERE
+			1 = 1
+		-- AND B.REWARD_COUNT <![CDATA[>]]> 0 --테이블 컬럼 추가후 주석 제거
+		<if test='!@org.springframework.util.StringUtils@isEmpty(ldClass)'>
+			AND D.LCLAS_INDUTY_CODE = #{ldClass}
+		</if>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(mdClass)'>
+			AND A.MLSFC_INDUTY_CODE = #{mdClass}
+		</if>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(mtltyNm)'>
+			AND B.MTLTY_NM LIKE '%'||#{mtltyNm}||'%'
+		</if>
+		ORDER BY B.HEDOFC_NO ASC
+		LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+	
+	<!--프랜차이즈 본사 상벌 관리 목록 수 조회 - 21.12.08 주한별  -->
+	<select id="selectRewardListCount" parameterType="java.util.Map" resultType="int">
+	/*selectRewardListCount*/
+		SELECT 
+			COUNT(*)
+		FROM TB_FRNCHS_INFO A
+			INNER JOIN TB_FRNCHS_HEDOFC B ON
+				B.HEDOFC_NO = A.HEDOFC_NO AND B.BSNM_RGSDE!= ''
+			INNER JOIN TB_FRNCHS_MLSFC_CODE D ON
+				D.MLSFC_INDUTY_CODE = A.MLSFC_INDUTY_CODE
+			INNER JOIN TB_FRNCHS_LCLAS_CODE C ON
+				C.LCLAS_INDUTY_CODE = D.LCLAS_INDUTY_CODE
+		WHERE
+			1 = 1
+		<if test='!@org.springframework.util.StringUtils@isEmpty(ldClass)'>
+			AND D.LCLAS_INDUTY_CODE = #{ldClass}
+		</if>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(mdClass)'>
+			AND A.MLSFC_INDUTY_CODE = #{mdClass}
+		</if>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(mtltyNm)'>
+			AND B.MTLTY_NM LIKE '%'|| #{mtltyNm}||'%'
+		</if>
+	</select>
+	
+	<!-- 프랜차이즈 본사 상벌 관리 정보 조회 - 21.12.08 주한별  -->
+	<select id="selectRewardInfo" parameterType="egovMap" resultType="egovMap">
+	/*selectRewardInfo*/
+		SELECT 
+			HEDOFC_NO -- 본사번호
+			,MTLTY_NM -- 브랜드명(상호명)
+			,ADRES --본사주소
+			,REWARD_COUNT --수상 횟수
+			,TO_CHAR(REWARD_DT,'YYYY-MM-DD') AS REWARD_DT --수상일자
+			-- ,'2021.12.08' AS REWARD_DT --수상일자
+			-- , REWARD_DT
+			,REWARD_TYPE -- 수상여부 구분
+			,REWARD_CN --게시내용
+		FROM 
+			TB_FRNCHS_HEDOFC
+		WHERE 1=1
+		AND
+			HEDOFC_NO = #{hedofcNo}::INTEGER
+	</select>
+	
+	<!-- 프랜차이즈 본사 상벌 관리 정보 업데이트- 21.12.08 주한별  -->
+	<update id="updateRewardInsert" parameterType="egovMap">
+	/*updateRewardInsert*/
+		UPDATE 
+			TB_FRNCHS_HEDOFC 
+		SET
+			REWARD_COUNT = #{rewardCount}::INTEGER,
+			<if test='!@org.springframework.util.StringUtils@isEmpty(rewardCount)'>
+				<if test='rewardCount == 0'>
+				REWARD_CN = NULL,
+				REWARD_DT = NULL,
+				</if>
+				<if test='rewardCount != 0'>
+				REWARD_CN = #{rewardCn},
+				REWARD_DT = #{rewardDt}::TIMESTAMP,
+				</if>
+			</if>
+			REWARD_TYPE = 'Y'
+		WHERE 
+			HEDOFC_NO = #{hedofcNo}::INTEGER
+	</update>
+	
+	<!-- 프랜차이즈 본사 상벌 관리 정보 업데이트- 21.12.08 주한별  -->
+	<update id="updateRewardDelete" parameterType="egovMap">
+	/*updateRewardDelete*/
+		UPDATE 
+			TB_FRNCHS_HEDOFC 
+		SET
+			REWARD_COUNT = '0'::INTEGER,
+			REWARD_CN = '',
+			REWARD_DT = null,
+			REWARD_TYPE = 'N'
+		WHERE 1=1
+		<if test='!@org.springframework.util.StringUtils@isEmpty(hedofcNoArr)'>
+		  AND HEDOFC_NO IN
+			<foreach collection="hedofcNoArr" item="item" index="index" open="(" separator="," close=")">
+			#{item}::INTEGER
+			</foreach>
+		</if>
+	</update>
+	
+	<select id="selectFrnchsHedofcCount" parameterType="java.util.Map" resultType="int">
+		SELECT 
+			COUNT(1)
+		FROM (
+			SELECT
+			A.HEDOFC_NO,
+			A.MTLTY_NM,
+			A.RPRSNTV_NM,
+			A.CPR_FOND_RGIST_DE,
+			A.BSNM_RGSDE,
+			A.ADRES,
+			A.BSNM_TY,
+			A.JURIRNO,
+			A.BIZRNO,
+			A.USER_DATA_MANAGE_NO,
+			(
+			SELECT
+				CC.ATCHMNFL_NO
+			FROM
+				TB_FRNCHS_INFO AA,
+				TB_CHRG_BRAND BB,
+				TB_BRAND_HEDOFC_MNGR CC
+			WHERE
+				AA.FRNCHS_NO = BB.FRNCHS_NO
+				AND BB.USER_NO = CC.USER_NO
+				AND AA.HEDOFC_NO  = A.HEDOFC_NO
+			GROUP BY CC.ATCHMNFL_NO
+			) AS ATCHMNFL_NO
+		FROM
+			TB_FRNCHS_HEDOFC A
+		WHERE A.MTLTY_NM LIKE '%' || #{mtltyNm} || '%'
+		  AND A.RPRSNTV_NM LIKE '%' || #{rprsntvNm} || '%'
+		) AS TMP
+	</select>
+</mapper>

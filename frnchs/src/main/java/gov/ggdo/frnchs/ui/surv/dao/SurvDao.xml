@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="gov.ggdo.frnchs.ui.surv.dao.SurvDao">
+
+	
+	<!-- 기간 내 설문조사순번 조회 -->
+	<select id="selectQustnrSn" resultType="String">
+		SELECT /* selectQustnrSn */
+			  COALESCE(qustnr_sn::TEXT,'') AS qustnr_sn
+		 FROM tb_qustnr 
+		WHERE delete_at = 'N'
+		  AND begin_de::DATE <![CDATA[<=]]> CURRENT_DATE
+		  AND end_de::DATE >= CURRENT_DATE
+		ORDER BY regist_dt ASC
+		LIMIT 1
+	</select>
+	
+	<!-- 설문조사 질문문항 리스트 -->
+	<select id="selectQustnQestnList" resultType="egovMap">
+		SELECT /* selectQustnQestnList */
+			   a.qustnr_sn
+			 , a.qustnr_qestn_sn
+			 , a.qestn
+			 , a.qestn_ordr
+		  FROM tb_qustnr_qestn a
+		 WHERE a.qustnr_sn = #{qustnrSn}::INTEGER
+		 ORDER BY qestn_ordr ASC
+	</select>
+	
+	<!-- 설문조사 답변문항 리스트 -->
+	<select id="selectQustnAnswerList" resultType="egovMap">
+		SELECT /* selectQustnAnswerList */
+			   a.qustnr_sn
+			 , a.qustnr_qestn_sn
+			 , a.answer_sn
+			 , a.answer
+		  FROM tb_qustnr_answer a
+		 WHERE a.qustnr_sn = #{qustnrSn}::INTEGER
+		 ORDER BY answer_ordr ASC
+	</select>
+	
+	<!-- 설문조사 여부 조회 -->
+	<select id="selectQustnResultAt" resultType="String">
+		SELECT /* selectQustnResultAt */
+			   CASE WHEN COUNT(qustnr_qestn_sn) > 0 THEN 'Y' ELSE 'N' END result_at
+		  FROM tb_qustnr_annymty_result a
+		 WHERE a.qustnr_sn = #{qustnrSn}::INTEGER
+		   AND a.user_ip = #{userIp}
+	</select>
+	
+	<!-- 설문조사 답변 등록 -->
+	<update id="mergeQustnResult" parameterType="java.util.Map">
+		WITH /* mergeQustnResult */
+			 UPSERT 
+		  AS (
+			 UPDATE tb_qustnr_annymty_result 
+			    SET answer_sn = #{answerSn}::INTEGER
+			  WHERE qustnr_sn = #{qustnrSn}::INTEGER
+				AND qustnr_qestn_sn = #{qustnrQestnSn}::INTEGER
+				AND user_ip = #{userIp}
+		  RETURNING *
+		)
+		INSERT 
+		  INTO tb_qustnr_annymty_result(
+			   qustnr_sn
+			 , qustnr_qestn_sn
+			 , answer_sn
+			 , user_ip)
+		SELECT 
+			   #{qustnrSn}::INTEGER
+			 , #{qustnrQestnSn}::INTEGER
+			 , #{answerSn}::INTEGER
+			 , #{userIp}
+		 WHERE NOT EXISTS(SELECT * FROM UPSERT)
+	</update>
+	
+</mapper>

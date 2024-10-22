@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="gov.ggdo.frnchs.ui.stat.dao.StatDao">
+	<select id="selectFranStat" parameterType="java.util.Map" resultType="egovMap">
+	/* StatDao.selectFranStat(프랜차이즈 통계 전국) */
+	SELECT a.stdr_year 
+	     , a.ctprvn_code 
+	     , b.ctprvn_nm
+	     , AVG(a.avrg_selng_am) AS avrg_selng_am 
+	     , AVG(a.enfsn_co ) AS enfsn_co
+	     , AVG(a.reside_popltn_co) AS reside_popltn_co
+		 , SUM(a.mrhst_co) AS mrhst_co
+		 , SUM(a.droper_co) AS droper_co
+	  FROM tb_frnchs_ctprvn_sm a
+	 INNER JOIN tb_ctprvn_relm b ON a.ctprvn_code = b.ctprvn_code
+	 INNER JOIN tb_frnchs_mlsfc_code c ON a.mlsfc_induty_code = c.mlsfc_induty_code
+	 WHERE a.stdr_year = #{year}
+ 	<if test='!@org.springframework.util.StringUtils@isEmpty(lCode)'>
+		AND c.lclas_induty_code = #{lCode}
+	</if>
+	<if test='!@org.springframework.util.StringUtils@isEmpty(code)'>
+		AND a.mlsfc_induty_code = #{code}
+	</if>
+     GROUP BY a.stdr_year, a.ctprvn_code, b.ctprvn_nm
+     ORDER BY ctprvn_code
+	</select>
+
+	<select id="selectFranStatTrend" parameterType="java.util.Map" resultType="egovMap">
+	/* StatDao.selectFranStatTrend(프랜차이즈 통계 지역별) */
+	SELECT a.stdr_year 
+         , a.ctprvn_code 
+		 , b.ctprvn_nm
+		 , AVG(a.avrg_selng_am) AS avrg_selng_am 
+	     , AVG(a.enfsn_co ) AS enfsn_co
+	     , AVG(a.reside_popltn_co) AS reside_popltn_co
+		 , SUM(a.mrhst_co) AS mrhst_co
+		 , SUM(a.droper_co) AS droper_co
+	  FROM tb_frnchs_ctprvn_sm a
+     INNER JOIN tb_ctprvn_relm b ON a.ctprvn_code = b.ctprvn_code
+     INNER JOIN tb_frnchs_mlsfc_code c ON a.mlsfc_induty_code = c.mlsfc_induty_code
+  	 WHERE a.stdr_year BETWEEN #{strtYear} AND #{endYear}
+		<!-- 	psm 업종 전체 조회용 추가-->
+		<if test='!@org.springframework.util.StringUtils@isEmpty(lJobCode)'>
+		AND c.lclas_induty_code = #{lJobCode}
+		</if>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(jobCode)'>
+		AND c.mlsfc_induty_code = #{jobCode}
+		</if>
+		<!-- 	psm -->
+	AND a.ctprvn_code = #{ctprvnCode}
+	GROUP BY a.stdr_year, a.ctprvn_code, b.ctprvn_nm
+	ORDER BY a.stdr_year
+	</select>
+
+	<select id="selectDataYear" parameterType="java.util.Map" resultType="egovMap">
+	/* StatDao.selectDataYear */
+	SELECT
+		DISTINCT STDR_YEAR
+
+	FROM TB_FRNCHS_CTPRVN_SM A
+
+	ORDER BY STDR_YEAR
+	</select>
+
+
+	<select id="selectFrchsList" parameterType="java.util.Map" resultType="egovMap">
+	/* StatDao.selectFrchsList */
+	SELECT
+		C.MLSFC_INDUTY_NM,
+		A.BSN_SGNAL,
+		A.FRNCHS_NO,
+		A.HEDOFC_NO,
+		B.MTLTY_NM,
+		B.RPRSNTV_NM,
+		B.ADRES
+	FROM
+		TB_FRNCHS_INFO A
+	JOIN (
+		SELECT FRNCHS_NO
+			,  SUM(MRHST_CO + DROPER_CO) AS CNT 
+		FROM TB_FRNCHS_MRHST_STTUS
+		GROUP BY FRNCHS_NO
+	) D ON A.FRNCHS_NO = D.FRNCHS_NO
+	INNER JOIN TB_FRNCHS_HEDOFC B ON
+		A.HEDOFC_NO = B.HEDOFC_NO
+	INNER JOIN TB_FRNCHS_MLSFC_CODE C ON
+		C.MLSFC_INDUTY_CODE = A.MLSFC_INDUTY_CODE
+	WHERE
+		A.MLSFC_INDUTY_CODE = #{jobCode}
+		AND UPPER(A.BSN_SGNAL) LIKE '%' || UPPER(#{frchsNm}) || '%'
+	ORDER BY
+ 		<if test='!@org.springframework.util.StringUtils@isEmpty(orderType)'>
+			<if test='orderType == "bsnSgnal"'>
+			A.BSN_SGNAL ASC
+			</if>
+			<if test='orderType == "cnt"'>
+			D.CNT DESC
+			</if>
+		</if>
+		<if test='@org.springframework.util.StringUtils@isEmpty(orderType)'>
+			A.BSN_SGNAL ASC
+		</if>
+	<if test="pageIndex != null">	
+	LIMIT #{recordCountPerPage} OFFSET #{firstRecordIndex}
+	</if>
+	</select>
+
+	<select id="selectFranBrandStat" parameterType="java.util.Map" resultType="egovMap">
+	/* StatDao.selectFranBrandStat(브랜드통계 목록 조회) */
+<!-- 	SELECT
+		E.CTPRVN_NM,
+		A.YEAR,
+		A.CTPRVN_CODE,
+		SUM(A.MRHST_CO) as MRHST_CO,
+		ROUND(AVG(A.AVRG_SELNG_AM),1) as AVRG_SELNG_AM,
+		ROUND(AVG(A.UNIT_AR_AVRG_SELNG_AM),1) as UNIT_AR_AVRG_SELNG_AM,
+		AVG(B.ENFSN_CO) as ENFSN_CO,
+		AVG(C.POPLTN_CO) as POPLTN_CO
+	FROM
+		TB_FRNCHS_SELNG A
+	left JOIN ODS_ENFSN_DATA B ON
+		A.CTPRVN_CODE = B.CTPRVN_CODE AND A.YEAR = B.STDR_YEAR
+	left JOIN ODS_RESIDE_POPLTN_DATA C ON
+		A.CTPRVN_CODE = C.CTPRVN_CODE AND A.YEAR = C.STDR_YEAR
+	INNER JOIN TB_FRNCHS_INFO D ON
+		D.FRNCHS_NO = A.FRNCHS_NO
+	INNER JOIN TB_CTPRVN_RELM E ON
+		E.CTPRVN_CODE = A.CTPRVN_CODE
+	
+	INNER JOIN tb_frnchs_mlsfc_code f ON
+	f.mlsfc_induty_code = d.mlsfc_induty_code
+	
+		WHERE A.YEAR = #{year}
+		<if test='!@org.springframework.util.StringUtils@isEmpty(frchsNo)'>
+		AND a.frnchs_no = #{frchsNo}
+		</if>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(lCode)'>
+		AND f.lclas_induty_code = #{lCode}
+		</if>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(mCode)'>
+		AND f.mlsfc_induty_code = #{mCode}
+		</if>
+		group by E.CTPRVN_NM,
+			 A.YEAR,
+			 A.CTPRVN_CODE	
+		order by A.CTPRVN_CODE	 -->
+		
+	SELECT E.CTPRVN_NM 
+		 , A.*
+		 , B.ENFSN_CO
+		 , C.POPLTN_CO
+	  FROM (
+			SELECT A.YEAR
+				 , A.CTPRVN_CODE
+				 , SUM(A.MRHST_CO) as MRHST_CO
+				 , ROUND(AVG(A.AVRG_SELNG_AM),1) as AVRG_SELNG_AM
+				 , ROUND(AVG(A.UNIT_AR_AVRG_SELNG_AM),1) as UNIT_AR_AVRG_SELNG_AM
+		    FROM TB_FRNCHS_SELNG A
+				 INNER JOIN TB_FRNCHS_INFO D ON D.FRNCHS_NO = A.FRNCHS_NO
+				 INNER JOIN tb_frnchs_mlsfc_code f ON f.mlsfc_induty_code = d.mlsfc_induty_code
+			WHERE A.YEAR = #{year}
+			<if test='!@org.springframework.util.StringUtils@isEmpty(frchsNo)'>
+			  AND a.frnchs_no = #{frchsNo}
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(lCode)'>
+			  AND f.lclas_induty_code = #{lCode}
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(mCode)'>
+			  AND f.mlsfc_induty_code = #{mCode}
+			</if>
+			group by  A.YEAR, A.CTPRVN_CODE  
+	  	) a
+  	left JOIN ODS_RESIDE_POPLTN_DATA C ON A.CTPRVN_CODE = C.CTPRVN_CODE AND A.YEAR = C.STDR_YEAR  
+  	left JOIN ODS_ENFSN_DATA B ON A.CTPRVN_CODE = B.CTPRVN_CODE AND A.YEAR = B.STDR_YEAR
+  	INNER JOIN TB_CTPRVN_RELM E ON E.CTPRVN_CODE = A.CTPRVN_CODE
+  	order by A.CTPRVN_CODE	 	
+	</select>
+	
+	<select id="selectFranRecentYear" parameterType="java.util.Map" resultType="egovMap">
+	/* StatDao.selectFranRecentYear(브랜드정보 최근 년도 조회) */
+	SELECT MAX(a.year) AS data_year
+	  FROM tb_frnchs_selng a
+	  LEFT JOIN ods_enfsn_data b ON a.ctprvn_code = b.ctprvn_code AND a.year = b.stdr_year
+	  LEFT JOIN ods_reside_popltn_data c ON a.ctprvn_code = c.ctprvn_code AND a.year = c.stdr_year
+	 INNER JOIN tb_frnchs_info d ON d.frnchs_no = a.frnchs_no
+	 INNER JOIN tb_ctprvn_relm e ON e.ctprvn_code = a.ctprvn_code
+	 INNER JOIN tb_frnchs_mlsfc_code f ON f.mlsfc_induty_code = d.mlsfc_induty_code
+	<if test='!@org.springframework.util.StringUtils@isEmpty(frchsNo)'>
+		AND a.frnchs_no = #{frchsNo}
+	</if>
+	<if test='!@org.springframework.util.StringUtils@isEmpty(lCode)'>
+		AND f.lclas_induty_code = #{lCode}
+	</if>
+	<if test='!@org.springframework.util.StringUtils@isEmpty(mCode)'>
+		AND f.mlsfc_induty_code = #{mCode}
+	</if>
+	<![CDATA[
+		AND a.year < '2021'
+	]]>
+	GROUP BY a.frnchs_no
+	</select>
+
+	<!-- 프랜차이즈 분포 현황  2019년(최근연도) / 전체 업종 / 전국 단위 프랜차이즈 가맹점 + 직영점 수  -->
+	<select id="selectFranFullStatList" parameterType="java.util.Map" resultType="egovMap">
+	/* StatDao.selectFranFullStatList 프랜차이즈 분포 현황  2019년(최근연도) / 전체 업종 / 전국 단위 프랜차이즈 가맹점 + 직영점 수 */
+	SELECT
+		A.CTPRVN_CODE ,
+		SUM(A.MRHST_CO) AS MRHST_CO_SUM ,
+		SUM(A.DROPER_CO) AS DROPER_CO_SUM
+	FROM TB_FRNCHS_CTPRVN_SM A
+	WHERE 1 = 1
+	  /* 임시주석 - 20220119 - 2021 데이터 업데이트 이후 복구 필
+	  AND A.STDR_YEAR = (SELECT MAX(STDR_YEAR) FROM TB_FRNCHS_CTPRVN_SM)
+	  */
+	  AND A.STDR_YEAR = '2020'
+	GROUP BY A.CTPRVN_CODE
+	</select>
+	<!-- 프랜차이즈 업종 순위 -->
+	<select id="selectFranIndutyLankList" parameterType="java.util.Map" resultType="egovMap">
+	SELECT ROW_NUMBER() OVER() AS RN, AA.MLSFC_INDUTY_NM AS LC01, BB.MLSFC_INDUTY_NM AS LC02, CC.MLSFC_INDUTY_NM AS LC03 FROM (
+			SELECT
+				ROW_NUMBER() OVER(ORDER BY COUNT(1) DESC) AS RN, B.MLSFC_INDUTY_NM, A.MLSFC_INDUTY_CODE, COUNT(1)
+			FROM TB_FRNCHS_INFO A, TB_FRNCHS_MLSFC_CODE B
+			WHERE A.MLSFC_INDUTY_CODE = B.MLSFC_INDUTY_CODE
+			  AND B.LCLAS_INDUTY_CODE = 'LC01'
+			GROUP BY A.MLSFC_INDUTY_CODE, B.MLSFC_INDUTY_NM
+			LIMIT 5
+			) AA,
+			(SELECT
+				ROW_NUMBER() OVER(ORDER BY COUNT(1) DESC) AS RN, B.MLSFC_INDUTY_NM, A.MLSFC_INDUTY_CODE, COUNT(1)
+			FROM TB_FRNCHS_INFO A, TB_FRNCHS_MLSFC_CODE B
+			WHERE A.MLSFC_INDUTY_CODE = B.MLSFC_INDUTY_CODE
+			  AND B.LCLAS_INDUTY_CODE = 'LC02'
+			GROUP BY A.MLSFC_INDUTY_CODE, B.MLSFC_INDUTY_NM
+			LIMIT 5) BB,
+			(SELECT
+				ROW_NUMBER() OVER(ORDER BY COUNT(1) DESC) AS RN, B.MLSFC_INDUTY_NM, A.MLSFC_INDUTY_CODE, COUNT(1)
+			FROM TB_FRNCHS_INFO A, TB_FRNCHS_MLSFC_CODE B
+			WHERE A.MLSFC_INDUTY_CODE = B.MLSFC_INDUTY_CODE
+			  AND B.LCLAS_INDUTY_CODE = 'LC03'
+			GROUP BY A.MLSFC_INDUTY_CODE, B.MLSFC_INDUTY_NM
+			LIMIT 5) CC
+	WHERE AA.RN = BB.RN
+	  AND AA.RN = CC.RN
+	</select>
+	
+	<select id="selectFrchsListCount" parameterType="java.util.Map" resultType="int">
+		SELECT 
+			COUNT(1)
+		FROM (
+			SELECT
+				C.MLSFC_INDUTY_NM,
+				A.BSN_SGNAL,
+				A.FRNCHS_NO,
+				A.HEDOFC_NO
+			FROM
+				TB_FRNCHS_INFO A
+			INNER JOIN TB_FRNCHS_HEDOFC B ON
+				A.HEDOFC_NO = B.HEDOFC_NO
+			INNER JOIN TB_FRNCHS_MLSFC_CODE C ON
+				C.MLSFC_INDUTY_CODE = A.MLSFC_INDUTY_CODE
+			<if test='!@org.springframework.util.StringUtils@isEmpty(jobCode)'>
+			WHERE A.MLSFC_INDUTY_CODE = #{jobCode}
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(frchsNm)'>
+			AND UPPER(A.BSN_SGNAL) LIKE '%' || UPPER(#{frchsNm}) || '%'
+			</if>
+		) AS TMP
+	</select>
+</mapper>

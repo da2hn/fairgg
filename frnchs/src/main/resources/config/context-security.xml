@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-4.1.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+
+	<security:http pattern="/static/**/*" security="none"/>
+	<security:http pattern="\A/WEB-INF/jsp/.*\Z" request-matcher="regex" security="none"/>
+
+
+	<security:http auto-config="true"  use-expressions="true" entry-point-ref="authenticationEntryPoint">
+		<security:intercept-url pattern="/logout.do*" access="isAuthenticated()" />
+		<security:intercept-url pattern="/*/logout.do*" access="isAuthenticated()" />
+
+		<security:intercept-url pattern="/user/joinForm.do*" access="isAnonymous()" />
+		<security:intercept-url pattern="/user/loginPage.do*" access="isAnonymous()" />
+		<security:intercept-url pattern="/loginSecurity.do" access="isAnonymous()" />
+
+		<security:intercept-url pattern="/sysMngr/**/*.do*" access="hasRole('ROLE_US04')" />
+		<security:intercept-url pattern="/sysMngr/**/*.ajax*" access="hasRole('ROLE_US04')" />
+
+		<!-- 마이페이지 권한제어 추가 - 20.12.28 -->
+		<security:intercept-url pattern="/myPage/**/*.do*" access="isAuthenticated()" />
+		<security:intercept-url pattern="/myPage/**/*.ajax*" access="isAuthenticated()" />
+
+		<!-- 지오서버 권한 열기 - 21.04.02 -->
+		<security:intercept-url pattern="/geoData.do*" access="permitAll" />
+		<!-- ajax 권한 열기 - 20.12.14 -->
+<!-- 		<security:intercept-url pattern="/*.ajax*" access="hasAnyRole('ROLE_US01','ROLE_US02','ROLE_US03','ROLE_US04')" /> -->
+		<security:intercept-url pattern="/*.ajax*" access="permitAll" />
+		<security:intercept-url pattern="/**/*.ajax*" access="permitAll" />
+		<security:intercept-url pattern="/*.do*" access="permitAll" />
+		<security:intercept-url pattern="/**/*.do*" access="permitAll" />
+<!-- 		<security:intercept-url pattern="/*.do*" access="isAuthenticated()" /> -->
+<!-- 		<security:intercept-url pattern="/**/*.do*" access="isAuthenticated()" /> -->
+
+		<security:access-denied-handler ref="CustomAccessDeniedHandler" />
+		<security:csrf disabled="true" />
+
+		<security:form-login	login-page="/user/loginPage.do*"
+								authentication-failure-handler-ref="loginFailureHandler"
+								authentication-success-handler-ref="loginSuccessHandler"
+								username-parameter="userId"
+								password-parameter="userPw"
+								login-processing-url="/loginSecurity.do"
+		/>
+		<security:logout logout-url="/logout.do" logout-success-url="/"  invalidate-session="true"/>
+	</security:http>
+
+
+	<!-- 로그인 성공시 핸들러 -->
+	<bean id="loginSuccessHandler" class="gov.ggdo.frnchs.common.security.LoginSuccessHandler" />
+	<!-- 로그인 실패시 핸들러 -->
+	<bean id="loginFailureHandler" class="gov.ggdo.frnchs.common.security.LoginFailureHandler" />
+	<!-- accessDenied 핸들러 (권한없음) -->
+	<bean id="CustomAccessDeniedHandler" class="gov.ggdo.frnchs.common.security.CustomAccessDeniedHandler" />
+	<!-- accessDenied 핸들러 (인증없음) -->
+	<bean id="authenticationEntryPoint" class="gov.ggdo.frnchs.common.security.AuthenticationEntryPointImpl" />
+
+	<bean id="csrfMatcher" class="org.springframework.security.web.util.matcher.AndRequestMatcher">
+		<constructor-arg>
+			<list>
+				<bean class="org.springframework.security.web.csrf.CsrfFilter.DefaultRequiresCsrfMatcher"/>
+				<bean class="org.springframework.security.web.util.matcher.NegatedRequestMatcher">
+					<constructor-arg>
+						<bean class="org.springframework.security.web.util.matcher.AntPathRequestMatcher">
+							<constructor-arg value="/static/**/*"/>
+						</bean>
+					</constructor-arg>
+				</bean>
+				<bean class="org.springframework.security.web.util.matcher.NegatedRequestMatcher">
+					<constructor-arg>
+						<bean class="org.springframework.security.web.util.matcher.AntPathRequestMatcher">
+							<constructor-arg value="/index.jsp"/>
+						</bean>
+					</constructor-arg>
+				</bean>
+				<bean class="org.springframework.security.web.util.matcher.NegatedRequestMatcher">
+					<constructor-arg>
+						<bean class="org.springframework.security.web.util.matcher.AntPathRequestMatcher">
+							<constructor-arg value="/main/main.do"/>
+						</bean>
+					</constructor-arg>
+				</bean>
+				<bean class="org.springframework.security.web.util.matcher.NegatedRequestMatcher">
+					<constructor-arg>
+						<bean class="org.springframework.security.web.util.matcher.AntPathRequestMatcher">
+							<constructor-arg value="/user/loginPage.do"/>
+						</bean>
+					</constructor-arg>
+				</bean>
+				<bean class="org.springframework.security.web.util.matcher.NegatedRequestMatcher">
+					<constructor-arg>
+						<bean class="org.springframework.security.web.util.matcher.AntPathRequestMatcher">
+							<constructor-arg value="/common/jusoPopup.do"/>
+						</bean>
+					</constructor-arg>
+				</bean>
+			</list>
+		</constructor-arg>
+	</bean>
+
+	<bean id="loginService" class="gov.ggdo.frnchs.common.login.LoginService" />
+	<bean id="customAuthenticationProvider" class="gov.ggdo.frnchs.common.security.CustomAuthenticationProvider" />
+<!-- 	<bean id="csrfSecurityRequestMatcher" class="egovframework.security.CsrfSecurityRequestMatcher" /> -->
+
+	<bean id="bcryptPasswordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder" />
+
+	<security:authentication-manager >
+		<security:authentication-provider ref="customAuthenticationProvider" />
+	</security:authentication-manager>
+
+
+
+	<bean id="egovUserDetailsHelper" class="gov.ggdo.frnchs.common.security.EgovUserDetailsHelper">
+		<property name="egovUserDetailsService">
+<!--  			원하는 bean id를 아래에 ref 태그에 적용한다 -->
+			<ref bean="egovUserDetailsSessionService" />
+		</property>
+	</bean>
+
+	<!-- 0. 세션/시큐리티를 제외한 테스트위한 인증(더미)을 사용하는 빈 -->
+<!-- 	<bean id="egovTestUserDetailsService" class="egovframework.com.cmm.service.impl.EgovTestUserDetailsServiceImpl"/> -->
+
+	<!-- 1. 세션을 이용한 인증을 사용하는 빈 -->
+ 	<bean id="egovUserDetailsSessionService" class="gov.ggdo.frnchs.common.security.EgovUserDetailsSessionServiceImpl"/>
+
+
+
+</beans>

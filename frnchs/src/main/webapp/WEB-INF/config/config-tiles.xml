@@ -1,0 +1,152 @@
+<!DOCTYPE tiles-definitions PUBLIC
+  "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+  "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+
+<tiles-definitions>
+
+	<!-- 메인페이지 표시 -->
+	<definition name="baseMain" template="/WEB-INF/tiles/mainTemplate.jsp">
+		<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+		<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+		<put-attribute name="popup" value="/WEB-INF/tiles/popup.jsp" />
+		<put-attribute name="layerPopup" value="/WEB-INF/tiles/layerPopup.jsp" />
+	</definition>
+	<definition name="*/*.main" extends="baseMain">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}.jsp" />
+	</definition>
+	<definition name="*/*/*.main" extends="baseMain">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}.jsp" />
+	</definition>
+
+	<!-- 메뉴 표시 -->
+	<definition name="base" template="/WEB-INF/tiles/template.jsp">
+		<put-attribute name="analitics" value="/WEB-INF/tiles/googleAnalitics.jsp" />
+		<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+		<put-attribute name="popup" value="/WEB-INF/tiles/popup.jsp" />
+ 		<put-attribute name="left"   value="/WEB-INF/tiles/left.jsp" />
+		<put-attribute name="contentHeader" value="/WEB-INF/tiles/contentHeader.jsp" />
+		<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+		<put-attribute name="layerPopup" value="/WEB-INF/tiles/layerPopup.jsp" />
+	</definition>
+
+	<definition name="*/*.content" extends="base">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}.jsp" />
+	</definition>
+	<definition name="*/*/*.content" extends="base">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}.jsp" />
+	</definition>
+	<definition name="*/*/*/*.content" extends="base">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}.jsp" />
+	</definition>
+	<definition name="*/*/*/*/*.content" extends="base">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}.jsp" />
+	</definition>
+	<definition name="*/*/*/*/*/*.content" extends="base">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}/{6}.jsp" />
+	</definition>
+	<definition name="*/*/*/*/*/*/*.content" extends="base">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}/{6}/{7}.jsp" />
+	</definition>
+
+	<!-- popup -->
+	<definition name="popup" template="/WEB-INF/tiles/templatePopup.jsp">
+	</definition>
+
+	<definition name="*/*.popup" extends="popup">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}.jsp" />
+	</definition>
+
+	<definition name="*/*/*.popup" extends="popup">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}.jsp" />
+	</definition>
+
+	<definition name="*/*/*/*.popup" extends="popup">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}.jsp" />
+	</definition>
+	<definition name="*/*/*/*/*.popup" extends="popup">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}.jsp" />
+	</definition>
+	<definition name="*/*/*/*/*/*.popup" extends="popup">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}/{6}.jsp" />
+	</definition>
+	<definition name="*/*/*/*/*/*/*.popup" extends="popup">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}/{6}/{7}.jsp" />
+	</definition>
+
+	<!-- 시스템관리자 -->
+	<definition name="sysMngrBase" template="/WEB-INF/tiles/sysMngrTemplate.jsp">
+		<put-attribute name="analitics" value="/WEB-INF/tiles/googleAnalitics.jsp" />
+		<put-attribute name="header" value="/WEB-INF/tiles/sysMngrHeader.jsp" />
+		<put-attribute name="left"   value="/WEB-INF/tiles/sysMngrLeft.jsp" />
+		<put-attribute name="footer" value="/WEB-INF/tiles/sysMngrFooter.jsp" />
+	</definition>
+
+	<definition name="*/*.sysMngrContent" extends="sysMngrBase">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}.jsp" />
+	</definition>
+	<definition name="*/*/*.sysMngrContent" extends="sysMngrBase">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}.jsp" />
+	</definition>
+	<definition name="*/*/*/*.sysMngrContent" extends="sysMngrBase">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}.jsp" />
+	</definition>
+	<definition name="*/*/*/*/*.sysMngrContent" extends="sysMngrBase">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}.jsp" />
+	</definition>
+	<definition name="*/*/*/*/*/*.sysMngrContent" extends="sysMngrBase">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}/{6}.jsp" />
+	</definition>
+	<definition name="*/*/*/*/*/*/*.sysMngrContent" extends="sysMngrBase">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}/{6}/{7}.jsp" />
+	</definition>
+
+	<!-- 메뉴 미표시 -->
+	<definition name="sysMngrBaseEmpty" template="/WEB-INF/tiles/sysMngrTemplateEmpty.jsp">
+		<put-attribute name="footer" value="/WEB-INF/tiles/sysMngrFooter.jsp" />
+	</definition>
+
+	<definition name="*/*.sysMngrMain" extends="sysMngrBaseEmpty">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}.jsp" />
+	</definition>
+	<definition name="*/*/*.sysMngrMain" extends="sysMngrBaseEmpty">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}.jsp" />
+	</definition>
+	<definition name="*/*/*/*.sysMngrMain" extends="sysMngrBaseEmpty">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}.jsp" />
+	</definition>
+	<definition name="*/*/*/*/*.sysMngrMain" extends="sysMngrBaseEmpty">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}.jsp" />
+	</definition>
+	<definition name="*/*/*/*/*/*.sysMngrMain" extends="sysMngrBaseEmpty">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}/{6}.jsp" />
+	</definition>
+	<definition name="*/*/*/*/*/*/*.sysMngrMain" extends="sysMngrBaseEmpty">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}/{6}/{7}.jsp" />
+	</definition>
+
+	<!-- 시스템관리자 popup -->
+	<definition name="sysMngrPopup" template="/WEB-INF/tiles/sysMngrTemplatePopup.jsp">
+	</definition>
+
+	<definition name="*/*.sysMngrPopup" extends="sysMngrPopup">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}.jsp" />
+	</definition>
+
+	<definition name="*/*/*.sysMngrPopup" extends="sysMngrPopup">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}.jsp" />
+	</definition>
+
+	<definition name="*/*/*/*.sysMngrPopup" extends="sysMngrPopup">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}.jsp" />
+	</definition>
+	<definition name="*/*/*/*/*.sysMngrPopup" extends="sysMngrPopup">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}.jsp" />
+	</definition>
+	<definition name="*/*/*/*/*/*.sysMngrPopup" extends="sysMngrPopup">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}/{6}.jsp" />
+	</definition>
+	<definition name="*/*/*/*/*/*/*.sysMngrPopup" extends="sysMngrPopup">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}/{6}/{7}.jsp" />
+	</definition>
+
+</tiles-definitions>

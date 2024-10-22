@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="gov.ggdo.frnchs.ui.sysMngr.pr.SysMngrPr">
+	<update id="callPrUserDataPartitn" parameterType="java.util.Map" statementType="CALLABLE">
+		CALL ggfowr.PR_USER_DATA_PARTITN(#{userDataManageNo, jdbcType=VARCHAR})
+<!-- 		{ CALL ggfowr.PR_USER_DATA_PARTITN( -->
+<!-- 	        #{userDataManageNo, mode=IN, jdbcType=VARCHAR} -->
+<!-- 		)} -->
+	</update>
+	<insert id="callPrFrnchsCtprvnSm" parameterType="java.util.Map" statementType="CALLABLE">
+		CALL ggfowr.PR_FRNCHS_CTPRVN_SM(
+	        #{dataStdrYear}
+		)
+	</insert>
+	<insert id="callPrFrnchsIndex" parameterType="java.util.Map" statementType="CALLABLE">
+		 CALL ggfowr.PR_FRNCHS_IDEX(
+	        #{parseDataStdrYear}
+		)
+	</insert>
+	<insert id="callStorMxmCtprvn" parameterType="java.util.Map" statementType="CALLABLE">
+		 CALL ggfowr.PR_STOR_MXM_CTPRVN(
+	        #{dataStdrYear}
+		)
+	</insert>
+	
+	<select id="selectTest"  parameterType="java.util.Map" resultType="egovMap">
+		SELECT MIN(DATA_SN ) as AA, MAX(DATA_SN ) as BB
+		    FROM ggfowr.TB_USER_DATA
+		    WHERE 1=1
+		        AND USER_DATA_MANAGE_NO = #{userDataManageNo}::INTEGER
+	</select>
+</mapper>

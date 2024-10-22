@@ -1,0 +1,1706 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="gov.ggdo.frnchs.ui.sysMngr.dao.SysMngrDao">
+	<sql id="userListCondition">
+		<if test='!@org.springframework.util.StringUtils@isEmpty(dateStart)'>
+			AND CONFM_DT >= #{dateStart}
+		</if>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(dateEnd)'>
+			AND CONFM_DT <![CDATA[ <= ]]>  #{dateEnd}
+		</if>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(userSeCode)'>
+			AND USER_SE_CODE = #{userSeCode}
+		</if>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(searchType) and !@org.springframework.util.StringUtils@isEmpty(searchText)'>
+			<if test='searchType eq "type1"'>
+				AND USER_NM LIKE '%' || #{searchText} || '%'
+			</if>
+			<if test='searchType eq "type2"'>
+				AND EMAIL_ADRES LIKE '%' || #{searchText} || '%'
+			</if>
+			<if test='searchType eq "type3"'>
+				AND ( TELNO LIKE '%' || #{searchText} || '%' OR TELNO LIKE '%' || #{searchText} || '%')
+			</if>
+			<if test='searchType eq "type4"'>
+				AND (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = TMP.CONFM_STTUS_CODE) LIKE '%' || #{searchText} || '%'
+			</if>
+		</if>
+	</sql>
+
+	<sql id="popupListCondition">
+		<!-- 쿼리 에러 및 메인도 검색 가능하게 수정 - 21.03.18 -->
+		<if test='!@org.springframework.util.StringUtils@isEmpty(searchType) and !@org.springframework.util.StringUtils@isEmpty(searchText)'>
+			<if test='searchType eq "sj"'>
+				AND SJ LIKE '%' || #{searchText} || '%'
+			</if>
+			<if test='searchType eq "menuNm"'>
+<!-- 				AND (SELECT B.MENU_NM FROM TB_MENU_GROUP_MANAGE A, TB_MENU_MANAGE B WHERE A.MENU_GROUP_CODE = B.MENU_GROUP_CODE AND A.MENU_SE_CODE ='U') LIKE '%' || #{searchText} || '%'  -->
+				AND CASE
+					WHEN PM.MENU_CODE = 'main' THEN '메인화면'
+					ELSE (SELECT B.MENU_NM FROM TB_MENU_GROUP_MANAGE A, TB_MENU_MANAGE B WHERE A.MENU_GROUP_CODE = B.MENU_GROUP_CODE AND A.MENU_SE_CODE ='U' AND PM.MENU_CODE = B.MENU_CODE)
+				END LIKE '%' || #{searchText} || '%'
+			</if> 
+		</if>
+	</sql>
+
+	<sql id="dataListCondition">
+		<if test='!@org.springframework.util.StringUtils@isEmpty(dateStart)'>
+			AND  TO_CHAR(UDM.REGIST_DT , 'YYYY-MM-DD') >= #{dateStart}
+		</if>
+		<if test='!@org.springframework.util.StringUtils@isEmpty(dateEnd)'>
+			AND  TO_CHAR(UDM.REGIST_DT , 'YYYY-MM-DD') <![CDATA[ <= ]]>  #{dateEnd}
+		</if>
+	</sql>
+	<!-- 유저목록을 리스트를 조회한다 - 20.12.14 -->
+	<select id="selectUserList" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			TMP.USER_NO
+			, TMP.USER_SE_CODE
+			, (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'USER_SE_CODE' AND CODE_VALUE = TMP.USER_SE_CODE) AS USER_SE_NM
+			, TMP.DEPT_NM
+			, TMP.USER_NM
+			, TMP.TELNO
+			, CASE
+				WHEN TELNO IS NULL OR TELNO = '' THEN ''
+				WHEN CHAR_LENGTH(TELNO) = 11 THEN CONCAT(SUBSTRING(TELNO, 1, 3),'-',SUBSTRING(TELNO, 4, 4),'-',SUBSTRING(TELNO, 8, 4))
+				ELSE CONCAT(SUBSTRING(TELNO, 1, 2),'-',SUBSTRING(TELNO, 3, 4),'-',SUBSTRING(TELNO, 7, 4))
+			END AS CONVERT_TELNO
+			, TMP.EMAIL_ADRES
+			, TMP.PASSWORD
+			, TMP.CONFM_STTUS_CODE
+			, (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = TMP.CONFM_STTUS_CODE) AS CONFM_STTUS_NM
+			, USE_STPLAT_AGRE_AT
+			, TMP.MARKT_RECPTN_AGRE_AT
+			, TMP.CRTFC_KEY
+			, TMP.CRTFC_AT
+			, TMP.LAST_UPDT_USER_NO
+			, TO_CHAR(TMP.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+			, TO_CHAR(TMP.CONFM_DT , 'YYYY-MM-DD') AS CONFM_DT
+			, TO_CHAR(TMP.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+		FROM
+			TB_USER TMP
+		WHERE
+			1=1
+			<include refid="userListCondition" />
+			<!--
+			<if test='!@org.springframework.util.StringUtils@isEmpty(dateStart)'>
+				AND TO_CHAR(CONFM_DT , 'YYYY-MM-DD') >= #{dateStart}
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(dateEnd)'>
+				AND TO_CHAR(CONFM_DT , 'YYYY-MM-DD') <![CDATA[ <= ]]>  #{dateEnd}
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(userSeCode)'>
+				AND USER_SE_CODE = #{userSeCode}
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(searchType) and !@org.springframework.util.StringUtils@isEmpty(searchText)'>
+				<if test='searchType eq "type1"'>
+					AND USER_NM LIKE '%' || #{searchText} || '%'
+				</if>
+				<if test='searchType eq "type2"'>
+					AND EMAIL_ADRES LIKE '%' || #{searchText} || '%'
+				</if>
+				<if test='searchType eq "type3"'>
+					AND TELNO LIKE '%' || #{searchText} || '%'
+				</if>
+				<if test='searchType eq "type4"'>
+					AND (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = TU.CONFM_STTUS_CODE) LIKE '%' || #{searchText} || '%'
+				</if>
+			</if>
+			 -->
+	</select>
+
+	<!-- 유저목록을 전체 목록 갯수를 조회한다 - 20.12.21 -->
+	<select id="selectAllUserListCount" parameterType="java.util.Map" resultType="_int">
+		SELECT COUNT(*) FROM (
+			SELECT
+				TU.USER_NO
+				, TO_CHAR(TU.CONFM_DT , 'YYYY-MM-DD') AS CONFM_DT
+				, TU.USER_SE_CODE
+				, TU.USER_NM
+				, TU.EMAIL_ADRES
+				, TU.CONFM_STTUS_CODE
+				, TU.TELNO
+				, CASE
+					WHEN TELNO IS NULL OR TELNO = '' THEN ''
+					WHEN CHAR_LENGTH(TELNO) = 11 THEN CONCAT(SUBSTRING(TELNO, 1, 3),'-',SUBSTRING(TELNO, 4, 4),'-',SUBSTRING(TELNO, 8, 4))
+					ELSE CONCAT(SUBSTRING(TELNO, 1, 2),'-',SUBSTRING(TELNO, 3, 4),'-',SUBSTRING(TELNO, 7, 4))
+				END AS CONVERT_TELNO
+			FROM
+				TB_USER TU
+			UNION ALL
+			SELECT
+				TBHM.USER_NO
+				, TO_CHAR(TBHM.CONFM_DT , 'YYYY-MM-DD') AS CONFM_DT
+				, TBHM.USER_SE_CODE
+				, TBHM.CHARGER_NM AS USER_NM <!-- 담당자명으로 임시처리 추후 확인 -->
+				, TBHM.EMAIL_ADRES
+				, TBHM.CONFM_STTUS_CODE
+				, TBHM.TELNO
+				, CASE
+					WHEN TELNO IS NULL OR TELNO = '' THEN ''
+					WHEN CHAR_LENGTH(TELNO) = 11 THEN CONCAT(SUBSTRING(TELNO, 1, 3),'-',SUBSTRING(TELNO, 4, 4),'-',SUBSTRING(TELNO, 8, 4))
+					ELSE CONCAT(SUBSTRING(TELNO, 1, 2),'-',SUBSTRING(TELNO, 3, 4),'-',SUBSTRING(TELNO, 7, 4))
+				END AS CONVERT_TELNO
+			FROM
+				TB_BRAND_HEDOFC_MNGR TBHM
+		) TMP
+		WHERE
+			1=1
+			<include refid="userListCondition" />
+	</select>
+
+	<!--
+		유저목록을 전체 목록을 조회한다 - 20.12.17
+		pagign 추가 - 20.12.21
+	-->
+	<select id="selectAllUserList" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			*
+			, ROW_NUMBER() OVER (ORDER BY USER_NO ASC) AS RN
+		FROM (
+			SELECT
+				TU.USER_NO
+				, TU.USER_SE_CODE
+				, (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'USER_SE_CODE' AND CODE_VALUE = TU.USER_SE_CODE) AS USER_SE_NM
+				, TU.TELNO
+				, CASE
+					WHEN TELNO IS NULL OR TELNO = '' THEN ''
+					WHEN CHAR_LENGTH(TELNO) = 11 THEN CONCAT(SUBSTRING(TELNO, 1, 3),'-',SUBSTRING(TELNO, 4, 4),'-',SUBSTRING(TELNO, 8, 4))
+					ELSE CONCAT(SUBSTRING(TELNO, 1, 2),'-',SUBSTRING(TELNO, 3, 4),'-',SUBSTRING(TELNO, 7, 4))
+				END AS CONVERT_TELNO
+				, TU.EMAIL_ADRES
+				, TU.PASSWORD
+				, TU.CONFM_STTUS_CODE
+				, (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = TU.CONFM_STTUS_CODE) AS CONFM_STTUS_NM
+				, TU.CRTFC_KEY
+				, TU.CRTFC_AT
+				, TU.LAST_UPDT_USER_NO
+				, TO_CHAR(TU.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+				, TO_CHAR(TU.CONFM_DT , 'YYYY-MM-DD') AS CONFM_DT
+				, TO_CHAR(TU.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+				, TU.USER_NM
+				, TU.DEPT_NM
+				, TU.MARKT_RECPTN_AGRE_AT
+				, TU.USE_STPLAT_AGRE_AT
+				, '' AS BIZRNO
+				, null AS ATCHMNFL_NO
+<!-- 				, '' AS CHARGER_NM -->
+			FROM
+				TB_USER TU
+			UNION ALL
+			SELECT
+				TBHM.USER_NO
+				, TBHM.USER_SE_CODE
+				, (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'USER_SE_CODE' AND CODE_VALUE = TBHM.USER_SE_CODE) AS USER_SE_NM
+				, TBHM.TELNO
+				, CASE
+					WHEN TELNO IS NULL OR TELNO = '' THEN ''
+					WHEN CHAR_LENGTH(TELNO) = 11 THEN CONCAT(SUBSTRING(TELNO, 1, 3),'-',SUBSTRING(TELNO, 4, 4),'-',SUBSTRING(TELNO, 8, 4))
+					ELSE CONCAT(SUBSTRING(TELNO, 1, 2),'-',SUBSTRING(TELNO, 3, 4),'-',SUBSTRING(TELNO, 7, 4))
+				END AS CONVERT_TELNO
+				, TBHM.EMAIL_ADRES
+				, TBHM.PASSWORD
+				, TBHM.CONFM_STTUS_CODE
+				, (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = TBHM.CONFM_STTUS_CODE) AS CONFM_STTUS_NM
+				, TBHM.CRTFC_KEY
+				, TBHM.CRTFC_AT
+				, TBHM.LAST_UPDT_USER_NO
+				, TO_CHAR(TBHM.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+				, TO_CHAR(TBHM.CONFM_DT , 'YYYY-MM-DD') AS CONFM_DT
+				, TO_CHAR(TBHM.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+				, TBHM.CHARGER_NM AS USER_NM <!-- 담당자명으로 임시처리 추후 확인 -->
+				, '' AS DEPT_NM
+				, '' AS MARKT_RECPTN_AGRE_AT
+				, '' AS USE_STPLAT_AGRE_AT
+				, TBHM.BIZRNO
+				, TBHM.ATCHMNFL_NO
+<!-- 				, TBHM.CHARGER_NM -->
+			FROM
+				TB_BRAND_HEDOFC_MNGR TBHM
+		) TMP
+		WHERE
+			1=1
+			<include refid="userListCondition" />
+		ORDER BY
+			USER_NO DESC
+		LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+<!-- 		LIMIT #{firstIndex}, #{pageSize} -->
+	</select>
+
+	<!-- 유저정보를 조회한다 - 20.12.15 -->
+	<select id="selectUserInfo" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			TU.USER_NO
+			, TU.USER_SE_CODE
+			, (SELECT CODE_VALUE_NM FROM tb_cmmn_code WHERE CODE_ID = 'USER_SE_CODE' AND CODE_VALUE = TU.USER_SE_CODE) as USER_SE_NM
+			, TU.DEPT_NM
+			, TU.USER_NM
+			, TU.TELNO
+			, CASE
+				WHEN TELNO IS NULL OR TELNO = '' THEN ''
+				WHEN CHAR_LENGTH(TELNO) = 11 THEN CONCAT(SUBSTRING(TELNO, 1, 3)::TEXT,'-',SUBSTRING(TELNO, 4, 4),'-',SUBSTRING(TELNO, 8, 4))
+				ELSE CONCAT(SUBSTRING(TELNO, 1, 2),'-',SUBSTRING(TELNO, 3, 4),'-',SUBSTRING(TELNO, 7, 4))
+			END AS CONVERT_TELNO
+			, TU.EMAIL_ADRES
+			, TU.PASSWORD
+			, TU.CONFM_STTUS_CODE
+			, (SELECT CODE_VALUE_NM FROM tb_cmmn_code WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = TU.CONFM_STTUS_CODE) as CONFM_STTUS_NM
+			, TU.USE_STPLAT_AGRE_AT
+			, TU.MARKT_RECPTN_AGRE_AT
+			, TU.CRTFC_KEY
+			, TU.CRTFC_AT
+			, TU.LAST_UPDT_USER_NO
+			, TO_CHAR(TU.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+			, TO_CHAR(TU.CONFM_DT , 'YYYY-MM-DD') AS CONFM_DT
+			, TO_CHAR(TU.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+		FROM
+			TB_USER TU
+		WHERE
+			TU.USER_NO::TEXT = #{userNo}
+	</select>
+
+	<!-- 전체 목록에서 특정 유저정보를 조회한다 - 20.12.17 -->
+	<select id="selectAllUserInfo" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			TU.USER_NO
+			, TU.USER_SE_CODE
+			, (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'USER_SE_CODE' AND CODE_VALUE = TU.USER_SE_CODE) AS USER_SE_NM
+			, TU.TELNO
+			, CASE
+				WHEN TELNO IS NULL OR TELNO = '' THEN ''
+				WHEN CHAR_LENGTH(TELNO) = 11 THEN CONCAT(SUBSTRING(TELNO, 1, 3),'-',SUBSTRING(TELNO, 4, 4),'-',SUBSTRING(TELNO, 8, 4))
+				ELSE CONCAT(SUBSTRING(TELNO, 1, 2),'-',SUBSTRING(TELNO, 3, 4),'-',SUBSTRING(TELNO, 7, 4))
+			END AS CONVERT_TELNO
+			, TU.EMAIL_ADRES
+			, TU.PASSWORD
+			, TU.CONFM_STTUS_CODE
+			, (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = TU.CONFM_STTUS_CODE) AS CONFM_STTUS_NM
+			, TU.CRTFC_KEY
+			, TU.CRTFC_AT
+			, TU.LAST_UPDT_USER_NO
+			, TO_CHAR(TU.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+			, TO_CHAR(TU.CONFM_DT , 'YYYY-MM-DD') AS CONFM_DT
+			, TO_CHAR(TU.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+			, TU.USER_NM
+			, TU.DEPT_NM
+			, TU.MARKT_RECPTN_AGRE_AT
+			, TU.USE_STPLAT_AGRE_AT
+			, '' AS BIZRNO
+			, null AS ATCHMNFL_NO
+			, '' AS CHARGER_NM
+		FROM
+			TB_USER TU
+		WHERE
+			TU.USER_NO::TEXT = #{userNo}
+		UNION ALL
+		SELECT
+			TBHM.USER_NO
+			, TBHM.USER_SE_CODE
+			, (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'USER_SE_CODE' AND CODE_VALUE = TBHM.USER_SE_CODE) AS USER_SE_NM
+			, TELNO
+			, CASE
+				WHEN TELNO IS NULL OR TELNO = '' THEN ''
+				WHEN CHAR_LENGTH(TELNO) = 11 THEN CONCAT(SUBSTRING(TELNO, 1, 3),'-',SUBSTRING(TELNO, 4, 4),'-',SUBSTRING(TELNO, 8, 4))
+				ELSE CONCAT(SUBSTRING(TELNO, 1, 2),'-',SUBSTRING(TELNO, 3, 4),'-',SUBSTRING(TELNO, 7, 4))
+			END AS CONVERT_TELNO
+			, TBHM.EMAIL_ADRES
+			, TBHM.PASSWORD
+			, TBHM.CONFM_STTUS_CODE
+			, (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = TBHM.CONFM_STTUS_CODE) AS CONFM_STTUS_NM
+			, TBHM.CRTFC_KEY
+			, TBHM.CRTFC_AT
+			, TBHM.LAST_UPDT_USER_NO
+			, TO_CHAR(TBHM.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+			, TO_CHAR(TBHM.CONFM_DT , 'YYYY-MM-DD') AS CONFM_DT
+			, TO_CHAR(TBHM.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+			, '' AS USER_NM
+			, '' AS DEPT_NM
+			, '' AS MARKT_RECPTN_AGRE_AT
+			, '' AS USE_STPLAT_AGRE_AT
+			, TBHM.BIZRNO
+			, TBHM.ATCHMNFL_NO
+			, TBHM.CHARGER_NM
+		FROM
+			TB_BRAND_HEDOFC_MNGR TBHM
+		WHERE
+			TBHM.USER_NO::TEXT = #{userNo}
+	</select>
+
+	<!-- 전체 목록에서 특정 유저정보를 조회한다 - 20.12.17 -->
+	<select id="selectAllUserInfoByEmail" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			TU.USER_NO
+			, TU.USER_SE_CODE
+			, (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'USER_SE_CODE' AND CODE_VALUE = TU.USER_SE_CODE) AS USER_SE_NM
+			, TU.TELNO
+			, CASE
+				WHEN TELNO IS NULL OR TELNO = '' THEN ''
+				WHEN CHAR_LENGTH(TELNO) = 11 THEN CONCAT(SUBSTRING(TELNO, 1, 3),'-',SUBSTRING(TELNO, 4, 4),'-',SUBSTRING(TELNO, 8, 4))
+				ELSE CONCAT(SUBSTRING(TELNO, 1, 2),'-',SUBSTRING(TELNO, 3, 4),'-',SUBSTRING(TELNO, 7, 4))
+			END AS CONVERT_TELNO
+			, TU.EMAIL_ADRES
+			, TU.PASSWORD
+			, TU.CONFM_STTUS_CODE
+			, (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = TU.CONFM_STTUS_CODE) AS CONFM_STTUS_NM
+			, TU.CRTFC_KEY
+			, TU.CRTFC_AT
+			, TU.LAST_UPDT_USER_NO
+			, TO_CHAR(TU.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+			, TO_CHAR(TU.CONFM_DT , 'YYYY-MM-DD') AS CONFM_DT
+			, TO_CHAR(TU.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+			, TU.USER_NM
+			, TU.DEPT_NM
+			, TU.MARKT_RECPTN_AGRE_AT
+			, TU.USE_STPLAT_AGRE_AT
+			, '' AS BIZRNO
+			, null AS ATCHMNFL_NO
+			, '' AS CHARGER_NM
+		FROM
+			TB_USER TU
+		WHERE TU.EMAIL_ADRES = #{emailAdres}
+		  --AND TU.SECSN_AT = 'N'
+		  AND (TU.SECSN_AT != 'Y' OR TU.SECSN_AT IS NULL)
+		UNION ALL
+		SELECT
+			TBHM.USER_NO
+			, TBHM.USER_SE_CODE
+			, (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'USER_SE_CODE' AND CODE_VALUE = TBHM.USER_SE_CODE) AS USER_SE_NM
+			, TELNO
+			, CASE
+				WHEN TELNO IS NULL OR TELNO = '' THEN ''
+				WHEN CHAR_LENGTH(TELNO) = 11 THEN CONCAT(SUBSTRING(TELNO, 1, 3),'-',SUBSTRING(TELNO, 4, 4),'-',SUBSTRING(TELNO, 8, 4))
+				ELSE CONCAT(SUBSTRING(TELNO, 1, 2),'-',SUBSTRING(TELNO, 3, 4),'-',SUBSTRING(TELNO, 7, 4))
+			END AS CONVERT_TELNO
+			, TBHM.EMAIL_ADRES
+			, TBHM.PASSWORD
+			, TBHM.CONFM_STTUS_CODE
+			, (SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'CONFM_STTUS_CODE' AND CODE_VALUE = TBHM.CONFM_STTUS_CODE) AS CONFM_STTUS_NM
+			, TBHM.CRTFC_KEY
+			, TBHM.CRTFC_AT
+			, TBHM.LAST_UPDT_USER_NO
+			, TO_CHAR(TBHM.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+			, TO_CHAR(TBHM.CONFM_DT , 'YYYY-MM-DD') AS CONFM_DT
+			, TO_CHAR(TBHM.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+			, TBHM.CHARGER_NM AS USER_NM
+			, '' AS DEPT_NM
+			, '' AS MARKT_RECPTN_AGRE_AT
+			, '' AS USE_STPLAT_AGRE_AT
+			, TBHM.BIZRNO
+			, TBHM.ATCHMNFL_NO
+			, TBHM.CHARGER_NM
+		FROM
+			TB_BRAND_HEDOFC_MNGR TBHM
+		WHERE TBHM.EMAIL_ADRES = #{emailAdres}
+		  --AND TBHM.SECSN_AT = 'N'
+		  AND (TBHM.SECSN_AT != 'Y' OR TBHM.SECSN_AT IS NULL)
+	</select>
+
+	<update id="updateUserInfo" parameterType="java.util.Map">
+		/* updateUserInfo */
+		UPDATE TB_USER TU
+		SET
+			USER_NM = #{userNm}
+			, EMAIL_ADRES = #{emailAdres}
+			, TELNO = #{telno}
+			<if test='!@org.springframework.util.StringUtils@isEmpty(deptNm)'>
+			, DEPT_NM = (CASE WHEN TU.USER_SE_CODE = 'US04' THEN #{deptNm} ELSE TU.DEPT_NM END) <!-- 기관 관리자만 부서명 수정가능 - 20.12.16 -->
+			</if>
+			, USER_SE_CODE = (CASE WHEN TU.CONFM_STTUS_CODE = 'CS01' THEN TU.USER_SE_CODE ELSE #{userSeCode} END) <!-- 승인 아닐때만 수정가능하게 - 20.12.15 -->
+			, LAST_UPDT_USER_NO = #{updtUserNo}
+			, UPDT_DT = NOW()
+		WHERE
+			TU.USER_NO::TEXT = #{userNo}
+	</update>
+
+	<update id="updateBrandUserInfo" parameterType="java.util.Map">
+		UPDATE TB_BRAND_HEDOFC_MNGR TBHM
+		SET
+			UPDT_DT = NOW()
+			<!-- 미정 -->
+		WHERE
+			TBHM.USER_NO::TEXT = #{userNo}
+	</update>
+
+	<update id="updateUserStat" parameterType="java.util.Map">
+		UPDATE TB_USER TU
+		SET
+			CONFM_STTUS_CODE = #{confmSttusCode}
+			, LAST_UPDT_USER_NO = #{confmUserNo}
+			, UPDT_DT = NOW()
+<!-- 			, CONFM_USER_NO = #{confmUserNo} 추후 추가 -->
+			, CONFM_DT = NOW()
+		WHERE
+			TU.USER_NO::TEXT = #{userNo}
+	</update>
+
+	<!-- 회원관리 브랜드 승인상태 변경(승인, 반려) - 21.03.11 -->
+	<update id="updateBrandMngrStat" parameterType="java.util.Map">
+		UPDATE TB_BRAND_HEDOFC_MNGR TBHM
+		SET
+			CONFM_STTUS_CODE = #{confmSttusCode}
+			, LAST_UPDT_USER_NO = #{confmUserNo}
+			, UPDT_DT = NOW()
+<!-- 			, CONFM_USER_NO = #{confmUserNo} 추후 추가 -->
+			, CONFM_DT = NOW()
+		WHERE
+			TBHM.USER_NO::TEXT = #{userNo}
+	</update>
+
+	<select id="selectAuthList" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			A.MENU_GROUP_CODE
+			, A.MENU_GROUP_NM
+			, B.MENU_CODE
+			, B.MENU_NM
+			, (SELECT AUTHOR_AT FROM TB_AUTHOR_MANAGE WHERE MENU_CODE = B.MENU_CODE AND USER_SE_CODE = #{userSeCode} AND AUTHOR_CODE = 'AC01') AS AC01_AT
+			, (SELECT AUTHOR_AT FROM TB_AUTHOR_MANAGE WHERE MENU_CODE = B.MENU_CODE AND USER_SE_CODE = #{userSeCode} AND AUTHOR_CODE = 'AC02') AS AC02_AT
+			, (SELECT AUTHOR_AT FROM TB_AUTHOR_MANAGE WHERE MENU_CODE = B.MENU_CODE AND USER_SE_CODE = #{userSeCode} AND AUTHOR_CODE = 'AC03') AS AC03_AT
+			, (SELECT AUTHOR_AT FROM TB_AUTHOR_MANAGE WHERE MENU_CODE = B.MENU_CODE AND USER_SE_CODE = #{userSeCode} AND AUTHOR_CODE = 'AC04') AS AC04_AT
+			, (SELECT AUTHOR_AT FROM TB_AUTHOR_MANAGE WHERE MENU_CODE = B.MENU_CODE AND USER_SE_CODE = #{userSeCode} AND AUTHOR_CODE = 'AC05') AS AC05_AT
+		FROM
+			TB_MENU_GROUP_MANAGE A
+			INNER JOIN TB_MENU_MANAGE B ON A.MENU_GROUP_CODE = B.MENU_GROUP_CODE
+		WHERE A.MENU_SE_CODE = 'U'
+		  AND A.USE_AT = 'Y'
+		  AND B.USE_AT = 'Y'
+<!-- 		  AND B.MENU_CODE IN (SELECT DISTINCT MENU_CODE FROM TB_AUTHOR_MANAGE WHERE USER_SE_CODE= #{userSeCode}) -->
+		ORDER BY
+			A.MENU_GROUP_ORDR, B.MENU_ORDR
+	</select>
+
+	<update id="updateAuthInfo" parameterType="java.util.Map">
+		UPDATE TB_AUTHOR_MANAGE
+		SET
+			AUTHOR_AT = #{authorAt}
+			, UPDT_DT = NOW()
+			, LAST_UPDT_USER_NO = #{updtUserNo}
+		WHERE
+			USER_SE_CODE = #{userSeCode}
+			AND MENU_CODE = #{menuCode}
+			<if test='authorAt eq "Y"'>
+				AND AUTHOR_AT = 'N'
+				AND AUTHOR_CODE IN
+					<foreach collection="authorCodes" item="type" index="index"  open="(" close=")" separator=",">
+						#{type}
+					</foreach>
+			</if>
+			<if test='authorAt eq "N"'>
+				AND AUTHOR_AT = 'Y'
+				AND AUTHOR_CODE NOT IN
+					<foreach collection="authorCodes" item="type" index="index"  open="(" close=")" separator=",">
+						#{type}
+					</foreach>
+			</if>
+	</update>
+
+	<select id="selectPopupMngInfo" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			PM.POPUP_NO
+			, PM.MENU_CODE
+			, CONCAT(SUBSTRING(PM.NTCE_BEGIN_DE, 1, 4),'-',SUBSTRING(PM.NTCE_BEGIN_DE, 5, 2),'-',SUBSTRING(PM.NTCE_BEGIN_DE, 7, 2)) AS NTCE_BEGIN_DE
+			, CONCAT(SUBSTRING(PM.NTCE_END_DE, 1, 4),'-',SUBSTRING(PM.NTCE_END_DE, 5, 2),'-',SUBSTRING(PM.NTCE_END_DE, 7, 2)) AS NTCE_END_DE
+			, PM.POPUP_WIDTH_MG
+			, PM.POPUP_VRTICL_MG
+			, PM.POPUP_WIDTH_LC
+			, PM.POPUP_VRTICL_LC
+			, PM.CN
+			, PM.SJ
+			, PM.USE_AT
+			, PM.REGIST_USER_NO
+			, PM.LAST_UPDT_USER_NO
+			, PM.POPUP_STTUS_CODE <!-- 20240313 테스트 -->
+			, TO_CHAR(PM.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+			, TO_CHAR(PM.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+			, PM.ATCHMNFL_NO
+			, PM.IMG_LINK
+			, TAS.HASHCD
+			, TAS.FILE_SN
+			, TAS.INPUT_FILE_NM
+			, TAS.ATCHMNFL_STTUS_CODE
+		FROM
+			TB_POPUP_MANAGE PM
+			LEFT OUTER JOIN TB_ATCHMNFL_STRE TAS ON PM.ATCHMNFL_NO = TAS.ATCHMNFL_NO AND TAS.ATCHMNFL_STTUS_CODE != 'FS03'
+		WHERE
+			POPUP_NO = #{popupNo}::INTEGER
+			AND MENU_CODE = #{menuCode}
+	</select>
+
+	<select id="selectPopupMngInfoByPopupNo" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			PM.POPUP_NO
+			, PM.MENU_CODE
+			, CONCAT(SUBSTRING(PM.NTCE_BEGIN_DE, 1, 4),'-',SUBSTRING(PM.NTCE_BEGIN_DE, 5, 2),'-',SUBSTRING(PM.NTCE_BEGIN_DE, 7, 2)) AS NTCE_BEGIN_DE
+			, CONCAT(SUBSTRING(PM.NTCE_END_DE, 1, 4),'-',SUBSTRING(PM.NTCE_END_DE, 5, 2),'-',SUBSTRING(PM.NTCE_END_DE, 7, 2)) AS NTCE_END_DE
+			, PM.POPUP_WIDTH_MG
+			, PM.POPUP_VRTICL_MG
+			, PM.POPUP_WIDTH_LC
+			, PM.POPUP_VRTICL_LC
+			, PM.CN
+			, PM.SJ
+			, PM.USE_AT
+			, PM.REGIST_USER_NO
+			, PM.LAST_UPDT_USER_NO
+			, TO_CHAR(PM.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+			, TO_CHAR(PM.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+			, PM.ATCHMNFL_NO
+			, TAS.HASHCD
+			, TAS.FILE_SN
+			, TAS.INPUT_FILE_NM
+			, TAS.ATCHMNFL_STTUS_CODE
+		FROM
+			TB_POPUP_MANAGE PM
+			LEFT OUTER JOIN TB_ATCHMNFL_STRE TAS ON PM.ATCHMNFL_NO = TAS.ATCHMNFL_NO AND TAS.ATCHMNFL_STTUS_CODE != 'FS03'
+		WHERE
+			POPUP_NO = #{popupNo}::INTEGER
+	</select>
+
+	<select id="selectPopupMngList" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			*
+			, ROW_NUMBER() OVER (ORDER BY POPUP_NO ASC) AS RN
+		FROM (
+			SELECT
+				PM.POPUP_NO
+				, PM.MENU_CODE
+				<!-- 메인 화면 추가 - 21.02.22 -->
+				, CASE
+					WHEN PM.MENU_CODE = 'main' THEN '/'
+					WHEN PM.MENU_CODE = 'all' THEN '/'
+					ELSE MM.MENU_URL
+				END MENU_URL
+				, CASE
+					WHEN PM.MENU_CODE = 'main' THEN '메인화면'
+					WHEN PM.MENU_CODE = 'all' THEN '전체화면'
+					ELSE MM.MENU_NM
+				END MENU_NM
+				, CONCAT(SUBSTRING(PM.NTCE_BEGIN_DE, 1, 4),'-',SUBSTRING(PM.NTCE_BEGIN_DE, 5, 2),'-',SUBSTRING(PM.NTCE_BEGIN_DE, 7, 2)) AS NTCE_BEGIN_DE
+				, CONCAT(SUBSTRING(PM.NTCE_END_DE, 1, 4),'-',SUBSTRING(PM.NTCE_END_DE, 5, 2),'-',SUBSTRING(PM.NTCE_END_DE, 7, 2)) AS NTCE_END_DE
+				, PM.POPUP_WIDTH_MG
+				, PM.POPUP_VRTICL_MG
+				, PM.POPUP_WIDTH_LC
+				, PM.POPUP_VRTICL_LC
+				, PM.CN
+				, PM.SJ
+				, PM.ATCHMNFL_NO
+				, PM.USE_AT
+				, PM.REGIST_USER_NO
+				, PM.LAST_UPDT_USER_NO
+				, TO_CHAR(PM.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+				, TO_CHAR(PM.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+			FROM
+				TB_POPUP_MANAGE PM
+				LEFT OUTER JOIN TB_MENU_MANAGE MM ON PM.MENU_CODE = MM.MENU_CODE
+			WHERE
+				1=1
+			<if test='popupType != "noPaging"'>
+				<include refid="popupListCondition" />
+			</if>
+			<if test='popupType == "noPaging"'>
+				AND PM.USE_AT = 'Y'
+			</if>
+		) TMP
+		ORDER BY
+			POPUP_NO DESC
+		<if test='popupType != "noPaging"'>
+		LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+		</if>
+	</select>
+
+	<select id="selectPopupMngListCount" parameterType="java.util.Map" resultType="_int">
+		SELECT
+			COUNT(*)
+		FROM
+			TB_POPUP_MANAGE PM
+		WHERE
+			1=1
+			<include refid="popupListCondition" />
+	</select>
+
+	<update id="updatePopupMngInfo" parameterType="java.util.Map">
+		UPDATE TB_POPUP_MANAGE
+		SET
+			MENU_CODE               = #{menuCode}
+			, NTCE_BEGIN_DE         = REPLACE(#{ntceBeginDe}, '-', '')
+			, NTCE_END_DE           = REPLACE(#{ntceEndDe}, '-', '')
+			, POPUP_WIDTH_MG        = #{popupWidthMg}::INTEGER
+			, POPUP_VRTICL_MG       = #{popupVrticlMg}::INTEGER
+			, POPUP_WIDTH_LC        = #{popupWidthLc}::INTEGER
+			, POPUP_VRTICL_LC       = #{popupVrticlLc}::INTEGER
+			, SJ                    = #{sj}
+			<if test='popupType eq "imgType"'>
+			, CN                    = #{cn}
+			, ATCHMNFL_NO           = #{atchmnflNo}::INTEGER
+			</if>
+			<if test='popupType eq "cnType"'>
+			, CN                    = #{cn}
+			, ATCHMNFL_NO           = NULL
+			</if>
+			, USE_AT                = #{useAt}
+<!-- 			, REGIST_USER_NO        = #{registUserNo}     -->
+			, LAST_UPDT_USER_NO     = #{ssUserNo}::INTEGER
+<!-- 			, REGIST_DT             = #{registDt}         -->
+			, UPDT_DT               = NOW()
+			, IMG_LINK              = #{imgLink}
+		WHERE
+			POPUP_NO = #{popupNo}
+	</update>
+
+	<insert id="insertPopupMngInfo" parameterType="java.util.Map">
+		INSERT INTO TB_POPUP_MANAGE (
+			POPUP_NO
+			, MENU_CODE
+			, NTCE_BEGIN_DE
+			, NTCE_END_DE
+			, POPUP_WIDTH_MG
+			, POPUP_VRTICL_MG
+			, POPUP_WIDTH_LC
+			, POPUP_VRTICL_LC
+			, SJ
+			, CN
+			, ATCHMNFL_NO
+			, USE_AT
+			, REGIST_USER_NO
+<!-- 			, LAST_UPDT_USER_NO -->
+			, REGIST_DT
+<!-- 			, UPDT_DT -->
+			, IMG_LINK
+		) VALUES (
+			NEXTVAL('TB_POPUP_MANAGE_POPUP_NO_SEQ')::INTEGER
+			, #{menuCode}
+			, REPLACE(#{ntceBeginDe}, '-', '')
+			, REPLACE(#{ntceEndDe}, '-', '')
+			, #{popupWidthMg}::INTEGER
+			, #{popupVrticlMg}::INTEGER
+			, #{popupWidthLc}::INTEGER
+			, #{popupVrticlLc}::INTEGER
+			, #{sj}
+			<if test='popupType eq "imgType"'>
+				, #{cn}
+				, #{atchmnflNo}::INTEGER
+			</if>
+			<if test='popupType eq "cnType"'>
+				, #{cn}
+				, NULL
+			</if>
+			, #{useAt}
+			, #{ssUserNo}::INTEGER
+<!-- 			, #{lastUpdtUserNo} -->
+			, NOW()
+<!-- 			, #{updtDt} -->
+			, #{imgLink}
+		)
+	</insert>
+
+	<delete id="deletePopupMngInfo" parameterType="java.util.Map">
+		DELETE FROM TB_POPUP_MANAGE
+		WHERE
+			POPUP_NO = #{popupNo}::INTEGER
+	</delete>
+
+	<select id="selectPopupMenuList" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			A.MENU_GROUP_CODE
+			, A.MENU_GROUP_NM
+			, B.MENU_ORDR
+			, B.MENU_CODE
+			, B.MENU_NM
+			, B.MENU_URL
+		FROM
+			TB_MENU_GROUP_MANAGE A
+		    , TB_MENU_MANAGE B
+		WHERE
+			A.MENU_GROUP_CODE = B.MENU_GROUP_CODE
+			AND A.MENU_SE_CODE = 'U'
+	</select>
+
+	<insert id="insertUserDataManage" parameterType="java.util.Map">
+		<selectKey order="BEFORE" keyProperty="userDataManageNo" resultType="string">
+			SELECT nextval('tb_user_data_manage_user_data_manage_no_seq'::regclass)
+		</selectKey>
+		INSERT INTO TB_USER_DATA_MANAGE
+		(
+			USER_DATA_MANAGE_NO
+			, SJ
+<!-- 			, SVC_DATA_NM -->
+<!-- 			, FRNCHS_NO -->
+			, DATA_STDR_YEAR
+			, ATCHMNFL_NO
+			, LAST_UPDT_USER_NO
+			, REGIST_DT
+		) VALUES (
+			#{userDataManageNo}::INTEGER
+			, #{sj}
+<!-- 			, #{svcDataNm} -->
+<!-- 			, #{frnchsNo} -->
+			, #{dataStdrYear}
+			, #{atchmnflNo}::INTEGER
+			, #{ssUserNo}::INTEGER
+			, NOW()
+		)
+	</insert>
+
+	<insert id="insertUserData" parameterType="java.util.Map">
+		INSERT INTO TB_USER_DATA
+		<foreach item="value" index="key" collection="_parameter.entrySet()" open="("  separator="," close=")">
+			${key}
+		</foreach>
+		VALUES
+		<foreach item="value" index="key" collection="_parameter.entrySet()" open="("  separator="," close=")">
+			<choose>
+				<when test='key eq "USER_DATA_MANAGE_NO"'>
+					#{value}::INTEGER
+				</when>
+				<otherwise>
+					#{value}
+				</otherwise>
+			</choose>
+
+		</foreach>
+	</insert>
+
+	<select id="selectDataMngListCount" parameterType="java.util.Map" resultType="_int">
+		SELECT
+			COUNT(*)
+		FROM
+			TB_USER_DATA_MANAGE UDM
+			INNER JOIN TB_ATCHMNFL_STRE TAS ON UDM.ATCHMNFL_NO = TAS.ATCHMNFL_NO AND TAS.ATCHMNFL_STTUS_CODE != 'FS03'
+		WHERE
+			1=1
+			<include refid="dataListCondition" />
+	</select>
+
+	<select id="selectDataMngList" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			*
+			, ROW_NUMBER() OVER (ORDER BY USER_DATA_MANAGE_NO ASC) AS RN
+		FROM (
+			SELECT
+				UDM.USER_DATA_MANAGE_NO
+				, UDM.SJ
+				, UDM.DATA_STDR_YEAR
+				, UDM.ATCHMNFL_NO
+				, UDM.LAST_UPDT_USER_NO
+				, TO_CHAR(UDM.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+				, TAS.INPUT_FILE_NM
+				, TAS.FILE_SN
+				, TAS.ATCHMNFL_STTUS_CODE
+			FROM
+				TB_USER_DATA_MANAGE UDM
+				INNER JOIN TB_ATCHMNFL_STRE TAS ON UDM.ATCHMNFL_NO = TAS.ATCHMNFL_NO AND TAS.ATCHMNFL_STTUS_CODE != 'FS03'
+			WHERE
+				1=1
+				<include refid="dataListCondition" />
+		) TMP
+		ORDER BY
+			USER_DATA_MANAGE_NO DESC
+		LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+
+	<select id="selectSurvGroupYear" resultType="egovMap">
+		SELECT
+			TO_CHAR(SER.REGIST_DT, 'YYYY') AS SURV_YEAR
+		FROM
+			TB_SVC_EXAMIN_IEM SEI
+			INNER JOIN TB_SVC_EXAMIN_RESULT SER ON SEI.EVL_IEM_NO = SER.EVL_IEM_NO
+		GROUP BY
+			SURV_YEAR
+		ORDER BY
+			SURV_YEAR DESC
+	</select>
+
+	<select id="selectSurvYearGroupMonth" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			TO_CHAR(SER.REGIST_DT, 'MM') AS SURV_YEAR_MONTH
+		FROM
+			TB_SVC_EXAMIN_IEM SEI
+			INNER JOIN TB_SVC_EXAMIN_RESULT SER ON SEI.EVL_IEM_NO = SER.EVL_IEM_NO
+		WHERE
+			TO_CHAR(SER.REGIST_DT, 'YYYY') = #{survYear}
+		GROUP BY
+			SURV_YEAR_MONTH
+		ORDER BY
+			SURV_YEAR_MONTH ASC
+	</select>
+
+	<select id="selectSurvListByAccdtExaminNo" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			ACCDT_EXAMIN_NO
+			, EVL_IEM_NO
+			, EVL_IEM_CN
+			, GRAD_CODE_ID
+			, LAST_UPDT_USER_NO
+			, TO_CHAR(REGIST_DT, 'YYYY-MM-DD') AS REGIST_DT
+			, TO_CHAR(UPDT_DT, 'YYYY-MM-DD') AS UPDT_DT
+		FROM
+			TB_SVC_EXAMIN_IEM
+		WHERE
+			ACCDT_EXAMIN_NO = #{accdtExaminNo}::INTEGER
+		ORDER BY
+			EVL_IEM_NO ASC
+	</select>
+
+
+	<select id="selectSurvDataByCondition" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			SEI.EVL_IEM_CN
+			, CC.CODE_VALUE_NM
+			, COUNT(*) AS CNT
+		FROM
+			TB_SVC_EXAMIN_IEM SEI
+			INNER JOIN TB_SVC_EXAMIN_RESULT SER ON SEI.EVL_IEM_NO = SER.EVL_IEM_NO
+			INNER JOIN TB_USER U ON SER.USER_NO = U.USER_NO
+			INNER JOIN TB_CMMN_CODE CC ON CC.CODE_ID = SEI.GRAD_CODE_ID AND CC.CODE_VALUE = SER.GRAD_CODE_VALUE
+		WHERE
+			1=1
+			AND SEI.EVL_IEM_NO  = #{evlIemNo}::INTEGER
+			AND TO_CHAR(SER.REGIST_DT, 'YYYY') = #{survYear}
+			<if test='survYearMonth != "all"'>
+				AND TO_CHAR(SER.REGIST_DT, 'MM') = #{survYearMonth}
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(userSeCode)'>
+				AND U.USER_SE_CODE = #{userSeCode}
+			</if>
+		GROUP BY
+			SEI.EVL_IEM_NO,
+			SEI.EVL_IEM_CN,
+			SER.GRAD_CODE_VALUE,
+			CC.CODE_VALUE_NM
+	</select>
+	
+	<select id="selectWeekCountList" parameterType="java.util.Map" resultType="egovMap">
+	/*selectWeekCountList 연월별 주차수 조회*/
+		SELECT
+			/*
+			TARGET_DATE AS search_date
+		  , TO_CHAR(TARGET_DATE, 'W') AS search_week
+		  	*/
+			DISTINCT TO_CHAR(TARGET_DATE, 'W') as search_week
+		FROM
+			(SELECT DATE_TRUNC('MONTH', TO_DATE(#{searchMonth}, 'YYYYMM'))::DATE + I AS target_date
+			   FROM GENERATE_SERIES(0, 30) AS T(I) ) a
+		WHERE
+			EXTRACT(MONTH
+		FROM
+			TARGET_DATE) = EXTRACT(MONTH
+		FROM
+			TO_DATE(#{searchMonth}, 'YYYYMM'))
+	</select>
+
+	<select id="selectAccsStatMonthList" parameterType="java.util.Map" resultType="egovMap">
+	/*selectAccsStatMonthList 일별 접속 통계*/
+		SELECT
+			TMP.SRCH_DATE
+			, EXTRACT(DOW FROM TMP.SRCH_DATE)::INTEGER AS SRCH_WEEK_DAY
+			, COUNT(CASE WHEN TMP.SESION_ID IS NOT NULL THEN 1 END)::INTEGER AS DAY_COUNT
+			, TO_CHAR(TMP.SRCH_DATE::DATE, 'DD')::INTEGER AS SRCH_DAY
+		FROM (
+			SELECT
+				SRCH_DATE, SESION_ID, CONECTR_IP, LOGIN_ID, COUNT(CASE WHEN SESION_ID IS NOT NULL THEN 1 END)::INTEGER AS CNT
+			FROM
+				(
+					SELECT
+						DATE_TRUNC('MONTH', #{searchDate}::DATE)::DATE + (i - 1) AS SRCH_DATE
+						, EXTRACT(DOW FROM DATE_TRUNC('MONTH', #{searchDate}::DATE)::DATE + (i - 1)) AS SRCH_WEEK_DAY
+					FROM
+						GENERATE_SERIES(
+							1, EXTRACT(DAY FROM DATE_TRUNC('MONTH', #{searchDate}::DATE + INTERVAL '1 MONTHS')::DATE - 1)::INTEGER
+						) AS t(i)
+				) SRCH
+				LEFT OUTER JOIN TB_CONECT_LOG CL ON CL.CONECT_DT::DATE = SRCH.SRCH_DATE
+					<if test='!@org.springframework.util.StringUtils@isEmpty(userSeCode)'>
+<!--  						AND (CASE WHEN CL.LOGIN_ID IS NULL THEN NULL ELSE (SELECT TU.USER_SE_CODE FROM TB_USER TU WHERE TU.USER_NO::TEXT = CL.LOGIN_ID) END) = CASE WHEN #{userSeCode} = 'none' THEN NULL ELSE #{userSeCode} END
+-->						AND (
+							CASE WHEN CL.LOGIN_ID IS NULL THEN NULL 
+							ELSE (
+								SELECT TU.USER_SE_CODE 
+								FROM (
+									SELECT 'US00' AS USER_SE_CODE
+										, '0' AS USER_NO 
+									UNION 
+									SELECT USER_SE_CODE
+											, USER_NO  
+									FROM TB_USER 
+									UNION 
+									SELECT USER_SE_CODE
+											, USER_NO 
+									FROM tb_brand_hedofc_mngr 
+								) TU 
+								WHERE TU.USER_NO::TEXT = CL.LOGIN_ID
+							) 
+							END
+						) = #{userSeCode}
+					</if>
+			GROUP BY
+				SRCH_DATE, SESION_ID, CONECTR_IP, LOGIN_ID
+		) TMP
+		GROUP BY
+			SRCH_DATE
+		ORDER BY
+			TMP.SRCH_DATE ASC
+	</select>
+	
+	<select id="selectAccsStatDetailListCount" parameterType="java.util.Map" resultType="_int">
+	/*selectAccsStatDetailListCount 로그 통계 공통 목록 수 조회*/
+		SELECT
+			count(*)
+		FROM (
+			SELECT
+				CL.LOGIN_ID
+			FROM
+				TB_CONECT_LOG CL
+			WHERE
+				1=1
+				<if test='!@org.springframework.util.StringUtils@isEmpty(searchDate)'>
+					AND TO_CHAR(CONECT_DT, 'YYYY-MM-DD') = #{searchDate}
+				</if>
+				<if test='!@org.springframework.util.StringUtils@isEmpty(searchYear) and !@org.springframework.util.StringUtils@isEmpty(searchMonth)'>
+					AND TO_CHAR(CONECT_DT, 'YYYY-MM') = (#{searchYear} || '-' || LPAD(#{searchMonth}::TEXT,2,'0'))
+				</if>
+				<if test='!@org.springframework.util.StringUtils@isEmpty(searchWeek)'>
+					AND TO_CHAR(CONECT_DT, 'YYYY-MM-DD') IN (
+						SELECT to_char(target_date, 'YYYY-MM-DD') 
+						  FROM ( SELECT date_trunc('MONTH',  TO_DATE((#{searchYear} || '-' || LPAD(#{searchMonth}::TEXT,2,'0')), 'YYYY-MM'))::DATE + i AS target_date 
+								   FROM generate_series(0, 30) AS t(i) ) A 
+						 WHERE EXTRACT(MONTH FROM target_date) = EXTRACT(MONTH FROM TO_DATE((#{searchYear} || '-' || LPAD(#{searchMonth}::TEXT,2,'0')), 'YYYY-MM'))
+						   AND to_char(target_date, 'W') = #{searchWeek}
+					) 
+				</if>
+			GROUP BY  SESION_ID, CONECTR_IP, LOGIN_ID
+		) TMP
+		<!-- LEFT OUTER JOIN TB_USER TU ON TMP.LOGIN_ID = TU.USER_NO::TEXT -->
+		LEFT OUTER JOIN (
+			SELECT 
+				'0' AS USER_NO,
+				'' AS USER_NM,
+				'US00' AS USER_SE_CODE
+			UNION
+			SELECT 
+				USER_NO,
+				USER_NM,
+				USER_SE_CODE
+			FROM TB_USER
+			UNION
+			SELECT 
+				USER_NO,
+				charger_nm AS USER_NM,
+				USER_SE_CODE
+			FROM TB_BRAND_HEDOFC_MNGR
+		) TU ON TMP.LOGIN_ID = TU.USER_NO::TEXT
+		WHERE
+			1=1
+			<if test='!@org.springframework.util.StringUtils@isEmpty(userSeCode)'>
+				<!-- <choose>
+					<when test='userSeCode == "US00"'>
+						AND TU.USER_SE_CODE IS NULL
+					</when>
+					<otherwise>
+						AND TU.USER_SE_CODE = #{userSeCode}
+					</otherwise>
+				</choose> -->
+				AND TU.USER_SE_CODE = #{userSeCode}
+			</if>
+	</select>
+	
+	<select id="selectAccsStatDetailList" parameterType="java.util.Map" resultType="egovMap">
+	/*selectAccsStatDetailList 로그 통계 공통 목록 조회*/
+		SELECT
+			TMP.*
+			<!-- , COALESCE(TU.USER_NM , '비로그인') AS USER_NM -->
+			, TU.USER_NM
+			, COALESCE((SELECT CODE_VALUE_NM FROM TB_CMMN_CODE WHERE CODE_ID = 'USER_SE_CODE' AND CODE_VALUE = TU.USER_SE_CODE), '') AS USER_SE_NM
+			, ROW_NUMBER() OVER (ORDER BY MAX_CONECT_DT ASC) AS RN
+			, TU.USER_SE_CODE::TEXT
+			, TO_CHAR(TMP.MAX_CONECT_DT, 'YYYY-MM-DD') AS CONVERT_CONECT_DT
+		FROM (
+			SELECT
+				CL.SESION_ID
+				, CL.CONECTR_IP
+				, CL.LOGIN_ID
+				, CASE WHEN COUNT(*) = 1 THEN '측정불가' ELSE TO_CHAR(MAX(CL.CONECT_DT) - MIN(CL.CONECT_DT),'HH24:MI:SS') END AS LOGIN_TIME
+				, MAX(CONECT_DT) AS MAX_CONECT_DT
+			FROM
+				TB_CONECT_LOG CL
+			WHERE
+				1=1
+				<if test='!@org.springframework.util.StringUtils@isEmpty(searchDate)'>
+					AND TO_CHAR(CONECT_DT, 'YYYY-MM-DD') = #{searchDate}
+				</if>
+				<if test='!@org.springframework.util.StringUtils@isEmpty(searchYear) and !@org.springframework.util.StringUtils@isEmpty(searchMonth)'>
+					AND TO_CHAR(CONECT_DT, 'YYYY-MM') = (#{searchYear} || '-' || LPAD(#{searchMonth}::TEXT,2,'0'))
+				</if>
+				<if test='!@org.springframework.util.StringUtils@isEmpty(searchWeek)'>
+					AND TO_CHAR(CONECT_DT, 'YYYY-MM-DD') IN (
+						SELECT to_char(target_date, 'YYYY-MM-DD') 
+						  FROM ( SELECT date_trunc('MONTH',  TO_DATE((#{searchYear} || '-' || LPAD(#{searchMonth}::TEXT,2,'0')), 'YYYY-MM'))::DATE + i AS target_date 
+								   FROM generate_series(0, 30) AS t(i) ) A 
+						 WHERE EXTRACT(MONTH FROM target_date) = EXTRACT(MONTH FROM TO_DATE((#{searchYear} || '-' || LPAD(#{searchMonth}::TEXT,2,'0')), 'YYYY-MM'))
+						   AND to_char(target_date, 'W') = #{searchWeek}
+					) 
+				</if>
+			GROUP BY  SESION_ID, CONECTR_IP, LOGIN_ID
+		) TMP
+		<!-- LEFT OUTER JOIN TB_USER TU ON TMP.LOGIN_ID = TU.USER_NO::TEXT --><!-- 브랜드관리자 추가 -->
+		LEFT OUTER JOIN (
+			SELECT 
+				'0' AS USER_NO,
+				'비로그인' AS USER_NM,
+				'US00' AS USER_SE_CODE
+			UNION
+			SELECT 
+				USER_NO,
+				USER_NM,
+				USER_SE_CODE
+			FROM TB_USER
+			UNION
+			SELECT 
+				USER_NO,
+				charger_nm AS USER_NM,
+				USER_SE_CODE
+			FROM TB_BRAND_HEDOFC_MNGR
+		) TU ON TMP.LOGIN_ID = TU.USER_NO::TEXT
+		WHERE
+			1=1
+			<if test='!@org.springframework.util.StringUtils@isEmpty(userSeCode)'>
+				<!-- <choose>
+					<when test='userSeCode == "US00"'>
+						AND TU.USER_SE_CODE IS NULL
+					</when>
+					<otherwise>
+						AND TU.USER_SE_CODE = #{userSeCode}
+					</otherwise>
+				</choose> -->
+				AND TU.USER_SE_CODE = #{userSeCode}
+			</if>
+		<choose>
+			<when test='!@org.springframework.util.StringUtils@isEmpty(type) and type eq "excel"'>
+				ORDER BY
+					MAX_CONECT_DT ASC
+			</when>
+			<otherwise>
+				ORDER BY
+					MAX_CONECT_DT DESC
+				LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="selectAccsStatWeekList" parameterType="java.util.Map" resultType="egovMap">
+	/* selectAccsStatWeekList 주별 접속통계 */
+		SELECT 
+			   wk
+			 /* , NULLIF(sum(cnt),0) cnt */
+			 , COUNT(CASE WHEN a.sesion_id IS NOT NULL THEN 1 END)::INTEGER AS cnt
+		  FROM (
+			SELECT TO_CHAR(conect_dt, 'YYYY-MM-DD') dt
+			     , sesion_id
+			     , CONECTR_IP
+			     , LOGIN_ID
+			     /* , count(*) cnt */
+			     , COUNT(CASE WHEN sesion_id IS NOT NULL THEN 1 END)::INTEGER AS cnt
+			  FROM tb_conect_log
+			 WHERE to_char(conect_dt, 'YYYY-MM') =  #{searchYear}|| '-' || LPAD(#{searchMonth}::TEXT,2,'0')
+			 <if test='!@org.springframework.util.StringUtils@isEmpty(userSeCode)'>
+	<!-- 			<if test='userSeCode == "US00"'>
+					AND LOGIN_ID = 0::text
+				</if>
+				<if test='userSeCode != "US00"'> -->
+				AND LOGIN_ID IN (
+					SELECT USER_NO::TEXT
+					FROM (
+						SELECT '0' AS USER_NO, 'US00' AS USER_SE_CODE 
+						UNION
+						SELECT USER_NO, USER_SE_CODE FROM TB_USER
+						UNION
+						SELECT USER_NO, USER_SE_CODE FROM TB_BRAND_HEDOFC_MNGR
+					) A
+					WHERE A.USER_SE_CODE = #{userSeCode}
+				 )
+				<!-- </if> -->
+			 </if>
+			 GROUP BY TO_CHAR(conect_dt, 'YYYY-MM-DD'), sesion_id,CONECTR_IP, LOGIN_ID
+		  		) A
+		 RIGHT outer join (
+		 SELECT to_char(target_date, 'YYYY-MM-DD') AS dt ,to_char(target_date, 'W') AS wk 
+				  FROM ( SELECT date_trunc('MONTH',  TO_DATE(#{searchYear}|| '-' || LPAD(#{searchMonth}::TEXT,2,'0'), 'YYYY-MM'))::DATE + i AS target_date 
+						   FROM generate_series(0, 30) AS t(i) ) A 
+				 WHERE EXTRACT(MONTH FROM target_date) = EXTRACT(MONTH FROM TO_DATE(#{searchYear}|| '-' || LPAD(#{searchMonth}::TEXT,2,'0'), 'YYYY-MM'))
+		 ) b on a.dt=b.dt
+		 GROUP BY wk 
+	</select>
+
+	<select id="selectAccsStatYearList" parameterType="java.util.Map" resultType="egovMap">
+	/*selectAccsStatYearList 월별 접속통계*/
+		SELECT
+			TMP.SRCH_YEAR_MONTH
+			, COUNT(CASE WHEN TMP.SESION_ID IS NOT NULL THEN 1 END)::INTEGER MONTH_COUNT
+			, RIGHT(TMP.SRCH_YEAR_MONTH,2)::INTEGER AS SRCH_MONTH
+		FROM (
+			SELECT
+				SRCH_YEAR_MONTH, SESION_ID, CONECTR_IP, LOGIN_ID
+				, COUNT(*)
+			FROM
+				(
+					SELECT
+						CONCAT(#{searchYear}, '-', LPAD(I::TEXT,2,'0')) AS SRCH_YEAR_MONTH
+					FROM
+						GENERATE_SERIES(
+							1, 12
+						) AS T(I)
+				) SRCH
+				LEFT OUTER JOIN TB_CONECT_LOG CL ON TO_CHAR(CL.CONECT_DT, 'YYYY-MM') = SRCH.SRCH_YEAR_MONTH
+					<if test='!@org.springframework.util.StringUtils@isEmpty(userSeCode)'>
+<!-- 						AND (CASE WHEN CL.LOGIN_ID IS NULL THEN NULL ELSE (SELECT TU.USER_SE_CODE FROM TB_USER TU WHERE TU.USER_NO::TEXT = CL.LOGIN_ID) END) = CASE WHEN #{userSeCode} = 'none' THEN NULL ELSE #{userSeCode} END
+-->						AND (
+							CASE WHEN CL.LOGIN_ID IS NULL THEN NULL 
+							ELSE (
+								SELECT TU.USER_SE_CODE 
+								FROM (
+									SELECT 'US00' AS USER_SE_CODE
+										, '0' AS USER_NO 
+									UNION 
+									SELECT USER_SE_CODE
+											, USER_NO  
+									FROM TB_USER 
+									UNION 
+									SELECT USER_SE_CODE
+											, USER_NO 
+									FROM tb_brand_hedofc_mngr 
+								) TU 
+								WHERE TU.USER_NO::TEXT = CL.LOGIN_ID
+							) 
+							END
+						) = #{userSeCode}
+					</if>
+			GROUP BY
+				SRCH_YEAR_MONTH, SESION_ID, CONECTR_IP, LOGIN_ID
+		) TMP
+		GROUP BY
+			TMP.SRCH_YEAR_MONTH
+		ORDER BY
+			TMP.SRCH_YEAR_MONTH ASC
+	</select>
+	
+	<select id="selectFairTradeVideoList" parameterType="java.util.Map" resultType="egovMap">
+		SELECT /*selectFairTradeVideoList*/
+			A.FAIR_TRADE_SN
+			, A.FAIR_TRADE_SE_CODE
+			, (SELECT X.CODE_VALUE_NM FROM TB_CMMN_CODE X WHERE X.CODE_ID = 'FAIR_TRADE_SE_CODE' AND X.CODE_VALUE = A.FAIR_TRADE_SE_CODE) AS FAIR_TRADE_SE_CODE_NM
+			, A.SJ
+			, TO_CHAR(A.PST_SRT_DT,'YYYY-MM-DD') AS PST_SRT_DT
+			, TO_CHAR(A.PST_AND_DT,'YYYY-MM-DD') AS PST_AND_DT
+			, TO_CHAR(A.REGIST_DT,'YYYY-MM-DD') AS REGIST_DT
+		FROM
+			TB_FAIR_TRADE_BBS AS A
+		WHERE 1=1
+	   	AND A.DELETE_AT = 'N'
+		<if test='!@org.springframework.util.StringUtils@isEmpty(fairTradeSeCode)'>
+	       AND A.FAIR_TRADE_SE_CODE = #{fairTradeSeCode}
+		</if>
+		<!-- 시큐어 코딩 수정 - 21.03.17 -->
+		<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+		   AND A.SJ like '%'|| #{schTxt} ||'%'
+		</if>
+		ORDER BY
+			A.FAIR_TRADE_SN DESC 
+	 	LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+	
+	<select id="selectFairTradeVideoListCount" parameterType="java.util.Map" resultType="int">
+		SELECT /*selectFairTradeVideoListCount*/
+			COUNT(1)
+		FROM
+			TB_FAIR_TRADE_BBS AS A
+		WHERE 1=1
+	   	AND A.DELETE_AT = 'N'
+		<if test='!@org.springframework.util.StringUtils@isEmpty(schFntnSportCnSeCode)'>
+	       AND A.FNTN_SPORT_CN_SE_CODE = #{schFntnSportCnSeCode}
+		</if>
+		<!-- 시큐어 코딩 수정 - 21.03.17 -->
+		<if test='!@org.springframework.util.StringUtils@isEmpty(schTxt)'>
+		   AND A.SJ like '%'|| #{schTxt} ||'%'
+		</if>
+	</select>
+	
+	<select id="selectFairTradeVideoInfo" parameterType="java.util.Map" resultType="egovMap">
+	SELECT /*selectFairTradeVideoInfo*/
+		FT.FAIR_TRADE_SN
+		, FT.FAIR_TRADE_SE_CODE
+		, FT.SJ
+		, FT.CN
+		, FT.USE_AT
+		, FT.REGIST_USER_NO
+		, FT.LAST_UPDT_USER_NO
+		, TO_CHAR(FT.PST_SRT_DT , 'YYYY-MM-DD') AS PST_SRT_DT
+		, TO_CHAR(FT.PST_AND_DT , 'YYYY-MM-DD') AS PST_AND_DT
+		, TO_CHAR(FT.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+		, TO_CHAR(FT.UPDT_DT , 'YYYY-MM-DD') AS UPDT_DT
+		, FT.ATCHMNFL_NO
+		, TAS.HASHCD
+		, TAS.FILE_SN
+		, TAS.INPUT_FILE_NM
+		, TAS.ATCHMNFL_STTUS_CODE
+	FROM
+		TB_FAIR_TRADE_BBS FT
+		LEFT OUTER JOIN TB_ATCHMNFL_STRE TAS ON FT.ATCHMNFL_NO = TAS.ATCHMNFL_NO AND TAS.ATCHMNFL_STTUS_CODE != 'FS03'
+	WHERE 
+		FT.FAIR_TRADE_SN = #{fairTradeSn}::INTEGER
+	</select>
+	
+	<select id="selectFairTradeCodeList" parameterType="java.util.Map" resultType="egovMap">
+	SELECT
+		CODE_VALUE,
+		CODE_VALUE_NM
+	FROM 
+		TB_CMMN_CODE 
+	WHERE 
+		CODE_ID = 'FAIR_TRADE_SE_CODE'
+	</select>
+	
+	<select id="selectBoardOptions" parameterType="java.util.Map" resultType="egovMap">
+		SELECT /* selectBoardOptions */
+			   A.MENU_GROUP_CODE
+			 , A.MENU_GROUP_NM
+		  FROM TB_MENU_GROUP_MANAGE A
+		     , TB_MENU_MANAGE B
+		 WHERE A.MENU_GROUP_CODE = B.MENU_GROUP_CODE
+		   AND A.MENU_SE_CODE = 'U' --A : 관리자 메뉴 / U : 사용자 메뉴
+		   AND A.USE_AT = 'Y'
+		   AND B.USE_AT = 'Y'
+		   AND B.MENU_ORDR = 1
+		   AND A.MENU_GROUP_CODE NOT IN ( 'U10' )
+		 ORDER BY A.MENU_GROUP_ORDR, B.MENU_ORDR
+	</select>
+	
+	<select id="selectBoardMngListCount" parameterType="java.util.Map" resultType="_int">
+		SELECT /* selectBoardMngListCount */
+			   COUNT(*)
+		  FROM
+			   TB_BBS_MASTER
+		 WHERE 1=1
+		   AND delete_at = 'N'
+	</select>
+	
+	<select id="selectBoardMngList" parameterType="java.util.Map" resultType="egovMap">
+	   SELECT /* selectBoardMngList */
+			*
+			, ROW_NUMBER() OVER (ORDER BY MASTER_SN ASC) AS RN
+		FROM (
+			SELECT
+				  A.MASTER_SN
+				, (SELECT menu_group_nm FROM TB_MENU_GROUP_MANAGE WHERE MENU_GROUP_CODE = A.MENU_GROUP_CODE) AS BBS_LC
+				, A.BBS_NM
+				, TO_CHAR(A.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+			FROM
+				TB_BBS_MASTER A
+			WHERE 1=1
+			  AND A.delete_at = 'N'
+			<if test='!@org.springframework.util.StringUtils@isEmpty(searchType)'>
+	       	  AND A.MENU_GROUP_CODE = #{searchType}
+			</if>
+			<if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+		  	  AND A.BBS_NM LIKE '%'|| #{searchText} ||'%'
+			</if>
+		) TMP
+		ORDER BY
+			MASTER_SN ASC
+		LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+	
+	<select id="selectBoardMngInfo" parameterType="java.util.Map" resultType="egovMap">
+		SELECT /* selectBoardMngInfo */
+			  A.MASTER_SN
+			, (SELECT menu_group_nm FROM TB_MENU_GROUP_MANAGE WHERE MENU_GROUP_CODE = A.MENU_GROUP_CODE) AS BBS_LC
+			, A.BBS_NM
+			, TO_CHAR(A.REGIST_DT , 'YYYY-MM-DD') AS REGIST_DT
+			, A.BBS_CODE
+			, A.MENU_GROUP_CODE
+			, A.BBS_DC
+			, A.ANSWER_AT
+			, A.COMMENT_AT
+			, A.ATCHMNFL_AT
+			, A.ATCHMNFL_CO
+			, A.USE_AT
+		FROM
+			TB_BBS_MASTER A
+		WHERE 1=1
+		  AND A.delete_at = 'N'
+		  AND A.MASTER_SN = #{masterSn}::INTEGER
+	</select>
+	
+	<update id="updateBoardMngInfo" parameterType="java.util.Map">
+		UPDATE /* updateBoardMngInfo */
+			  TB_BBS_MASTER
+		  SET BBS_CODE = #{bbsCode}
+			, BBS_LC = '/board/' || #{bbsCode} || '.do?val='
+			, BBS_NM = #{bbsNm}
+			, BBS_DC = #{bbsDc}
+			<!-- , ANSWER_AT = #{answerAt} -->
+			, COMMENT_AT = #{commentAt}
+			, ATCHMNFL_CO = #{atchmnflCo}::INTEGER
+			, ATCHMNFL_AT = #{atchmnflAt}
+			, USE_AT = #{useAt}
+			, UPDT_USER_NO = #{ssUserNo}::INTEGER
+			, UPDT_DT = NOW()
+			, MENU_GROUP_CODE = #{menuGroupCode}
+		WHERE
+			MASTER_SN = #{masterSn}::INTEGER
+	</update>
+	
+	<update id="deleteBoardMngList" parameterType="java.util.Map">
+		UPDATE /* deleteBoardMngList */
+			  TB_BBS_MASTER
+		  SET UPDT_USER_NO = #{ssUserNo}::INTEGER
+			, UPDT_DT = NOW()
+			, DELETE_AT = 'Y'
+			, USE_AT = 'Y'
+		WHERE
+			MASTER_SN = #{masterSn}::INTEGER
+	</update>
+	
+	<insert id="insertBoardMngInfo" parameterType="java.util.Map">
+		INSERT  /* insertBoardMngInfo */
+		  INTO TB_BBS_MASTER (
+			BBS_CODE
+			, BBS_LC
+			, BBS_NM
+			, BBS_DC
+			<!-- , ANSWER_AT -->
+			, COMMENT_AT
+			, ATCHMNFL_CO
+			, ATCHMNFL_AT
+			, REGIST_DT
+			, REGIST_USER_NO
+			, MENU_GROUP_CODE
+		) VALUES (
+			#{bbsCode}
+			, '/board/' || #{bbsCode} || '.do?val='
+			, #{bbsNm}
+			, #{bbsDc}
+			<!-- , #{answerAt} -->
+			, #{commentAt}
+			, #{atchmnflCo}::INTEGER
+			, #{atchmnflAt}
+			, NOW()
+			, #{ssUserNo}::INTEGER
+			, #{menuGroupCode}
+		)
+	</insert>
+	
+	<update id="updateFairTradeVideoInfo" parameterType="java.util.Map">
+		UPDATE TB_FAIR_TRADE_BBS
+		SET
+			SJ = #{sj}
+			, CN = #{cn}
+			, FAIR_TRADE_SE_CODE = #{fairTradeSeCode}
+			, ATCHMNFL_NO = #{atchmnflNo}::INTEGER
+			, LAST_UPDT_USER_NO = #{ssUserNo}::INTEGER
+			, PST_SRT_DT = #{pstSrtDt}::timestamp
+			, PST_AND_DT = #{pstAndDt}::timestamp
+			, UPDT_DT = NOW()
+		WHERE
+			FAIR_TRADE_SN = #{fairTradeSn}::INTEGER
+	</update>
+	
+	<insert id="insertFairTradeVideoInfo" parameterType="java.util.Map">
+		INSERT INTO TB_FAIR_TRADE_BBS (
+			FAIR_TRADE_SE_CODE
+			, SJ
+			, CN
+			, ATCHMNFL_NO
+			, DELETE_AT
+			, USE_AT
+			, REGIST_USER_NO
+			, PST_SRT_DT
+			, PST_AND_DT
+			, REGIST_DT
+		) VALUES (
+			#{fairTradeSeCode}
+			, #{sj}
+			, #{cn}
+			, #{atchmnflNo}::INTEGER
+			, 'N'
+			, 'Y'
+			, #{ssUserNo}::INTEGER
+			, #{pstSrtDt}::timestamp
+			, #{pstAndDt}::timestamp
+			, NOW()
+		)
+	</insert>
+	
+	<update id="deleteFairTradeVideoInfo" parameterType="java.util.Map">
+		UPDATE TB_FAIR_TRADE_BBS
+		SET
+			DELETE_AT = 'Y'
+			, UPDT_DT = NOW()
+		WHERE
+			FAIR_TRADE_SN = #{fairTradeSn}::INTEGER
+	</update>
+	
+	<select id="selectFairTradeVideoInfoByNo" parameterType="java.util.Map" resultType="egovMap">
+		SELECT
+			FAIR_TRADE_SN
+			, FAIR_TRADE_SE_CODE
+			, REGIST_USER_NO
+			, LAST_UPDT_USER_NO
+			, SJ
+			, CN
+			, ATCHMNFL_NO
+			, DELETE_AT
+			, PST_SRT_DT
+			, PST_AND_DT
+			, REGIST_DT
+			, UPDT_DT
+			, EXPSR_SN
+			, USE_AT
+		FROM 
+			TB_FAIR_TRADE_BBS
+		WHERE
+			FAIR_TRADE_SN = #{fairTradeSn}::INTEGER
+	</select>
+	
+	<!-- 설문관리 건수 -->
+	<select id="selectQustnListCnt" resultType="int">
+		SELECT COUNT(*)
+		  FROM tb_qustnr
+		 WHERE delete_at = 'N'
+	</select>
+	
+	<!-- 설문관리 리스트 -->
+	<select id="selectQustnList" resultType="egovMap">
+		SELECT /* selectQustnList */
+			   ROW_NUMBER() OVER (ORDER BY qustnr_sn DESC) AS RN
+			 , a.qustnr_sj 
+			 , a.qustnr_sn
+			 , a.qustnr_purps 
+			 , TO_CHAR(TO_date(begin_de,'YYYYMMDD'),'YYYY-MM-DD') AS begin_de
+			 , TO_CHAR(TO_date(end_de,'YYYYMMDD'),'YYYY-MM-DD') AS end_de
+			 , (
+				 SELECT COUNT(DISTINCT user_ip)
+			   	   FROM tb_qustnr_annymty_result
+			  	  WHERE qustnr_sn = a.qustnr_sn
+			   ) res_cnt
+			 , a.progress_at 
+			 , TO_CHAR(a.regist_dt,'YYYY-MM-DD') AS regist_dt
+		  FROM tb_qustnr a
+		 WHERE delete_at = 'N'
+		 <if test='!@org.springframework.util.StringUtils@isEmpty(searchText)'>
+			 <if test='"A".equals(searchType)'>
+			  	AND a.qustnr_sj LIKE '%' || #{searchText} || '%'
+			 </if>
+			 <if test='"B".equals(searchType)'>
+			  	AND TO_CHAR(a.regist_dt,'YYYYMMDD') = regexp_replace(#{searchText}, '[^0-9]+', '', 'g')
+			 </if>
+			 <if test='"C".equals(searchType)'>
+			  	AND a.begin_de  <![CDATA[ <= ]]> regexp_replace(#{searchText}, '[^0-9]+', '', 'g') 
+			  	AND a.end_de  <![CDATA[ >= ]]> regexp_replace(#{searchText}, '[^0-9]+', '', 'g')
+			 </if>
+			 <if test='"D".equals(searchType)'>
+			  	AND a.progress_at = #{searchText} 
+			 </if>
+		 </if>
+		
+		 
+		 ORDER BY qustnr_sn DESC
+		 LIMIT ${recordCountPerPage} OFFSET ${firstRecordIndex}
+	</select>
+	
+	
+	<!-- 설문관리 설문등록 -->
+	<insert id="insertQustn" parameterType="java.util.Map">
+		<selectKey keyProperty="qustnrSn" resultType="int" order="BEFORE">
+	        SELECT CAST(nextval('sq_qustn_sn') AS integer) 
+    	</selectKey>
+		INSERT /* insertQustn */
+		  INTO tb_qustnr(
+		  	   qustnr_sn
+		  	 , qustnr_sj
+		  	 , qustnr_purps 
+			 , begin_de 
+			 , end_de 
+			 , regist_user_no
+		  )
+	  VALUES (
+	  		   #{qustnrSn}
+	  		 , #{qustnrSj}
+		  	 , #{qustnrPurps} 
+			 , #{beginDe}
+			 , #{endDe}
+			 , #{ssUserNo}::INTEGER
+	  )
+	</insert>
+	
+	<!-- 설문관리 설문정보 수정 -->
+	<update id="updateQustn" parameterType="java.util.Map">
+		UPDATE /* updateQustn */
+			   tb_qustnr
+		   SET qustnr_sj = #{qustnrSj}
+		   	 , qustnr_purps = #{qustnrPurps}
+		   	 , begin_de = #{beginDe}
+		   	 , end_de = #{endDe}
+		   	 , updt_user_no = #{ssUserNo}::INTEGER
+		   	 , updt_dt = now()
+		 WHERE qustnr_sn = #{qustnrSn}::INTEGER
+	</update>
+	
+	<!-- 설문관리 설문정보 삭제 -->
+	<update id="updateQustnDel" parameterType="java.util.Map">
+		UPDATE /* updateQustnDel */
+			   tb_qustnr
+		   SET delete_at = 'Y'
+		   	 , updt_user_no = #{ssUserNo}::INTEGER
+		 WHERE qustnr_sn = #{qustnrSn}::INTEGER
+	</update>
+	
+	<!-- 설문관리 질문문항 삭제 -->
+	<delete id="deleteQustnrQestn" parameterType="java.util.Map">
+		DELETE /* deleteQustnrQestn */
+		  FROM tb_qustnr_qestn
+		 WHERE qustnr_sn = #{qustnrSn}::INTEGER
+	</delete>
+	
+	<!-- 설문관리 답변문항 삭제 -->
+	<delete id="deleteQustnrAnswer" parameterType="java.util.Map">
+		DELETE /* deleteQustnrAnswer */
+		  FROM tb_qustnr_answer
+		 WHERE qustnr_sn = #{qustnrSn}::INTEGER
+	</delete>
+	
+	<!-- 설문관리 답변문항등록 -->
+	<insert id="insertQustnAnswer" parameterType="java.util.Map">
+		INSERT /* insertQustnAnswer */ 
+		  INTO tb_qustnr_answer(
+		  	   qustnr_sn
+			 , qustnr_qestn_sn
+			 , answer_sn
+			 , answer
+			 , answer_ordr)
+		VALUES (
+			   #{qustnrSn}::INTEGER
+			 , #{qustnrQestnSn}::INTEGER
+			 , #{answerSn}::INTEGER
+			 , #{answer}
+			 , #{answerSn}::INTEGER+1
+		)
+	</insert>
+	
+	<!-- 설문관리 질문문항등록 -->
+	<insert id="insertQustnQestn" parameterType="java.util.Map">
+		INSERT /* insertQustnQestn */ 
+		  INTO tb_qustnr_qestn(
+		  	   qustnr_sn
+			 , qustnr_qestn_sn
+			 , qestn
+			 , qestn_ordr)
+		VALUES (
+			   #{qustnrSn}::INTEGER
+			 , #{qustnrQestnSn}::INTEGER
+			 , #{qestn}
+			 , #{qustnrQestnSn}::INTEGER+1
+		)
+	</insert>
+	
+	
+	
+	<!-- 설문 조회 -->
+	<select id="selectQustn" resultType="egovMap">
+		SELECT /* selectQustn */
+			   a.qustnr_sj 
+			 , a.qustnr_sn
+			 , a.qustnr_purps 
+			 , TO_CHAR(TO_date(begin_de,'YYYYMMDD'),'YYYY-MM-DD') AS begin_de
+			 , TO_CHAR(TO_date(end_de,'YYYYMMDD'),'YYYY-MM-DD') AS end_de
+			 , a.progress_at 
+			 , TO_CHAR(a.regist_dt,'YYYY-MM-DD') AS regist_dt
+		  FROM tb_qustnr a
+		 WHERE a.qustnr_sn = #{qustnrSn}::INTEGER
+	</select>
+	
+	<!-- 설문관리 질문문항 리스트 -->
+	<select id="selectQustnQestnList" resultType="egovMap">
+		SELECT /* selectQustnQestnList */
+			   a.qustnr_sn
+			 , a.qustnr_qestn_sn
+			 , a.qestn
+		  FROM tb_qustnr_qestn a
+		 WHERE a.qustnr_sn = #{qustnrSn}::INTEGER
+	</select>
+	
+	<!-- 설문관리 답변문항 리스트 -->
+	<select id="selectQustnAnswerList" resultType="egovMap">
+		SELECT /* selectQustnAnswerList */
+			   a.qustnr_sn
+			 , a.qustnr_qestn_sn
+			 , a.answer_sn
+			 , a.answer
+		  FROM tb_qustnr_answer a
+		 WHERE a.qustnr_sn = #{qustnrSn}::INTEGER
+	</select>
+	
+	<!-- 설문관리 답변결과 리스트 -->
+	<select id="selectQustnResultList" resultType="egovMap">
+		SELECT /* selectQustnResultList */
+		       a.qustnr_sn
+			 , a.qustnr_qestn_sn
+			 , a.answer_sn
+			 , a.answer
+			 , a.cnt
+		     , ROUND(100.0 * cnt / tot , 1) AS per
+		  FROM ( 
+				SELECT a.qustnr_sn
+					 , a.qustnr_qestn_sn
+					 , a.answer_sn
+					 , a.answer
+					 , COUNT(b.answer_sn) as tot
+					 , COUNT(CASE WHEN a.answer_sn = b.answer_sn THEN 1 END) AS cnt
+				  FROM tb_qustnr_answer a
+				  LEFT OUTER JOIN tb_qustnr_annymty_result b ON a.qustnr_sn = b.qustnr_sn AND a.qustnr_qestn_sn = b.qustnr_qestn_sn
+		 		 WHERE a.qustnr_sn = #{qustnrSn}::INTEGER
+				  <!-- <if test='!@org.springframework.util.StringUtils@isEmpty(searchType)'>
+				  	  AND b.user_no IN (SELECT user_no
+				  	                      FROM tb_user 
+				  	                     WHERE user_se_code = #{searchType}  
+				  	                    )
+				  </if> -->
+				 GROUP BY a.qustnr_sn, a.qustnr_qestn_sn, a.answer_sn
+			) a	 
+		ORDER BY a.qustnr_qestn_sn, a.answer_sn ASC
+	</select>
+	
+	<!-- 회원정보 삭제 -->
+	<select id="selectUserNo" parameterType="java.util.Map" resultType="int">
+		SELECT /*selecteUserNo*/
+			   count(*)
+		FROM TB_USER
+		WHERE user_no = #{userNo}::INTEGER
+	</select>
+	
+	<delete id="deleteUserNo" parameterType="java.util.Map">
+		DELETE /*deleteUserNo*/
+		FROM TB_USER
+		WHERE user_no = #{userNo}::INTEGER
+	</delete>
+	
+<!-- 	<select id="selectBrandUserNo" parameterType="java.util.Map">
+		SELECT /*selectBrandUserNo*/
+			   count(*)
+		FROM TB_BRAND_HEDOFC_MNGR
+		WHERE user_no = #{userNo}::INTEGER
+	</select> -->
+	
+	<delete id="deleteBrandUserNo" parameterType="java.util.Map">
+		DELETE /*deleteBrandUserNo*/
+		FROM TB_BRAND_HEDOFC_MNGR
+		WHERE user_no = #{userNo}::INTEGER
+	</delete>
+	
+		<!-- 담당프랜차이즈정보 조회 -->
+	<select id="selectUserChrgBrandCnt" parameterType="java.util.Map" resultType="int">
+		SELECT COUNT(*) FROM TB_CHRG_BRAND WHERE USER_NO::TEXT = #{userNo}
+	</select>
+	
+		<!-- 담당프랜차이즈정보 삭제 -->
+	<delete id="deleteUserChrgBrand" parameterType="java.util.Map">
+		DELETE FROM TB_CHRG_BRAND WHERE USER_NO::TEXT = #{userNo}
+	</delete>
+</mapper>

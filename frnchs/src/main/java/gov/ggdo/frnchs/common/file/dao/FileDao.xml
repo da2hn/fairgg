@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="gov.ggdo.frnchs.common.file.dao.FileDao">
+
+<!-- 첨부파일 시퀀스 조회 -->
+<select id="selectAtchmnflStreNextSeq" parameterType="java.util.Map" resultType="String">
+SELECT
+	NEXTVAL('SEQ_ATCHMNFL_STRE') AS ATCHMNFL_NO
+
+</select>
+
+<!-- 첨부파일 정보 저장 -->
+<insert id="insertAtchmnflStre" parameterType="java.util.Map">
+INSERT INTO TB_ATCHMNFL_STRE(
+	ATCHMNFL_NO
+	,FILE_SN
+	,INPUT_FILE_NM
+	,FILE_SIZE
+	,FILE_SERVER_COURS
+	,ATCHMNFL_STTUS_CODE
+	,HASHCD
+	,REGIST_DT
+)VALUES(
+	CAST(#{atchmnflNo} AS INTEGER)
+	,(SELECT COALESCE(MAX(FILE_SN),0)+1 FROM TB_ATCHMNFL_STRE WHERE ATCHMNFL_NO::TEXT = #{atchmnflNo})
+	,#{inputFileNm}
+	,#{fileSize}
+	,#{fileServerCours}
+	,#{atchmnflSttusCode}
+	,#{hashcd}
+	,now()
+)
+
+</insert>
+<!-- 첨부파일 정보 조회 -->
+<select id="selectAtchmnflStreList" parameterType="java.util.Map" resultType="gov.ggdo.frnchs.common.file.domain.FileVO">
+SELECT
+	ATCHMNFL_NO,
+	FILE_SN,
+	INPUT_FILE_NM,
+	FILE_SERVER_COURS,
+	ATCHMNFL_STTUS_CODE,
+	HASHCD,
+	REGIST_DT
+FROM
+	TB_ATCHMNFL_STRE
+WHERE 1=1
+<if test='!@org.springframework.util.StringUtils@isEmpty(atchmnflNo)'>
+  AND ATCHMNFL_NO::TEXT = #{atchmnflNo}
+</if>
+<if test='!@org.springframework.util.StringUtils@isEmpty(fileSn)'>
+  AND FILE_SN::TEXT = #{fileSn}
+</if>
+<if test='!@org.springframework.util.StringUtils@isEmpty(arrAtchmnflSttusCode)'>
+	AND ATCHMNFL_STTUS_CODE IN
+	<foreach collection="arrAtchmnflSttusCode" item="item" index="index" open="(" separator="," close=")">
+	#{item}
+	</foreach>
+</if>
+</select>
+
+<!-- 첨부파일 상태 변경 -->
+<update id="updateStatCd" parameterType="java.util.Map">
+UPDATE TB_ATCHMNFL_STRE SET
+	ATCHMNFL_STTUS_CODE = #{atchmnflSttusCode}
+	<if test='atchmnflSttusCode == "FS03"'>
+	,DELETE_DT = now()
+	</if>
+WHERE ATCHMNFL_NO::TEXT = #{atchmnflNo}
+  AND NOT ATCHMNFL_STTUS_CODE = 'FS03' <!-- 오타수정 FC -> FS 21.01.04 , 임시저장이나 저장상태일때 삭제로 저장 가능하도록 수정-->
+ <if test='!@org.springframework.util.StringUtils@isEmpty(arrFileSn)'>
+	AND FILE_SN::TEXT IN
+	<foreach collection="arrFileSn" item="item" index="index" open="(" separator="," close=")">
+		#{item}
+	</foreach>
+</if>
+</update>
+<!-- 임시저장 파일 삭제처리 -->
+<update id="updateStatCdTmp" parameterType="java.util.Map">
+UPDATE TB_ATCHMNFL_STRE SET
+	ATCHMNFL_STTUS_CODE = #{atchmnflSttusCode}
+	<if test='atchmnflSttusCode == "FS03"'>
+	,DELETE_DT = now()
+	</if>
+WHERE ATCHMNFL_NO::TEXT = #{atchmnflNo}
+  AND ATCHMNFL_STTUS_CODE = 'FS01'
+</update>
+</mapper>

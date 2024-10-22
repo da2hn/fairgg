@@ -1,0 +1,7 @@
+@charset "UTF-8";
+
+/* .mSub3 dt .col .rt{position:absolute;top:50%;right:10px;margin:-11px 0 0;} */
+/* .mSub3 dt .col .rt a{display:block;background:url(../images/ico_up2.png) 50% 50% no-repeat;text-indent:-9999px;font-size:0;width:11px;height:11px;} */
+.mSub3 dt .col .rt a.sortUp{background-image:url(../images/ico_up2_on.png);}
+/* .mSub3 dt .col .rt a.iDown{background-image:url(../images/ico_down2.png);} */
+.mSub3 dt .col .rt a.sortDown{background-image:url(../images/ico_down2_on.png);}
